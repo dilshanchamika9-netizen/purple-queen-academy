@@ -36,5 +36,6 @@ jobs:
         run: |
           git config user.name "purple-queen-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add assets/data assets/audio 2>/dev/null || true
+          [ -d assets/data ] && git add assets/data
+          [ -d assets/audio ] && git add assets/audio || true
           if git diff --cached --quiet; then echo "Nothing new"; else git commit -m "Update puzzles and narration [bot]" && git push; fi
