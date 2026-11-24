@@ -1,0 +1,40 @@
+name: Build puzzles and narration
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - 'assets/js/lessons.js'
+      - '.github/workflows/build-data.yml'
+permissions:
+  contents: write
+concurrency: build-data
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Puzzles from the Lichess database (when missing or when the builder changed)
+        run: |
+          if [ ! -f assets/data/puzzles.json ] || git diff --name-only HEAD~1 HEAD | grep -q tools/build_puzzles.py; then
+            curl -sL https://database.lichess.org/lichess_db_puzzle.csv.zst | zstd -dc | python3 tools/build_puzzles.py
+          else
+            echo "puzzles.json is up to date"
+          fi
+      - name: Lesson narration (Azure Speech)
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+        run: node tools/tts.mjs
+      - name: Commit results
+        run: |
+          git config user.name "purple-queen-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/data assets/audio 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nothing new"; else git commit -m "Update puzzles and narration [bot]" && git push; fi
