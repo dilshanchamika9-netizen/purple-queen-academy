@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Puzzles from the Lichess database (when missing or when the builder changed)
         run: |
           if [ ! -f assets/data/puzzles.json ] || git diff --name-only HEAD~1 HEAD | grep -q tools/build_puzzles.py; then

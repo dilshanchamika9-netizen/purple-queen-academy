@@ -18,6 +18,28 @@
   let coachView = store.get('coach', false);
   const tx = (o) => o == null ? '' : typeof o === 'string' ? o : (o[lang] || o.en);
 
+  /* ---------------- voice ---------------- */
+  let voiceOn = store.get('voice', true), manifest = null;
+  const audio = new Audio(); audio.preload = 'auto';
+  const hash = (s) => { let h = 0x811c9dc5; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0 } return h.toString(16).padStart(8, '0') };
+  fetch('assets/audio/manifest.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : {}).then(m => { manifest = m }).catch(() => { manifest = {} });
+  function sysVoice(l) { try { const vs = speechSynthesis.getVoices(); return vs.find(v => v.lang && v.lang.toLowerCase().startsWith(l === 'si' ? 'si' : 'en')) } catch { return null } }
+  function hush() { try { audio.pause(); speechSynthesis && speechSynthesis.cancel() } catch {} }
+  /* speak(obj) -> Promise resolving when speech ends (or at once when silent) */
+  function speak(o) {
+    hush();
+    if (!voiceOn || !o || !o.en) return Promise.resolve(false);
+    const text = tx(o), key = lang + '|' + text, h = hash(key);
+    if (manifest && manifest[h]) {
+      return new Promise(res => { audio.src = `assets/audio/${lang}/${h}.mp3`; audio.onended = () => res(true); audio.onerror = () => res(false); audio.play().catch(() => res(false)) });
+    }
+    const v = sysVoice(lang);
+    if (v && 'speechSynthesis' in window) {
+      return new Promise(res => { const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = .92; u.onend = () => res(true); u.onerror = () => res(false); speechSynthesis.speak(u) });
+    }
+    return Promise.resolve(false);
+  }
+
   /* ---------------- board ---------------- */
   class Board {
     constructor(el) {
@@ -84,7 +106,7 @@
     <header class="lp-top">
       <div><span class="lp-num" id="lessonNum"></span><h2 id="lessonTitle"></h2></div>
       <div class="lp-tools">
-        <div class="seg lang" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="si">සිංහල</button></div>
+        <button type="button" class="vbtn" id="voiceBtn" aria-pressed="true"></button><div class="seg lang" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="si">සිංහල</button></div>
         <div class="seg mode" role="tablist"><button type="button" data-mode="watch" role="tab"></button><button type="button" data-mode="practice" role="tab"></button></div>
       </div>
     </header>
@@ -112,6 +134,7 @@
     pickPiece: { en: 'Click the white piece, then its square.', si: 'සුදු ඉත්තා ක්ලික් කරලා, ඊට පස්සේ කොටුව ක්ලික් කරන්න.' },
     clickSq: { en: 'Click a square on the board.', si: 'පුවරුවේ කොටුවක් ක්ලික් කරන්න.' },
     cert: { en: '🏆 Get module certificate', si: '🏆 සහතිකය ලබාගන්න' },
+    voiceOn: { en: 'Voice on', si: 'හඬ ඇත' }, voiceOff: { en: 'Voice off', si: 'හඬ නැත' },
   };
   const board = new Board($('#board'));
   let li = 0, si = 0, mode = 'watch', timer = null, playing = false;
@@ -124,6 +147,7 @@
     $$('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
     $$('.mode button').forEach(b => { b.textContent = tx(UI[b.dataset.mode]); b.setAttribute('aria-selected', b.dataset.mode === mode) });
     $('#coachView').checked = coachView;
+    const vb = $('#voiceBtn'); vb.setAttribute('aria-pressed', voiceOn); vb.innerHTML = (voiceOn ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>') + '<span>' + tx(voiceOn ? UI.voiceOn : UI.voiceOff) + '</span>';
     document.documentElement.lang = lang === 'si' ? 'si' : 'en';
     const n = done(), pct = Math.round(n / M.lessons.length * 100);
     $('#ringFg').style.strokeDasharray = `${pct * 0.974} 100`; $('#ringTxt').textContent = pct + '%';
@@ -143,6 +167,7 @@
     for (let k = 0; k <= i; k++) { const s = steps[k]; if (s.pos) pos = { ...s.pos }; if (s.move) { const [a, b] = s.move; pos[b] = s.promote ? s.promote.p : pos[a]; delete pos[a] } }
     return pos;
   }
+  let speakId = 0, spoken = Promise.resolve(false), talk = false;
   function showStep(i, animate) {
     const steps = M.lessons[li].steps; const st = steps[i];
     if (animate && i === si + 1 && !st.pos && st.move) { board.move(st.move[0], st.move[1], st.promote && st.promote.p, true) }
@@ -150,24 +175,30 @@
     else if (!(animate && i === si + 1)) { const prev = i > 0 ? stateAt(i - 1) : {}; if (st.move && animate) { board.setPos(prev, false); board.move(st.move[0], st.move[1], st.promote && st.promote.p, true) } else board.setPos(stateAt(i), false) }
     si = i; board.decorate(st);
     const p = $('#panel .cap'); if (p) { p.classList.remove('swap'); void p.offsetWidth; p.classList.add('swap'); p.textContent = tx(st.text) }
+    if (talk) { const my = ++speakId; spoken = speak(st.text).then(ok => my === speakId && ok) } else { spoken = Promise.resolve(false) }
     $$('#panel .dots i').forEach((d, k) => d.className = k < i ? 'past' : k === i ? 'now' : '');
     const last = i === steps.length - 1;
     $('#panel .go-prac').classList.toggle('pulse', last);
     if (last) stop();
   }
-  function play() { playing = true; $('#playBtn').innerHTML = '❚❚ <span>' + tx(UI.pause) + '</span>'; schedule() }
-  function stop() { playing = false; clearTimeout(timer); const b = $('#playBtn'); if (b) b.innerHTML = (si === M.lessons[li].steps.length - 1 ? '↻ <span>' + tx(UI.replay) : '▶ <span>' + tx(UI.play)) + '</span>' }
-  function schedule() { clearTimeout(timer); const st = M.lessons[li].steps[si]; const ms = 2600 + tx(st.text).length * 32; timer = setTimeout(() => { if (!playing) return; if (si < M.lessons[li].steps.length - 1) { showStep(si + 1, true); if (playing) schedule() } }, ms) }
+  function play() { playing = true; talk = true; $('#playBtn').innerHTML = '❚❚ <span>' + tx(UI.pause) + '</span>'; schedule() }
+  function stop() { playing = false; clearTimeout(timer); speakId++; const b = $('#playBtn'); if (b) b.innerHTML = (si === M.lessons[li].steps.length - 1 ? '↻ <span>' + tx(UI.replay) : '▶ <span>' + tx(UI.play)) + '</span>' }
+  function schedule() {
+    clearTimeout(timer); const st = M.lessons[li].steps[si], my = speakId, t0 = Date.now();
+    const minMs = 2600 + tx(st.text).length * 32;
+    const advance = () => { if (!playing || my !== speakId) return; if (si < M.lessons[li].steps.length - 1) { showStep(si + 1, true); if (playing) schedule() } };
+    spoken.then(ok => { if (my !== speakId) return; const wait = ok ? 900 : Math.max(0, minMs - (Date.now() - t0)); timer = setTimeout(advance, wait) });
+  }
   function renderWatch(autoplay = true) {
     mode = 'watch'; paintStatic(); stop(); board.click = null; root.classList.remove('practicing');
     const steps = M.lessons[li].steps;
     $('#panel').innerHTML = `<div class="dots">${steps.map(() => '<i></i>').join('')}</div><p class="cap"></p>
       <div class="ctrl"><button type="button" class="ic" id="prevBtn" aria-label="Previous step">‹</button><button type="button" class="pl" id="playBtn"></button><button type="button" class="ic" id="nextBtn" aria-label="Next step">›</button></div>
       <button type="button" class="btn btn-primary go-prac">${tx(UI.toPractice)} →</button>`;
-    si = -1; board.setPos({}, false); showStep(0, false);
-    $('#prevBtn').onclick = () => { stop(); if (si > 0) showStep(si - 1, false) };
-    $('#nextBtn').onclick = () => { stop(); if (si < steps.length - 1) showStep(si + 1, true) };
-    $('#playBtn').onclick = () => { if (playing) { stop(); return } if (si === steps.length - 1) { showStep(0, false) } play() };
+    talk = autoplay; si = -1; board.setPos({}, false); showStep(0, false);
+    $('#prevBtn').onclick = () => { stop(); talk = true; if (si > 0) showStep(si - 1, false) };
+    $('#nextBtn').onclick = () => { stop(); talk = true; if (si < steps.length - 1) showStep(si + 1, true) };
+    $('#playBtn').onclick = () => { if (playing) { stop(); hush(); return } talk = true; if (si === steps.length - 1) showStep(0, false); else showStep(si, false); play() };
     $('.go-prac').onclick = () => renderPractice();
     autoplay ? play() : stop();
   }
@@ -179,7 +210,7 @@
     tasks = P[M.lessons[li].id] || []; ti = 0; score = 0; showTask();
   }
   function showTask() {
-    answered = false; sel = null;
+    answered = false; sel = null; hush();
     const t = tasks[ti];
     board.setPos(t.pos || {}, true); board.decorate({ hl: t.hl, files: true, ranks: true });
     const hint = t.type === 'move' ? tx(UI.pickPiece) : t.type === 'square' ? tx(UI.clickSq) : '';
@@ -188,6 +219,7 @@
       ${t.type === 'choice' ? `<div class="opts">${t.opts.map((o, k) => `<button type="button" data-k="${k}"><i>${'ABC'[k]}</i>${tx(o)}</button>`).join('')}</div>` : ''}
       <div class="fb" id="fb" aria-live="polite"></div><button type="button" class="btn btn-primary nx" id="nxBtn" hidden></button>`;
     root.classList.toggle('board-dim', t.type === 'choice' && !t.pos);
+    speak(t.q);
     if (t.type === 'choice') { $$('.opts button').forEach(b => b.onclick = () => answer(+b.dataset.k === t.a, () => { $$('.opts button').forEach(x => { x.disabled = true; if (+x.dataset.k === t.a) x.classList.add('right') }); if (+b.dataset.k !== t.a) b.classList.add('wrong') })); board.click = null }
     else if (t.type === 'square') { board.click = (s) => { if (answered) return; const ok = t.ans.includes(s); board.mark(s, ok ? 'good' : 'bad', 0); answer(ok, () => { if (!ok) board.decorate({ hl: t.ans.length <= 8 ? t.ans : [], soft: t.ans.length > 8 ? t.ans : [], files: true, ranks: true }); board.mark(s, ok ? 'good' : 'bad', 0) }) } }
     else if (t.type === 'move') {
@@ -213,7 +245,7 @@
   }
   function burst() { const b = $('#board'); b.classList.remove('win'); void b.offsetWidth; b.classList.add('win') }
   function result() {
-    board.click = null; root.classList.remove('board-dim');
+    hush(); board.click = null; root.classList.remove('board-dim');
     const pct = Math.round(score / tasks.length * 100), id = M.lessons[li].id;
     const prevBest = progress[id]; if (prevBest == null || pct > prevBest) { progress[id] = pct; store.set('progress', progress) }
     const pass = pct >= PASS, stars = pct >= 90 ? 3 : pct >= PASS ? 2 : pct >= 50 ? 1 : 0;
@@ -245,9 +277,10 @@
   function openLesson(i) { if (!unlocked(i)) return; li = i; store.set('li', li); renderWatch(true); root.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
   root.addEventListener('click', e => {
     const l = e.target.closest('#lessonList button'); if (l) { const i = +l.dataset.i; if (unlocked(i)) openLesson(i); else { l.classList.add('shake'); setTimeout(() => l.classList.remove('shake'), 500); l.title = tx(UI.locked) } }
-    const lg = e.target.closest('.lang button'); if (lg) { lang = lg.dataset.lang; store.set('lang', lang); mode === 'watch' ? (paintStatic(), showStep(si, false), stop()) : (paintStatic(), showTask()) }
+    const lg = e.target.closest('.lang button'); if (lg) { hush(); lang = lg.dataset.lang; store.set('lang', lang); mode === 'watch' ? (paintStatic(), showStep(si, false), stop()) : (paintStatic(), showTask()) }
     const md = e.target.closest('.mode button'); if (md) md.dataset.mode === 'practice' ? renderPractice() : renderWatch(true);
   });
+  $('#voiceBtn').addEventListener('click', () => { voiceOn = !voiceOn; store.set('voice', voiceOn); if (!voiceOn) hush(); paintStatic() });
   $('#coachView').addEventListener('change', e => { coachView = e.target.checked; store.set('coach', coachView); paintStatic() });
   $('#certBtn').addEventListener('click', certificate);
   document.addEventListener('keydown', e => {

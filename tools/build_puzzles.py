@@ -57,6 +57,7 @@ for lid, lo, hi, cnt in LEVELS:
         it['l'] = lid
     out += picked
     print(f'level {lid}: {len(picked)} puzzles (pool {len(pool)}, seen {seen[lid]})', file=sys.stderr)
+import os; os.makedirs('assets/data', exist_ok=True)
 json.dump({'source': 'Lichess puzzle database (CC0), database.lichess.org', 'count': len(out), 'puzzles': out},
           open('assets/data/puzzles.json', 'w'), separators=(',', ':'))
 print('total', len(out), file=sys.stderr)
