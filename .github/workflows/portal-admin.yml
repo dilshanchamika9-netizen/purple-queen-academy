@@ -1,0 +1,43 @@
+name: Portal admin (rules, coaches, password resets)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'firestore.rules'
+      - 'tools/portal-admin.mjs'
+      - '.github/workflows/portal-admin.yml'
+concurrency: portal-admin
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check secret
+        id: s
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: if [ -n "$SA" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "Service account secret not added yet"; fi
+      - name: Install
+        if: steps.s.outputs.ok == '1'
+        run: npm i --no-save firebase-admin@13 firebase-tools@15
+      - name: Publish Firestore rules
+        if: steps.s.outputs.ok == '1' && github.event_name != 'schedule'
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          echo '{"firestore":{"rules":"firestore.rules"}}' > firebase.json
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" npx firebase deploy --only firestore:rules --project purple-queen-38407 --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json" firebase.json
+      - name: Coaches and queued requests
+        if: steps.s.outputs.ok == '1'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          COACH_EMAILS: ${{ secrets.COACH_EMAILS }}
+        run: node tools/portal-admin.mjs

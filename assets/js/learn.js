@@ -10,7 +10,7 @@
   const PASS = 70;
   const store = {
     get(k, d) { try { const v = localStorage.getItem('pq-' + k); return v == null ? d : JSON.parse(v) } catch { return d } },
-    set(k, v) { try { localStorage.setItem('pq-' + k, JSON.stringify(v)) } catch {} },
+    set(k, v) { try { localStorage.setItem('pq-' + k, JSON.stringify(v)) } catch {} if (k === 'progress' || k === 'xp') window.dispatchEvent(new Event('pq-saved')) },
   };
   let lang = store.get('lang', 'en');
   let progress = store.get('progress', {});      // lessonId -> best %
@@ -289,5 +289,6 @@
   });
   const saved = store.get('li', 0); li = Math.min(saved, M.lessons.length - 1); if (!unlocked(li)) li = 0;
   renderWatch(false);
+  window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
   window.PQ_LEARN = { openLesson, board, get state() { return { li, si, mode, ti, score } } };
 })();

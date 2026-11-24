@@ -1,0 +1,42 @@
+rules_version = '2';
+// Purple Queen Chess Academy: who can read and write what.
+// Students sign in as <ID>@pq-students.example.com; coaches sign in with a verified email listed in /coaches.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function isCoach() {
+      return signedIn() && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/coaches/$(myEmail()));
+    }
+    function isStudent() { return signedIn() && myEmail().matches('.*@pq-students[.]example[.]com'); }
+
+    match /coaches/{email} {
+      allow read: if signedIn() && (myEmail() == email || isCoach());
+      allow write: if false;                       // managed by the GitHub admin workflow only
+    }
+    match /users/{uid} {
+      allow read: if isCoach() || (signedIn() && request.auth.uid == uid);
+      allow create: if isCoach() && request.resource.data.role == 'student';
+      allow update: if isCoach()
+        || (isStudent() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen'])
+            && (request.resource.data.mustChange == false || request.resource.data.mustChange == resource.data.mustChange));
+      allow delete: if false;
+    }
+    match /progress/{uid} {
+      allow read: if isCoach() || (signedIn() && request.auth.uid == uid);
+      allow write: if isStudent() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['lessons', 'xp', 'puzzles', 'updatedAt']);
+    }
+    match /meta/{doc} {
+      allow read, write: if isCoach();
+    }
+    match /adminQueue/{id} {
+      allow read: if isCoach();
+      allow create: if isCoach() && request.resource.data.type in ['reset', 'delete']
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
+  }
+}

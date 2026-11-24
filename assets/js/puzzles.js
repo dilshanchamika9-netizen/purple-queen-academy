@@ -8,7 +8,7 @@
   const GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
   const store = {
     get(k, d) { try { const v = localStorage.getItem('pqz-' + k); return v == null ? d : JSON.parse(v) } catch { return d } },
-    set(k, v) { try { localStorage.setItem('pqz-' + k, JSON.stringify(v)) } catch {} },
+    set(k, v) { try { localStorage.setItem('pqz-' + k, JSON.stringify(v)) } catch {} if (k === 'solved' || k === 'best') window.dispatchEvent(new Event('pq-saved')) },
   };
   const LEVELS = [
     { id: 1, name: 'Beginner', piece: '♙', range: 'under 1000', tip: 'Mates in 1 and 2, hanging pieces' },
@@ -227,5 +227,6 @@
     ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c) c.textContent = ALL.length.toLocaleString('en');
     const q = new URLSearchParams(location.search).get('id'); load(ALL.find(p => p.id === q) || pick());
   }).catch(() => { msg('Puzzles could not be loaded. Refresh the page to try again.', 'err') });
+  window.addEventListener('pq-reload', () => { solved = store.get('solved', {}); best = store.get('best', 0); if (ALL.length) paintSide() });
   window.PQ_PUZZLES = { Engine, takeBack, get state() { return { cur, idx, moves, level, theme, streak, orient, fen: game && game.fen() } }, userMove, load, pick };
 })();

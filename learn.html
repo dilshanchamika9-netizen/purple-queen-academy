@@ -14,7 +14,7 @@
 <meta property="og:image" content="assets/logo/pq-logo-primary-wood-1024.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=202611242156">
+<link rel="stylesheet" href="assets/css/site.css?v=202611242224">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -40,7 +40,7 @@
     <a href="index.html" class="brand" aria-label="Purple Queen Chess Academy, home"><img class="brand-seal" src="assets/logo/pq-logo-primary-wood.svg" width="84" height="84" alt=""><span class="brand-txt"><b>Purple Queen</b><small>CHESS ACADEMY</small></span></a>
     <nav class="nav" id="nav" aria-label="Main"><a href="classes.html">Classes</a><a href="schedule.html">Schedule</a><a href="tournaments.html">Tournaments</a><a href="coaches.html">Coaches</a><a href="schools.html">Schools</a><a href="puzzle.html">Puzzles</a><a href="learn.html" aria-current="page">Learn</a><a href="contact.html">Contact</a></nav>
     <div class="hdr-cta">
-      <a class="btn btn-ghost btn-sm" href="learn.html"><svg><use href="#i-user"/></svg>Student portal</a>
+      <a class="uchip" id="pqUserChip" href="account.html" hidden><svg><use href="#i-user"/></svg><b></b></a><a class="btn btn-ghost btn-sm" href="login.html"><svg><use href="#i-user"/></svg>Student portal</a>
       <a class="btn btn-primary btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a trial class." target="_blank" rel="noopener">Book a trial</a>
     </div>
     <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav"><span></span></button>
@@ -49,8 +49,8 @@
 <main id="top">
 <section class="page-top" style="padding-bottom:30px"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Learn</span></nav>
   <div class="sec-head" style="margin-bottom:10px"><div><p class="eyebrow">Student portal · Level 1</p><h1>Learn chess <em>step by step</em></h1></div>
-  <p class="lead">Watch each animated lesson, then practise on the board and get your marks. Score 70% to open the next lesson. Switch between English and Sinhala at any time.</p></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" type="button" data-portal><svg><use href="#i-user"/></svg>Student sign in</button></div>
+  <p class="lead">Watch each animated lesson, then practise on the board and get your marks. Score 70% to open the next lesson. Sign in with your student ID to save your marks to your account.</p></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-ghost btn-sm" href="login.html"><svg><use href="#i-user"/></svg>Student sign in</a></div>
 </div></section>
 <section class="learn-wrap"><div class="wrap"><div id="learnApp"></div>
   <div class="sec-head rv" style="margin-top:80px"><div><p class="eyebrow">Your journey</p><h2>From the first square to <em>tournament play</em></h2></div><p class="lead">Module 1 is open now. Each level ends with a promotion test and a certificate.</p></div>
@@ -85,9 +85,10 @@
     <a class="btn btn-primary" href="#" data-wa="Hello! I am a Purple Queen student and need my lesson material." target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>Message the academy</a>
   </div>
 </dialog>
-<script src="assets/js/site.js?v=202611242156"></script>
-<script src="assets/js/celebrate.js?v=202611242156"></script>
-<script src="assets/js/lessons.js?v=202611242156"></script>
-<script src="assets/js/learn.js?v=202611242156"></script>
+<script src="assets/js/site.js?v=202611242224"></script>
+<script src="assets/js/celebrate.js?v=202611242224"></script>
+<script src="assets/js/lessons.js?v=202611242224"></script>
+<script src="assets/js/learn.js?v=202611242224"></script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=202611242224")}catch(e){}</script>
 </body>
 </html>

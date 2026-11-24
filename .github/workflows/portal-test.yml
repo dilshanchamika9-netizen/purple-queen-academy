@@ -1,0 +1,32 @@
+name: Portal test (emulators)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/portal/**'
+      - 'firestore.rules'
+      - 'tools/portal-*.mjs'
+      - 'login.html'
+      - 'coach.html'
+      - 'account.html'
+      - '.github/workflows/portal-test.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm i --no-save firebase-tools@15 firebase-admin@13 playwright@1
+      - run: npx playwright install --with-deps chromium
+      - name: Emulators + site + test
+        run: |
+          echo '{"emulators":{"auth":{"port":9099},"firestore":{"port":8085},"ui":{"enabled":false}},"firestore":{"rules":"firestore.rules"}}' > firebase.json
+          python3 -m http.server 8080 --bind 127.0.0.1 >/dev/null 2>&1 &
+          npx firebase emulators:exec --only auth,firestore --project demo-pq "node tools/portal-test.mjs"
