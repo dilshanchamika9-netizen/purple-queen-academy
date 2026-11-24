@@ -779,3 +779,50 @@ table.stu { width:100%; border-collapse:collapse; font-size:14px; min-width:900p
 .opts.promo button img { flex:none; filter:drop-shadow(0 2px 2px rgba(42,18,64,.25)) }
 .acc-mods { display:grid; gap:20px; align-content:start }
 .piece.ghost .stand img { opacity:.9 }
+
+/* ===== FX layer (assets/js/fx.js): aurora, glow cards, shimmer, ticker, floating pieces ===== */
+.fx-aurora { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden }
+.fx-aurora i { position:absolute; border-radius:50%; will-change:transform }
+.fx-aurora i:nth-child(1) { width:62vw; height:62vw; left:-16vw; top:-22vw; background:radial-gradient(closest-side, rgba(140,95,194,.26), transparent); animation:fxA 28s ease-in-out infinite alternate }
+.fx-aurora i:nth-child(2) { width:52vw; height:52vw; right:-14vw; top:8vh; background:radial-gradient(closest-side, rgba(194,163,230,.40), transparent); animation:fxB 34s ease-in-out infinite alternate }
+.fx-aurora i:nth-child(3) { width:44vw; height:44vw; left:22vw; bottom:-20vw; background:radial-gradient(closest-side, rgba(201,164,92,.15), transparent); animation:fxC 40s ease-in-out infinite alternate }
+.fx-aurora::after { content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(91,44,145,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(91,44,145,.06) 1px, transparent 1px); background-size:56px 56px; -webkit-mask-image:radial-gradient(ellipse 80% 55% at 50% 22%, #000, transparent 75%); mask-image:radial-gradient(ellipse 80% 55% at 50% 22%, #000, transparent 75%); animation:fxGrid 60s linear infinite }
+@keyframes fxA { to { transform:translate3d(10vw, 8vw, 0) scale(1.12) } }
+@keyframes fxB { to { transform:translate3d(-9vw, 10vw, 0) scale(.92) } }
+@keyframes fxC { to { transform:translate3d(8vw, -6vw, 0) scale(1.15) } }
+@keyframes fxGrid { to { background-position:56px 56px, 56px 56px } }
+.fx-progress { position:fixed; left:0; top:0; height:3px; width:100%; transform-origin:0 50%; transform:scaleX(var(--p, 0)); background:linear-gradient(90deg, #8C5FC2, #C2A3E6, #C9A45C); z-index:200; pointer-events:none; box-shadow:0 0 14px rgba(140,95,194,.75) }
+.fx-cursor { position:fixed; left:0; top:0; width:560px; height:560px; margin:-280px 0 0 -280px; border-radius:50%; pointer-events:none; z-index:-1; opacity:0; transition:opacity .5s; background:radial-gradient(closest-side, rgba(140,95,194,.13), transparent); transform:translate3d(var(--cx, -999px), var(--cy, -999px), 0) }
+/* shimmering italic headline words */
+h1 em, h2 em { padding-inline:.04em; background:linear-gradient(100deg, #5B2C91 18%, #9B6FD6 36%, #C9A45C 50%, #9B6FD6 64%, #5B2C91 82%); background-size:260% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:fxShine 8s linear infinite }
+.portal h1 em, .portal h2 em { background-image:linear-gradient(100deg, #C2A3E6 18%, #fff 42%, #E9CC8A 52%, #C2A3E6 80%) }
+@keyframes fxShine { to { background-position:-260% 0 } }
+/* glow cards + cursor spotlight */
+.fx-card { transition:transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s, border-color .3s }
+.fx-card:hover { box-shadow:0 0 0 1px rgba(140,95,194,.45), 0 36px 70px -34px rgba(91,44,145,.55), 0 0 46px -14px rgba(194,163,230,.9) }
+.fx-spot { position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .35s; z-index:2; background:radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(140,95,194,.15), transparent 62%) }
+.fx-card:hover > .fx-spot { opacity:1 }
+/* buttons: shine sweep + breathing glow on the main call to action */
+.btn-primary { position:relative; overflow:hidden; isolation:isolate }
+.btn-primary::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,.4) 50%, transparent 70%); transform:translateX(-120%); transition:transform .8s }
+.btn-primary:hover::after { transform:translateX(120%) }
+.hero-ctas .btn-primary { animation:fxPulse 3.4s ease-in-out infinite }
+@keyframes fxPulse { 0%, 100% { box-shadow:0 10px 24px -12px rgba(91,44,145,.8), 0 0 0 0 rgba(140,95,194,.45) } 55% { box-shadow:0 10px 24px -12px rgba(91,44,145,.8), 0 0 0 14px rgba(140,95,194,0) } }
+/* header glow line and dark band sweep */
+.hdr.scrolled::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:linear-gradient(90deg, transparent, #8C5FC2, #C9A45C, #8C5FC2, transparent); opacity:.7 }
+.facts::after { content:""; position:absolute; top:0; bottom:0; left:0; width:26%; pointer-events:none; background:linear-gradient(90deg, transparent, rgba(194,163,230,.2), transparent); animation:fxSweep 8s ease-in-out infinite }
+@keyframes fxSweep { 0% { transform:translateX(-100%) } 100% { transform:translateX(480%) } }
+/* floating glass pieces */
+.fx-float { position:absolute; pointer-events:none; opacity:.14; z-index:0; animation:fxFloat 15s ease-in-out infinite alternate; filter:drop-shadow(0 14px 14px rgba(91,44,145,.3)) }
+@keyframes fxFloat { from { transform:translate3d(0, 0, 0) rotate(-7deg) } to { transform:translate3d(16px, -28px, 0) rotate(8deg) } }
+.page-top { overflow-x:clip } .page-top > .wrap { position:relative; z-index:1 }
+/* opening-moves ticker */
+.fx-ticker { overflow:hidden; border-block:1px solid var(--line); background:rgba(255,255,255,.65); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); -webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent) }
+.fx-ticker div { display:flex; width:max-content; padding:13px 0; font:600 13px var(--caps); letter-spacing:.2em; color:var(--purple); white-space:nowrap; animation:fxTick 60s linear infinite }
+.fx-ticker span { padding:0 20px } .fx-ticker b { color:var(--gold); font-weight:400 }
+@keyframes fxTick { to { transform:translateX(-50%) } }
+/* learn + puzzle boards, sidebar: neon edge */
+.lb, .pz-board, #pzBoard { box-shadow:0 0 0 1px rgba(194,163,230,.4), 0 34px 70px -34px rgba(91,44,145,.75), 0 0 70px -24px rgba(140,95,194,.6) }
+.lp-side { box-shadow:0 0 0 1px rgba(194,163,230,.22), 0 40px 90px -46px rgba(140,95,194,.8) }
+@media (max-width:760px) { .fx-aurora i, .fx-aurora::after, .facts::after { animation:none } .fx-float, .fx-cursor { display:none } }
+@media (prefers-reduced-motion:reduce) { .fx-aurora i, .fx-aurora::after, .facts::after, h1 em, h2 em, .fx-ticker div, .fx-float, .hero-ctas .btn-primary { animation:none !important } .fx-progress { transition:none } }
