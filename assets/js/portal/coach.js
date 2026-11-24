@@ -1,7 +1,8 @@
 import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn } from './fb.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalCoach');
-const LESSONS = (window.PQ_MODULE && window.PQ_MODULE.lessons) || [];
+const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []);
+const LESSONS = MODS.flatMap(m => m.lessons);
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const tempPw = () => words[Math.floor(Math.random() * words.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));

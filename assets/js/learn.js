@@ -1,6 +1,7 @@
 /* Purple Queen lesson player: animated lessons, practice with scoring, progress, certificate */
 (function () {
-  const M = window.PQ_MODULE, P = window.PQ_PRACTICE;
+  const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []), P = window.PQ_PRACTICE;
+  let mi = 0, M = MODS[0];
   const root = document.getElementById('learnApp');
   if (!root || !M) return;
   const $ = (s, r = root) => r.querySelector(s);
@@ -75,6 +76,8 @@
       if (animate) { e.classList.remove('hop'); void e.offsetWidth; e.classList.add('hop'); this.trail(from, to) } else { void e.offsetWidth; e.style.transition = '' }
       if (promote) { const fn = () => { e.dataset.p = promote; e.querySelector('img').src = `assets/pieces/${promote}.svg`; e.classList.add('promo') }; animate ? setTimeout(fn, 520) : fn() }
     }
+    remove(s, animate = true) { const e = this.pieces[s]; if (!e) return; delete this.pieces[s]; if (animate) { e.classList.add('cap'); setTimeout(() => e.remove(), 420) } else e.remove() }
+    setPiece(s, p, animate = true) { const e = this.pieces[s]; if (!e) return; e.dataset.p = p; e.querySelector('img').src = `assets/pieces/${p}.svg`; if (animate) e.classList.add('promo') }
     trail(a, b) { [a, b].forEach(s => { const q = this.sq[s]; q.classList.add('tr'); setTimeout(() => q.classList.remove('tr'), 1600) }) }
     decorate(st = {}) {
       Object.values(this.sq).forEach(q => { q.className = q.className.split(' ').filter(c => ['lsq', 'l', 'd', 'tr'].includes(c)).join(' '); q.querySelector('.ov').textContent = '' });
@@ -94,6 +97,7 @@
   /* ---------------- layout ---------------- */
   root.innerHTML = `
   <aside class="lp-side">
+    <div class="lp-mods" id="modTabs"></div>
     <div class="lp-mod"><span class="lp-lv" data-t="level"></span><b data-t="module"></b>
       <div class="lp-ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" class="bg"/><circle cx="18" cy="18" r="15.5" class="fg" id="ringFg"/></svg><span id="ringTxt">0%</span></div>
       <div class="lp-xp"><span>XP</span><b id="xpTxt">0</b></div>
@@ -117,7 +121,11 @@
   </section>`;
 
   const UI = {
-    level: M.level, module: M.title,
+    get level() { return M.level }, get module() { return M.title },
+    mod: { en: 'Module', si: 'මොඩියුලය' }, nextMod: { en: 'Next module', si: 'ඊළඟ මොඩියුලය' },
+    lockedMod: { en: 'Finish the previous module to open this one.', si: 'මේක විවෘත වෙන්න කලින් මොඩියුලය අවසන් කරන්න ඕන.' },
+    pcQ: { en: 'Queen', si: 'රැජින' }, pcR: { en: 'Rook', si: 'රුක්' }, pcB: { en: 'Bishop', si: 'බිෂොප්' }, pcN: { en: 'Knight', si: 'නයිට්' },
+    pickNew: { en: 'Now choose the new piece.', si: 'දැන් අලුත් ඉත්තා තෝරන්න.' },
     coach: { en: 'Coach view: open all lessons', si: 'කෝච් සඳහා: සියලුම පාඩම් විවෘත කරන්න' },
     watch: { en: '▶ Watch lesson', si: '▶ පාඩම නරඹන්න' }, practice: { en: '✎ Practice', si: '✎ පුහුණුව' },
     lesson: { en: 'Lesson', si: 'පාඩම' }, of: { en: 'of', si: '/' },
@@ -139,7 +147,10 @@
   const board = new Board($('#board'));
   let li = 0, si = 0, mode = 'watch', timer = null, playing = false;
 
-  const unlocked = (i) => coachView || i === 0 || (progress[M.lessons[i - 1].id] || 0) >= PASS;
+  const lkey = () => mi ? 'li' + (mi + 1) : 'li';
+  const modDone = (k) => MODS[k].lessons.every(l => (progress[l.id] || 0) >= PASS);
+  const modOpen = (k) => coachView || k === 0 || modDone(k - 1);
+  const unlocked = (i) => coachView || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
   const done = () => M.lessons.filter(l => (progress[l.id] || 0) >= PASS).length;
 
   function paintStatic() {
@@ -152,6 +163,8 @@
     const n = done(), pct = Math.round(n / M.lessons.length * 100);
     $('#ringFg').style.strokeDasharray = `${pct * 0.974} 100`; $('#ringTxt').textContent = pct + '%';
     $('#xpTxt').textContent = xp;
+    $('#modTabs').hidden = MODS.length < 2;
+    $('#modTabs').innerHTML = MODS.map((m, k) => `<button type="button" data-m="${k}" class="${k === mi ? 'cur' : ''} ${modOpen(k) ? '' : 'lock'}" title="${tx(m.title)}">${modOpen(k) ? '' : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>'}${tx(UI.mod)} ${k + 1}</button>`).join('');
     const cb = $('#certBtn'); cb.hidden = n < M.lessons.length; cb.textContent = tx(UI.cert);
     $('#lessonList').innerHTML = M.lessons.map((l, i) => {
       const best = progress[l.id], ok = (best || 0) >= PASS, lock = !unlocked(i);
@@ -162,17 +175,26 @@
   }
 
   /* ---------------- watch mode ---------------- */
+  const mvs = (st) => st.moves || (st.move ? [st.move] : []);
+  function applyStep(pos, st) {
+    if (st.pos) pos = { ...st.pos };
+    const m = mvs(st); m.forEach(([a, b], k) => { pos[b] = (st.promote && k === m.length - 1) ? st.promote.p : pos[a]; delete pos[a] });
+    (st.remove || []).forEach(q => delete pos[q]);
+    return pos;
+  }
   function stateAt(i) {
     const steps = M.lessons[li].steps; let pos = {};
-    for (let k = 0; k <= i; k++) { const s = steps[k]; if (s.pos) pos = { ...s.pos }; if (s.move) { const [a, b] = s.move; pos[b] = s.promote ? s.promote.p : pos[a]; delete pos[a] } }
+    for (let k = 0; k <= i; k++) pos = applyStep(pos, steps[k]);
     return pos;
   }
   let speakId = 0, spoken = Promise.resolve(false), talk = false;
   function showStep(i, animate) {
     const steps = M.lessons[li].steps; const st = steps[i];
-    if (animate && i === si + 1 && !st.pos && st.move) { board.move(st.move[0], st.move[1], st.promote && st.promote.p, true) }
+    const mv = mvs(st);
+    const playMoves = () => { mv.forEach(([a, b], k) => board.move(a, b, st.promote && k === mv.length - 1 ? st.promote.p : undefined, true)); (st.remove || []).forEach(q => board.remove(q, true)) };
+    if (animate && i === si + 1 && !st.pos && (mv.length || st.remove)) playMoves();
     else if (animate && i === si + 1 && st.pos) { board.setPos(st.pos, true) }
-    else if (!(animate && i === si + 1)) { const prev = i > 0 ? stateAt(i - 1) : {}; if (st.move && animate) { board.setPos(prev, false); board.move(st.move[0], st.move[1], st.promote && st.promote.p, true) } else board.setPos(stateAt(i), false) }
+    else if (!(animate && i === si + 1)) { const prev = i > 0 ? stateAt(i - 1) : {}; if ((mv.length || st.remove) && !st.pos && animate) { board.setPos(prev, false); playMoves() } else board.setPos(stateAt(i), false) }
     si = i; board.decorate(st);
     const p = $('#panel .cap'); if (p) { p.classList.remove('swap'); void p.offsetWidth; p.classList.add('swap'); p.textContent = tx(st.text) }
     if (talk) { const my = ++speakId; spoken = speak(st.text).then(ok => my === speakId && ok) } else { spoken = Promise.resolve(false) }
@@ -213,7 +235,7 @@
     answered = false; sel = null; hush();
     const t = tasks[ti];
     board.setPos(t.pos || {}, true); board.decorate({ hl: t.hl, files: true, ranks: true });
-    const hint = t.type === 'move' ? tx(UI.pickPiece) : t.type === 'square' ? tx(UI.clickSq) : '';
+    const hint = t.type === 'move' || t.type === 'promo' ? tx(UI.pickPiece) : t.type === 'square' ? tx(UI.clickSq) : '';
     $('#panel').innerHTML = `<div class="pbar"><span>${tx(UI.task)} ${ti + 1}/${tasks.length}</span><i><b style="width:${ti / tasks.length * 100}%"></b></i><span>${tx(UI.score)} ${score}</span></div>
       <p class="q">${tx(t.q)}</p>${hint ? `<p class="hint">${hint}</p>` : ''}
       ${t.type === 'choice' ? `<div class="opts">${t.opts.map((o, k) => `<button type="button" data-k="${k}"><i>${'ABC'[k]}</i>${tx(o)}</button>`).join('')}</div>` : ''}
@@ -230,8 +252,27 @@
         if (!sel) return;
         const ok = t.ans.some(([a, b]) => a === sel && b === s);
         const from = sel; board.sq[from].classList.remove('sel'); sel = null;
-        if (ok) board.move(from, s, t.promote, true); else board.mark(s, 'bad', 0);
+        if (ok) { board.move(from, s, t.promote, true); (t.also || []).forEach(([a, b]) => board.move(a, b, null, true)); (t.remove || []).forEach(q => board.remove(q, true)) } else board.mark(s, 'bad', 0);
         answer(ok, () => { if (!ok) { const [a, b] = t.ans[0]; board.decorate({ hl: [a, b], files: true, ranks: true }); board.mark(s, 'bad', 0) } });
+      };
+    }
+    else if (t.type === 'promo') {
+      board.click = (s) => {
+        if (answered || $('#promoBox')) return;
+        const p = board.pos()[s];
+        if (p && p[0] === 'w') { if (sel) board.sq[sel].classList.remove('sel'); sel = s; board.sq[s].classList.add('sel'); return }
+        if (!sel) return;
+        const ok = t.ans.some(([a, b]) => a === sel && b === s);
+        const from = sel; board.sq[from].classList.remove('sel'); sel = null;
+        if (!ok) { board.mark(s, 'bad', 0); answer(false, () => { const [a, b] = t.ans[0]; board.decorate({ hl: [a, b], files: true, ranks: true }); board.mark(s, 'bad', 0) }); return }
+        board.move(from, s, null, true);
+        const box = document.createElement('div'); box.id = 'promoBox'; box.className = 'opts promo';
+        box.innerHTML = '<p class="hint" style="grid-column:1/-1;margin:0">' + tx(UI.pickNew) + '</p>' + ['Q', 'R', 'B', 'N'].map(k => `<button type="button" data-k="${k}"><img src="assets/pieces/w${k}.svg" alt="" width="34" height="34"><span>${tx(UI['pc' + k])}</span></button>`).join('');
+        $('#fb').before(box);
+        box.querySelectorAll('button').forEach(b => b.onclick = () => {
+          if (answered) return; const k = b.dataset.k; board.setPiece(s, 'w' + k, true);
+          answer(k === t.p, () => { box.querySelectorAll('button').forEach(x => { x.disabled = true; if (x.dataset.k === t.p) x.classList.add('right') }); if (k !== t.p) b.classList.add('wrong') });
+        });
       };
     }
   }
@@ -255,9 +296,10 @@
       <div class="stars">${[1, 2, 3].map(n => `<i class="${n <= stars ? 'on' : ''}">★</i>`).join('')}</div>
       <h3>${tx(pass ? UI.passed : UI.failed)}</h3><p>${pass ? '' : tx(UI.passNote)}</p>
       <p class="bst">${tx(UI.best)}: ${progress[id]}%</p>
-      <div class="ra">${pass && li < M.lessons.length - 1 ? `<button type="button" class="btn btn-primary" id="goNext">${tx(UI.nextLesson)} →</button>` : ''}
+      <div class="ra">${pass && li < M.lessons.length - 1 ? `<button type="button" class="btn btn-primary" id="goNext">${tx(UI.nextLesson)} →</button>` : ''}${pass && li === M.lessons.length - 1 && mi < MODS.length - 1 ? `<button type="button" class="btn btn-primary" id="goMod">${tx(UI.nextMod)} →</button>` : ''}
       <button type="button" class="btn btn-ghost" id="goRetry">${tx(UI.retry)}</button><button type="button" class="btn btn-ghost" id="goWatch">${tx(UI.rewatch)}</button></div></div>`;
     const gn = $('#goNext'); if (gn) gn.onclick = () => openLesson(li + 1);
+    const gm = $('#goMod'); if (gm) gm.onclick = () => switchModule(mi + 1);
     $('#goRetry').onclick = renderPractice; $('#goWatch').onclick = () => renderWatch(true);
     if (pass) { board.el.classList.add('win'); if (window.PQ_CELEBRATE) PQ_CELEBRATE({ title: lang === 'si' ? 'සුබ පැතුම්!' : 'Congratulations!', sub: tx(UI.passed) + ' ' + pct + '%', size: 'big' }) }
   }
@@ -266,6 +308,8 @@
   function certificate() {
     const name = store.get('name', '');
     const dlg = document.getElementById('certDlg'); if (!dlg) return;
+    const md = dlg.querySelector('.md'); if (md) md.textContent = `${M.level.en.split(' ·')[0]} · Module ${mi + 1}: ${M.title.en}`;
+    const cp = dlg.querySelector('.cp'); if (cp) cp.textContent = `with a pass in all ${M.lessons.length} lessons and practice sessions.`;
     dlg.querySelector('#certName').value = name;
     const paint = () => { const n = dlg.querySelector('#certName').value.trim(); dlg.querySelector('.cn').textContent = n || '—'; store.set('name', n) };
     dlg.querySelector('#certName').oninput = paint; paint();
@@ -274,9 +318,11 @@
   }
 
   /* ---------------- wiring ---------------- */
-  function openLesson(i) { if (!unlocked(i)) return; li = i; store.set('li', li); renderWatch(true); root.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+  function switchModule(k) { if (!modOpen(k)) return; hush(); mi = k; M = MODS[k]; store.set('mi', mi); const sv = store.get(lkey(), null); li = sv == null ? Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)) : Math.min(sv, M.lessons.length - 1); if (!unlocked(li)) li = 0; renderWatch(false) }
+  function openLesson(i) { if (!unlocked(i)) return; li = i; store.set(lkey(), li); renderWatch(true); root.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
   root.addEventListener('click', e => {
     const l = e.target.closest('#lessonList button'); if (l) { const i = +l.dataset.i; if (unlocked(i)) openLesson(i); else { l.classList.add('shake'); setTimeout(() => l.classList.remove('shake'), 500); l.title = tx(UI.locked) } }
+    const mt = e.target.closest('#modTabs button'); if (mt) { const k = +mt.dataset.m; if (modOpen(k)) switchModule(k); else { mt.classList.add('shake'); setTimeout(() => mt.classList.remove('shake'), 500); mt.title = tx(UI.lockedMod) } }
     const lg = e.target.closest('.lang button'); if (lg) { hush(); lang = lg.dataset.lang; store.set('lang', lang); mode === 'watch' ? (paintStatic(), showStep(si, false), stop()) : (paintStatic(), showTask()) }
     const md = e.target.closest('.mode button'); if (md) md.dataset.mode === 'practice' ? renderPractice() : renderWatch(true);
   });
@@ -287,8 +333,10 @@
     if (mode !== 'watch' || /input|textarea/i.test(e.target.tagName)) return;
     if (e.key === 'ArrowRight') $('#nextBtn').click(); if (e.key === 'ArrowLeft') $('#prevBtn').click();
   });
-  const saved = store.get('li', 0); li = Math.min(saved, M.lessons.length - 1); if (!unlocked(li)) li = 0;
+  const smi = store.get('mi', null);
+  mi = smi == null ? Math.max(0, MODS.findIndex((m, k) => !modDone(k))) : Math.min(smi, MODS.length - 1); if (!modOpen(mi)) mi = 0; M = MODS[mi];
+  const saved = store.get(lkey(), null); li = saved == null ? Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)) : Math.min(saved, M.lessons.length - 1); if (!unlocked(li)) li = 0;
   renderWatch(false);
   window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
-  window.PQ_LEARN = { openLesson, board, get state() { return { li, si, mode, ti, score } } };
+  window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { li, si, mode, ti, score } } };
 })();

@@ -8,10 +8,11 @@ if (!KEY || !REGION) { console.log('No Azure key yet: skipping narration.'); pro
 const VOICE = { en: ['en-IN', 'en-IN-NeerjaNeural'], si: ['si-LK', 'si-LK-ThiliniNeural'] };
 const ctx = { window: {} }; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('assets/js/lessons.js', 'utf8'), ctx);
-const M = ctx.window.PQ_MODULE, P = ctx.window.PQ_PRACTICE;
+vm.runInContext(fs.readFileSync('assets/js/lessons2.js', 'utf8'), ctx);
+const MODS = ctx.window.PQ_MODULES, P = ctx.window.PQ_PRACTICE;
 const keys = new Set();
 const add = (o) => { if (o && o.en) { keys.add('en|' + o.en); if (o.si) keys.add('si|' + o.si); } };
-M.lessons.forEach(l => { add(l.title); l.steps.forEach(s => add(s.text)); });
+MODS.forEach(M => M.lessons.forEach(l => { add(l.title); l.steps.forEach(s => add(s.text)); }));
 Object.values(P).forEach(a => a.forEach(t => add(t.q)));
 // same FNV-1a hash as learn.js
 const hash = (s) => { let h = 0x811c9dc5; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };

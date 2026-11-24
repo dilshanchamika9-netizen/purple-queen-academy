@@ -1,7 +1,8 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn } from './fb.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalAccount');
-const LESSONS = (window.PQ_MODULE && window.PQ_MODULE.lessons) || [];
+const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []);
+const LESSONS = MODS.flatMap(m => m.lessons);
 const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediate)', 3: 'Level 3 · Queen (Advanced)' };
 
 (async () => {
@@ -31,12 +32,12 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       <div><b>${solved}</b><span>Puzzles solved</span></div>
     </div>
     <div class="acc-grid">
-      <section class="acc-card"><h3>Level 1 · Module 1</h3><p class="muted">The board and the pieces</p>
-        <ol class="acc-lessons">${LESSONS.map((l, i) => { const v = L[l.id]; return `<li class="${v >= 70 ? 'ok' : ''}"><span class="n">${v >= 70 ? '✓' : i + 1}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : '—'}</b></li>` }).join('')}</ol>
-        <a class="btn btn-primary" href="learn.html">${nextIdx === -1 ? 'Review lessons' : 'Continue: ' + esc(LESSONS[nextIdx].title.en)} →</a></section>
+      <div class="acc-mods">${MODS.map((m, k) => `<section class="acc-card"><h3>Level 1 · Module ${k + 1}</h3><p class="muted">${esc(m.title.en)}</p>
+        <ol class="acc-lessons">${m.lessons.map((l, i) => { const v = L[l.id]; return `<li class="${v >= 70 ? 'ok' : ''}"><span class="n">${v >= 70 ? '✓' : i + 1}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : '—'}</b></li>` }).join('')}</ol>
+        ${k === 0 ? `<a class="btn btn-primary" href="learn.html">${nextIdx === -1 ? 'Review lessons' : 'Continue: ' + esc(LESSONS[nextIdx].title.en)} →</a>` : ''}</section>`).join('')}</div>
       <section class="acc-card"><h3>Puzzles</h3><p class="muted">Best streak ${(prog.puzzles && prog.puzzles.best) || 0}</p>
         <div class="acc-big">${solved}<small>solved</small></div><a class="btn btn-ghost" href="puzzle.html">Solve puzzles →</a>
-        ${passed === LESSONS.length && LESSONS.length ? '<div class="acc-cert">🏆 Module 1 complete. Open the Learn page to get your certificate.</div>' : ''}</section>
+        ${MODS.some(m => m.lessons.every(l => (L[l.id] || 0) >= 70)) ? '<div class="acc-cert">🏆 You completed a module. Open the Learn page to get your certificate.</div>' : ''}</section>
     </div>
     <form class="acc-card acc-pw" id="pwForm" hidden><h3>Change password</h3>
       <label for="pw0">Current password<input id="pw0" type="password" autocomplete="current-password"></label>

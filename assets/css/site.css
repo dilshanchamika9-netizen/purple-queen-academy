@@ -689,8 +689,11 @@ footer .fl .brand-txt b { color:#fff; font-size:32px } footer .fl .brand-txt sma
 .lpc img { width:90%; height:90%; display:block; pointer-events:none; user-select:none; -webkit-user-drag:none; filter:drop-shadow(0 3px 3px rgba(26,11,46,.35)) }
 .lpc.hop img { animation:phop .6s cubic-bezier(.3,0,.3,1) }
 .lpc.promo img { animation:promo 1s both }
-.piece.knight .stand img { width:84px; height:84px; display:block; filter:drop-shadow(0 10px 8px rgba(42,18,64,.35)) }
-.piece.ghost .stand img { width:60px; height:60px; display:block; opacity:.55 }
+.piece .stand img { max-width:none }
+.piece.knight .stand { width:92px }
+.piece.ghost .stand { width:64px }
+.piece.knight .stand img { width:92px; height:92px; display:block; filter:drop-shadow(0 10px 8px rgba(42,18,64,.35)) }
+.piece.ghost .stand img { width:64px; height:64px; display:block; opacity:.6 }
 
 /* ===== portal ===== */
 .portal-page { min-height:60vh }
@@ -762,3 +765,17 @@ table.stu { width:100%; border-collapse:collapse; font-size:14px; min-width:900p
 .gbtn svg { width:20px; height:20px }
 .ordiv { display:flex; align-items:center; gap:10px; margin:16px 0; font:600 12px var(--body); color:var(--muted) }
 .ordiv::before, .ordiv::after { content:""; flex:1; height:1px; background:var(--line) }
+
+/* module tabs (learn app) + promotion picker + account modules */
+.lp-mods { display:flex; gap:6px; margin-bottom:14px }
+.lp-mods[hidden] { display:none }
+.lp-mods button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#E4D8F2; border-radius:999px; padding:8px 10px; font:700 12px var(--body); letter-spacing:.04em; cursor:pointer; transition:background .2s, border-color .2s }
+.lp-mods button:hover { background:rgba(255,255,255,.1) }
+.lp-mods button.cur { background:linear-gradient(90deg, #8C5FC2, #5B2C91); border-color:transparent; color:#fff; box-shadow:0 8px 20px -8px rgba(140,95,194,.8) }
+.lp-mods button.lock { opacity:.55 }
+.lp-mods .shake { animation:shake .4s }
+.opts.promo { grid-template-columns:1fr 1fr; align-items:stretch }
+.opts.promo button { gap:8px; padding:10px 12px }
+.opts.promo button img { flex:none; filter:drop-shadow(0 2px 2px rgba(42,18,64,.25)) }
+.acc-mods { display:grid; gap:20px; align-content:start }
+.piece.ghost .stand img { opacity:.9 }

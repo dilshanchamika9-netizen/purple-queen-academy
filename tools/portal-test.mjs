@@ -90,7 +90,7 @@ ok(denied.listUsers === 'permission-denied', 'student cannot list students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('1/12') && row.includes('100%'), 'coach table shows 1/12 lessons and 100%');
+ok(row.includes('1/17') && row.includes('100%'), 'coach table shows 1/17 lessons and 100%');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="reset"]`);
 await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
