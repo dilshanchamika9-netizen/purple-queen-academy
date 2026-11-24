@@ -336,6 +336,8 @@
   const smi = store.get('mi', null);
   mi = smi == null ? Math.max(0, MODS.findIndex((m, k) => !modDone(k))) : Math.min(smi, MODS.length - 1); if (!modOpen(mi)) mi = 0; M = MODS[mi];
   const saved = store.get(lkey(), null); li = saved == null ? Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)) : Math.min(saved, M.lessons.length - 1); if (!unlocked(li)) li = 0;
+  { const qp = new URLSearchParams(location.search), qm = qp.get('m'), ql = qp.get('l');
+    if (qm != null && MODS[+qm] && modOpen(+qm)) { mi = +qm; M = MODS[mi]; li = 0; if (!unlocked(0)) li = 0; if (ql != null && M.lessons[+ql] && unlocked(+ql)) li = +ql; else li = Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)); if (!unlocked(li)) li = 0; store.set('mi', mi); store.set(lkey(), li) } }
   renderWatch(false);
   window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
   window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { li, si, mode, ti, score } } };

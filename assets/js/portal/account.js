@@ -32,9 +32,15 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       <div><b>${solved}</b><span>Puzzles solved</span></div>
     </div>
     <div class="acc-grid">
-      <div class="acc-mods">${MODS.map((m, k) => `<section class="acc-card"><h3>Level 1 · Module ${k + 1}</h3><p class="muted">${esc(m.title.en)}</p>
-        <ol class="acc-lessons">${m.lessons.map((l, i) => { const v = L[l.id]; return `<li class="${v >= 70 ? 'ok' : ''}"><span class="n">${v >= 70 ? '✓' : i + 1}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : '—'}</b></li>` }).join('')}</ol>
-        ${k === 0 ? `<a class="btn btn-primary" href="learn.html">${nextIdx === -1 ? 'Review lessons' : 'Continue: ' + esc(LESSONS[nextIdx].title.en)} →</a>` : ''}</section>`).join('')}</div>
+      <div class="acc-mods">${MODS.map((m, k) => {
+        const modOpen = k === 0 || MODS[k - 1].lessons.every(l => (L[l.id] || 0) >= 70);
+        const done = m.lessons.filter(l => (L[l.id] || 0) >= 70).length;
+        const nxt = m.lessons.findIndex(l => (L[l.id] || 0) < 70);
+        return `<section class="acc-card${modOpen ? '' : ' locked'}"><h3>Level 1 · Module ${k + 1} <small class="acc-tag ${modOpen ? 'open' : ''}">${modOpen ? done + '/' + m.lessons.length + ' done' : 'Locked'}</small></h3><p class="muted">${esc(m.title.en)}</p>
+        <ol class="acc-lessons">${m.lessons.map((l, i) => { const v = L[l.id], ok = v >= 70, open = modOpen && (i === 0 || (L[m.lessons[i - 1].id] || 0) >= 70), cur = open && i === nxt;
+          const inner = `<span class="n">${ok ? '✓' : open ? i + 1 : '🔒'}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : cur ? 'Start →' : open ? '—' : ''}</b>`;
+          return open ? `<li class="${ok ? 'ok' : ''} ${cur ? 'cur' : ''}"><a href="learn.html?m=${k}&l=${i}">${inner}</a></li>` : `<li class="lk">${inner}</li>` }).join('')}</ol>
+        ${modOpen ? `<a class="btn btn-primary" href="learn.html?m=${k}${nxt > -1 ? '&l=' + nxt : ''}">${nxt === -1 ? 'Review module' : done ? 'Continue: ' + esc(m.lessons[nxt].title.en) : 'Start module'} →</a>` : '<p class="muted">Finish every lesson in the previous module to open this one.</p>'}</section>` }).join('')}</div>
       <section class="acc-card"><h3>Puzzles</h3><p class="muted">Best streak ${(prog.puzzles && prog.puzzles.best) || 0}</p>
         <div class="acc-big">${solved}<small>solved</small></div><a class="btn btn-ghost" href="puzzle.html">Solve puzzles →</a>
         ${MODS.some(m => m.lessons.every(l => (L[l.id] || 0) >= 70)) ? '<div class="acc-cert">🏆 You completed a module. Open the Learn page to get your certificate.</div>' : ''}</section>
