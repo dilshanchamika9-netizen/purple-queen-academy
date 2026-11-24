@@ -687,3 +687,10 @@ footer .fl .brand-txt b { color:#fff; font-size:32px } footer .fl .brand-txt sma
   .brand-txt b { font-size:26px } .brand-txt small { font-size:10px; letter-spacing:.26em }
   .hdr.open .nav, .hdr.scrolled.open .nav { top:84px }
 }
+
+/* ===== piece images (cburnett) ===== */
+.lpc img { width:90%; height:90%; display:block; pointer-events:none; user-select:none; -webkit-user-drag:none; filter:drop-shadow(0 3px 3px rgba(26,11,46,.35)) }
+.lpc.hop img { animation:phop .6s cubic-bezier(.3,0,.3,1) }
+.lpc.promo img { animation:promo 1s both }
+.piece.knight .stand img { width:84px; height:84px; display:block; filter:drop-shadow(0 10px 8px rgba(42,18,64,.35)) }
+.piece.ghost .stand img { width:60px; height:60px; display:block; opacity:.55 }

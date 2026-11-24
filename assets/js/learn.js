@@ -58,7 +58,7 @@
     xy(s) { return { left: F.indexOf(s[0]) * 12.5 + '%', top: (8 - +s[1]) * 12.5 + '%' } }
     makePiece(s, p) {
       const e = document.createElement('div'); e.className = 'lpc ' + (p[0] === 'w' ? 'w' : 'b');
-      e.innerHTML = `<span>${GLYPH[p[1]]}&#xFE0E;</span>`; Object.assign(e.style, this.xy(s)); e.dataset.p = p;
+      e.innerHTML = `<img src="assets/pieces/${p}.svg" alt="" draggable="false">`; Object.assign(e.style, this.xy(s)); e.dataset.p = p;
       this.layer.appendChild(e); return e;
     }
     setPos(pos, fade = true) {
@@ -73,7 +73,7 @@
       if (!animate) e.style.transition = 'none';
       Object.assign(e.style, this.xy(to));
       if (animate) { e.classList.remove('hop'); void e.offsetWidth; e.classList.add('hop'); this.trail(from, to) } else { void e.offsetWidth; e.style.transition = '' }
-      if (promote) { const fn = () => { e.dataset.p = promote; e.querySelector('span').innerHTML = GLYPH[promote[1]] + '&#xFE0E;'; e.classList.add('promo') }; animate ? setTimeout(fn, 520) : fn() }
+      if (promote) { const fn = () => { e.dataset.p = promote; e.querySelector('img').src = `assets/pieces/${promote}.svg`; e.classList.add('promo') }; animate ? setTimeout(fn, 520) : fn() }
     }
     trail(a, b) { [a, b].forEach(s => { const q = this.sq[s]; q.classList.add('tr'); setTimeout(() => q.classList.remove('tr'), 1600) }) }
     decorate(st = {}) {

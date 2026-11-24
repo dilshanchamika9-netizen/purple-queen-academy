@@ -66,7 +66,7 @@
     layer.innerHTML = '';
     game.board().forEach((row, ri) => row.forEach((p, fi) => {
       if (!p) return; const s = F[fi] + (8 - ri);
-      const e = document.createElement('div'); e.className = 'lpc ' + p.color; e.innerHTML = `<span>${GLYPH[p.type]}&#xFE0E;</span>`;
+      const e = document.createElement('div'); e.className = 'lpc ' + p.color; e.innerHTML = `<img src="assets/pieces/${p.color}${p.type.toUpperCase()}.svg" alt="" draggable="false">`;
       Object.assign(e.style, xy(animFrom && animFrom.to === s ? animFrom.from : s)); layer.appendChild(e);
       if (animFrom && animFrom.to === s) requestAnimationFrame(() => requestAnimationFrame(() => { Object.assign(e.style, xy(s)); e.classList.add('hop') }));
     }));
