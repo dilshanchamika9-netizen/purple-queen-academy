@@ -53,6 +53,17 @@ $('#cCreate').addEventListener('click', async () => {
     say(m, 'Account created. We sent a verification link to ' + em + '. Open it, then sign in here.', 'ok');
   } catch (err) { say(m, err.code === 'auth/email-already-in-use' ? 'This email already has an account. Sign in instead, or use “Forgot password”.' : /configuration-not-found|operation-not-allowed/.test(err.code) ? 'Sign-in is not switched on in Firebase yet (Authentication → Email/Password). Ask the website admin.' : 'Could not create the account: ' + (err.code || err.message), 'err') }
 });
+$('#cGoogle').addEventListener('click', async () => {
+  const m = $('#cMsg'); say(m, 'Opening Google…');
+  const provider = new F.GoogleAuthProvider(); provider.setCustomParameters({ prompt: 'select_account' });
+  try { await F.signInWithPopup(auth, provider); await afterSignIn() }
+  catch (err) {
+    if (/popup-blocked|operation-not-supported/.test(err.code)) { await F.signInWithRedirect(auth, provider); return }
+    if (/popup-closed|cancelled-popup/.test(err.code)) return say(m, '');
+    say(m, /unauthorized-domain/.test(err.code) ? 'Google sign-in is not allowed on this website address yet (Firebase → Authentication → Settings → Authorized domains).' : /operation-not-allowed|configuration-not-found/.test(err.code) ? 'Google sign-in is not switched on in Firebase yet.' : 'Google sign-in failed: ' + (err.code || err.message), 'err');
+  }
+});
+F.getRedirectResult(auth).then(r => { if (r) afterSignIn() }).catch(() => {});
 $('#cForgot').addEventListener('click', async () => {
   const m = $('#cMsg'); const em = $('#cEmail').value.trim();
   if (!em) return say(m, 'Type your email above first.', 'err');

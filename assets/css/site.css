@@ -757,3 +757,8 @@ table.stu { width:100%; border-collapse:collapse; font-size:14px; min-width:900p
 .mini.danger { color:#B4233C } .mini:disabled { opacity:.6; cursor:default }
 @media (max-width:1040px) { .login-wrap, .acc-grid, .coach-grid2 { grid-template-columns:1fr } .login-art { text-align:center } .login-art img { width:140px; height:140px } .acc-stats { grid-template-columns:1fr 1fr } }
 @media (max-width:720px) { .acc-head { grid-template-columns:auto 1fr } .acc-actions { grid-column:1 / -1 } .acc-av { width:64px; height:64px; font-size:24px } .row2 { grid-template-columns:1fr } .login-card { padding:20px } }
+.gbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:13px; border-radius:999px; border:1.5px solid var(--line); background:#fff; font:700 15px var(--body); color:var(--ink); cursor:pointer; transition:border-color .2s, box-shadow .2s }
+.gbtn:hover { border-color:var(--purple); box-shadow:0 8px 18px -12px rgba(42,18,64,.5) }
+.gbtn svg { width:20px; height:20px }
+.ordiv { display:flex; align-items:center; gap:10px; margin:16px 0; font:600 12px var(--body); color:var(--muted) }
+.ordiv::before, .ordiv::after { content:""; flex:1; height:1px; background:var(--line) }
