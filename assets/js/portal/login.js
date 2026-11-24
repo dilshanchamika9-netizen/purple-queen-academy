@@ -51,7 +51,7 @@ $('#cCreate').addEventListener('click', async () => {
     const c = await F.createUserWithEmailAndPassword(auth, em, pw);
     await F.sendEmailVerification(c.user); await F.signOut(auth);
     say(m, 'Account created. We sent a verification link to ' + em + '. Open it, then sign in here.', 'ok');
-  } catch (err) { say(m, err.code === 'auth/email-already-in-use' ? 'This email already has an account. Sign in instead, or use “Forgot password”.' : 'Could not create the account: ' + (err.code || err.message), 'err') }
+  } catch (err) { say(m, err.code === 'auth/email-already-in-use' ? 'This email already has an account. Sign in instead, or use “Forgot password”.' : /configuration-not-found|operation-not-allowed/.test(err.code) ? 'Sign-in is not switched on in Firebase yet (Authentication → Email/Password). Ask the website admin.' : 'Could not create the account: ' + (err.code || err.message), 'err') }
 });
 $('#cForgot').addEventListener('click', async () => {
   const m = $('#cMsg'); const em = $('#cEmail').value.trim();
