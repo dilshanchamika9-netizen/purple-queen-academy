@@ -663,27 +663,27 @@ html:lang(si) .pq-cheer b { font:700 24px/1.4 'Noto Sans Sinhala', var(--body) }
 .pq-cheer:not(.big) { padding:12px 22px 10px } .pq-cheer:not(.big) .crown { font-size:22px } .pq-cheer:not(.big) b { font-size:22px } .pq-cheer:not(.big) .snd { display:none }
 
 /* ===== bigger brand ===== */
-.hdr .wrap { height:92px; transition:height .3s }
-.hdr.scrolled .wrap { height:74px }
+.hdr .wrap { height:112px; transition:height .3s; max-width:1440px }
+.hdr.scrolled .wrap { height:84px }
 .brand { height:auto; display:flex; align-items:center; gap:12px; text-decoration:none; flex:none }
-.brand-seal { width:64px; height:64px; border-radius:50%; box-shadow:0 8px 18px -8px rgba(42,18,64,.55), 0 0 0 2px #fff; transition:width .3s, height .3s, transform .6s }
+.brand-seal { width:88px; height:88px; border-radius:50%; box-shadow:0 8px 18px -8px rgba(42,18,64,.55), 0 0 0 2px #fff; transition:width .3s, height .3s, transform .6s }
 .brand:hover .brand-seal { transform:rotate(-8deg) scale(1.04) }
-.hdr.scrolled .brand-seal { width:52px; height:52px }
+.hdr.scrolled .brand-seal { width:64px; height:64px }
 .brand-txt { display:grid; line-height:1 }
-.brand-txt b { font:700 27px/1 var(--display); color:var(--night); letter-spacing:-.005em; white-space:nowrap }
-.brand-txt small { font:600 10.5px/1 var(--caps); letter-spacing:.34em; color:var(--purple); margin-top:6px; white-space:nowrap }
+.brand-txt b { font:700 34px/1 var(--display); color:var(--night); letter-spacing:-.005em; white-space:nowrap }
+.brand-txt small { font:600 12px/1 var(--caps); letter-spacing:.34em; color:var(--purple); margin-top:8px; white-space:nowrap }
 .nav { gap:0 } .nav a { padding:9px 10px; font-size:14.5px }
-.hdr.open .nav { top:92px }
-.hdr.scrolled.open .nav { top:74px }
+.hdr.open .nav { top:112px }
+.hdr.scrolled.open .nav { top:84px }
 footer .fl { height:auto; display:flex; align-items:center; gap:14px }
 footer .fl .brand-seal { width:84px; height:84px; box-shadow:0 0 0 2px rgba(255,255,255,.25) }
 footer .fl .brand-txt b { color:#fff; font-size:32px } footer .fl .brand-txt small { color:var(--lav) }
 .btn { white-space:nowrap }
-@media (max-width:1360px) { .hdr-cta .btn-ghost { display:none } }
-@media (max-width:1140px) { .brand-txt b { font-size:24px } .nav a { padding:8px 8px; font-size:14px } }
+@media (max-width:1460px) { .hdr-cta .btn-ghost { display:none } }
+@media (max-width:1140px) { .brand-txt b { font-size:28px } .nav a { padding:8px 8px; font-size:14px } }
 @media (max-width:720px) {
-  .hdr .wrap, .hdr.scrolled .wrap { height:76px }
-  .brand-seal, .hdr.scrolled .brand-seal { width:54px; height:54px }
-  .brand-txt b { font-size:23px } .brand-txt small { font-size:9.5px; letter-spacing:.28em }
-  .hdr.open .nav, .hdr.scrolled.open .nav { top:76px }
+  .hdr .wrap, .hdr.scrolled .wrap { height:84px }
+  .brand-seal, .hdr.scrolled .brand-seal { width:64px; height:64px }
+  .brand-txt b { font-size:26px } .brand-txt small { font-size:10px; letter-spacing:.26em }
+  .hdr.open .nav, .hdr.scrolled.open .nav { top:84px }
 }
