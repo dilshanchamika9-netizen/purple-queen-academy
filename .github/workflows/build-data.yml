@@ -7,6 +7,10 @@ on:
       - 'tools/**'
       - 'assets/js/lessons.js'
       - 'assets/js/lessons2.js'
+      - 'assets/js/lessons3.js'
+      - 'assets/js/lessons4.js'
+      - 'assets/js/lessons5.js'
+      - 'assets/js/lessons6.js'
       - '.github/workflows/build-data.yml'
 permissions:
   contents: write
