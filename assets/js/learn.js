@@ -237,7 +237,7 @@
   }
   function answer(ok, reveal) {
     if (answered) return; answered = true;
-    if (ok) { score++; xp += 10; store.set('xp', xp); $('#xpTxt').textContent = xp; burst() }
+    if (ok) { score++; xp += 10; store.set('xp', xp); $('#xpTxt').textContent = xp; burst(); if (window.PQ_CELEBRATE) PQ_CELEBRATE({ title: tx(UI.right), sub: '+10 XP', size: 'small' }) }
     reveal();
     const fb = $('#fb'); fb.className = 'fb ' + (ok ? 'ok' : 'err'); fb.textContent = ok ? tx(UI.right) + ' +10 XP' : tx(UI.wrong);
     const nb = $('#nxBtn'); nb.hidden = false; nb.textContent = ti < tasks.length - 1 ? tx(UI.next) + ' →' : tx(UI.finish);
@@ -259,7 +259,7 @@
       <button type="button" class="btn btn-ghost" id="goRetry">${tx(UI.retry)}</button><button type="button" class="btn btn-ghost" id="goWatch">${tx(UI.rewatch)}</button></div></div>`;
     const gn = $('#goNext'); if (gn) gn.onclick = () => openLesson(li + 1);
     $('#goRetry').onclick = renderPractice; $('#goWatch').onclick = () => renderWatch(true);
-    if (pass) board.el.classList.add('win');
+    if (pass) { board.el.classList.add('win'); if (window.PQ_CELEBRATE) PQ_CELEBRATE({ title: lang === 'si' ? 'සුබ පැතුම්!' : 'Congratulations!', sub: tx(UI.passed) + ' ' + pct + '%', size: 'big' }) }
   }
 
   /* ---------------- certificate ---------------- */

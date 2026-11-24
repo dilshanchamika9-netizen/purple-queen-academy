@@ -646,3 +646,44 @@ html:lang(si) .lp-panel .q { font:600 clamp(16px, 1.8vw, 20px)/1.55 'Noto Sans S
 .pz-src { font-size:12px; color:var(--muted); margin:0 }
 @media (max-width:1040px) { .pz-levels { grid-template-columns:repeat(3,1fr) } .pz-main { grid-template-columns:1fr } }
 @media (max-width:720px) { .pz-levels { grid-template-columns:1fr 1fr } .pz-levels em { display:none } .pz-boardwrap { padding:12px 6px 26px 22px } .pz-turn { font-size:23px } }
+.pz-msg.think { color:var(--purple) }
+.pz-msg.think::before { content:""; display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:-2px; border:2px solid var(--lav); border-top-color:var(--purple); border-radius:50%; animation:spin .8s linear infinite }
+
+/* ===== celebration ===== */
+.pq-fx { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:90 }
+.pq-cheer { position:fixed; left:50%; top:calc(env(safe-area-inset-top, 0px) + 96px); z-index:91; transform:translate(-50%, -30px) scale(.9); opacity:0; pointer-events:none;
+  display:grid; justify-items:center; gap:4px; padding:18px 30px 14px; border-radius:22px; text-align:center; color:#fff;
+  background:linear-gradient(140deg, #5B2C91, #2A1240); box-shadow:0 30px 60px -20px rgba(42,18,64,.7), 0 0 0 2px rgba(233,204,138,.6); transition:opacity .35s, transform .45s cubic-bezier(.2,1.4,.4,1) }
+.pq-cheer.show { opacity:1; transform:translate(-50%, 0) scale(1); pointer-events:auto }
+.pq-cheer .crown { font:400 34px/1 'Segoe UI Symbol', 'Noto Sans Symbols 2', 'DejaVu Sans', serif; color:#E9CC8A; animation:pop .6s both }
+.pq-cheer b { font:600 30px/1.1 var(--display); background:linear-gradient(100deg, #F7E7BF, #E9CC8A 50%, #fff); -webkit-background-clip:text; background-clip:text; color:transparent }
+html:lang(si) .pq-cheer b { font:700 24px/1.4 'Noto Sans Sinhala', var(--body) }
+.pq-cheer small { font:600 13px var(--body); color:#E4D8F2 }
+.pq-cheer .snd { margin-top:6px; border:1px solid rgba(255,255,255,.3); background:transparent; color:#E4D8F2; border-radius:999px; padding:4px 10px; font:600 11px var(--body); cursor:pointer }
+.pq-cheer:not(.big) { padding:12px 22px 10px } .pq-cheer:not(.big) .crown { font-size:22px } .pq-cheer:not(.big) b { font-size:22px } .pq-cheer:not(.big) .snd { display:none }
+
+/* ===== bigger brand ===== */
+.hdr .wrap { height:92px; transition:height .3s }
+.hdr.scrolled .wrap { height:74px }
+.brand { height:auto; display:flex; align-items:center; gap:12px; text-decoration:none; flex:none }
+.brand-seal { width:64px; height:64px; border-radius:50%; box-shadow:0 8px 18px -8px rgba(42,18,64,.55), 0 0 0 2px #fff; transition:width .3s, height .3s, transform .6s }
+.brand:hover .brand-seal { transform:rotate(-8deg) scale(1.04) }
+.hdr.scrolled .brand-seal { width:52px; height:52px }
+.brand-txt { display:grid; line-height:1 }
+.brand-txt b { font:700 27px/1 var(--display); color:var(--night); letter-spacing:-.005em; white-space:nowrap }
+.brand-txt small { font:600 10.5px/1 var(--caps); letter-spacing:.34em; color:var(--purple); margin-top:6px; white-space:nowrap }
+.nav { gap:0 } .nav a { padding:9px 10px; font-size:14.5px }
+.hdr.open .nav { top:92px }
+.hdr.scrolled.open .nav { top:74px }
+footer .fl { height:auto; display:flex; align-items:center; gap:14px }
+footer .fl .brand-seal { width:84px; height:84px; box-shadow:0 0 0 2px rgba(255,255,255,.25) }
+footer .fl .brand-txt b { color:#fff; font-size:32px } footer .fl .brand-txt small { color:var(--lav) }
+.btn { white-space:nowrap }
+@media (max-width:1360px) { .hdr-cta .btn-ghost { display:none } }
+@media (max-width:1140px) { .brand-txt b { font-size:24px } .nav a { padding:8px 8px; font-size:14px } }
+@media (max-width:720px) {
+  .hdr .wrap, .hdr.scrolled .wrap { height:76px }
+  .brand-seal, .hdr.scrolled .brand-seal { width:54px; height:54px }
+  .brand-txt b { font-size:23px } .brand-txt small { font-size:9.5px; letter-spacing:.28em }
+  .hdr.open .nav, .hdr.scrolled.open .nav { top:76px }
+}

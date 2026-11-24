@@ -37,7 +37,7 @@
         <p class="pz-msg" id="pzMsg" aria-live="polite"></p>
         <div class="pz-meta" id="pzMeta"></div>
         <div class="pz-btns">
-          <button type="button" class="btn btn-ghost btn-sm" id="pzHint">Hint</button>
+          <button type="button" class="btn btn-primary btn-sm" id="pzBack" hidden>↶ Take back</button><button type="button" class="btn btn-ghost btn-sm" id="pzHint">Hint</button>
           <button type="button" class="btn btn-ghost btn-sm" id="pzRetry">Retry</button>
           <button type="button" class="btn btn-ghost btn-sm" id="pzShow">Show solution</button>
           <button type="button" class="btn btn-primary btn-sm" id="pzNext">Next puzzle →</button>
@@ -89,6 +89,7 @@
   }
   function load(p) {
     cur = p; if (!p) { msg('No puzzles for this theme at this level. Choose another theme.', ''); return }
+    $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
     orient = game.turn() === 'w' ? 'b' : 'w';  // the solver plays the side that moves after the first move
     buildGrid(); draw();
@@ -100,37 +101,96 @@
     paintSide();
   }
   function msg(t, cls) { const e = $('#pzMsg'); e.className = 'pz-msg ' + (cls || ''); e.textContent = t }
+  /* ---------- engine (Stockfish 19 lite, in a Web Worker) ---------- */
+  const Engine = (() => {
+    let w = null, ok = false, chain = Promise.resolve();
+    try {
+      w = new Worker('assets/js/vendor/stockfish/stockfish-19-lite-single.js');
+      ok = true; w.postMessage('uci'); w.postMessage('isready');
+      w.onerror = () => { ok = false };
+    } catch { ok = false }
+    function analyse(fen, ms) {
+      const run = () => new Promise(res => {
+        if (!ok) return res(null);
+        let score = null, pv = null; const t = setTimeout(() => { w.onmessage = null; res(score ? { score, best: pv } : null) }, ms + 4000);
+        w.onmessage = (e) => {
+          const line = String(e.data);
+          if (line.startsWith('info') && / pv /.test(line)) {
+            const m = line.match(/score (cp|mate) (-?\d+)/); const p = line.match(/ pv (\S+)/);
+            if (m) score = m[1] === 'cp' ? { cp: +m[2] } : { mate: +m[2] }; if (p) pv = p[1];
+          } else if (line.startsWith('bestmove')) { clearTimeout(t); w.onmessage = null; const b = line.split(' ')[1]; res(score ? { score, best: b && b !== '(none)' ? b : pv } : null) }
+        };
+        w.postMessage('ucinewgame'); w.postMessage('position fen ' + fen); w.postMessage('go movetime ' + ms);
+      });
+      const r = chain.then(run); chain = r.catch(() => {}); return r;
+    }
+    return { analyse, get ok() { return ok } };
+  })();
+  const val = (sc) => sc.mate != null ? (sc.mate > 0 ? 100000 - sc.mate * 100 : -100000 - sc.mate * 100) : sc.cp;
+  const show = (v) => Math.abs(v) >= 90000 ? (v > 0 ? 'forced mate' : 'you get mated') : (v >= 0 ? '+' : '−') + (Math.abs(v) / 100).toFixed(1);
+  const side = () => orient === 'w' ? 'White' : 'Black';
+  const oppName = () => orient === 'w' ? 'Black' : 'White';
+
+  let backFen = null;
   function userMove(from, to) {
     const legal = game.moves({ square: from, verbose: true }).find(m => m.to === to); if (!legal) return false;
     const want = moves[idx];
     const promo = want && want.slice(0, 4) === from + to ? (want[4] || 'q') : 'q';
+    const before = game.fen();
     const m = game.move({ from, to, promotion: promo });
-    const ok = uci(m) === want || game.in_checkmate();
     lastMove = m; sel = null; draw(m);
-    if (!ok) {
-      game.undo(); mistakes++; streak = 0; store.set('streak', 0);
-      if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
-      busy = true; bEl.classList.remove('shake'); void bEl.offsetWidth; bEl.classList.add('shake');
-      sqEl[to].classList.add('bad');
-      msg('That’s not the best move. Try again.', 'err');
-      setTimeout(() => { lastMove = idx > 0 ? null : lastMove; draw(); busy = false }, 700); paintSide(); return true;
+    if (uci(m) === want || game.in_checkmate()) {
+      idx++;
+      if (idx >= moves.length || game.in_checkmate()) return finish(), true;
+      msg('Correct! Keep going…', 'ok'); busy = true;
+      setTimeout(() => { const r = play(moves[idx]); lastMove = r; idx++; draw(r); busy = false; msg('Your move again.', '') }, 520);
+      return true;
     }
-    idx++;
-    if (idx >= moves.length || game.in_checkmate()) return finish(), true;
-    msg('Correct! Keep going…', 'ok'); busy = true;
-    setTimeout(() => { const r = play(moves[idx]); lastMove = r; idx++; draw(r); busy = false; msg('Your move again.', '') }, 520);
+    // a different move: let the engine judge it, and show the opponent's answer
+    busy = true; msg('Checking your move…', 'think');
+    const afterFen = game.fen();
+    Promise.all([Engine.analyse(before, 700), Engine.analyse(afterFen, 700)]).then(([b, a]) => {
+      if (!b || !a) { reject(before, null, null); return }
+      const bestV = val(b.score), myV = -val(a.score);
+      const good = bestV >= 90000 ? myV >= 90000 : myV >= bestV - (bestV > 600 ? 200 : 100);
+      if (good) {
+        msg(`Good move! It also wins (${show(myV)}). The puzzle’s main line was ${sanOf(before, want)}.`, 'ok');
+        idx = moves.length; return finish(true);
+      }
+      reject(before, a.best, myV, bestV);
+    });
     return true;
   }
-  function finish() {
+  function sanOf(fen, u) { try { const g = new window.Chess(fen); return g.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san } catch { return u } }
+  function reject(before, reply, myV, bestV) {
+    mistakes++; streak = 0; store.set('streak', 0);
+    if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
+    backFen = before; paintSide();
+    const done = () => { $('#pzBack').hidden = false; busy = true };
+    if (reply && !game.game_over()) {
+      setTimeout(() => {
+        const r = play(reply); lastMove = r; draw(r);
+        const why = myV == null ? '' : myV <= -90000 ? ' Now you get checkmated.' : myV < -150 ? ` Now ${oppName()} is better (${show(myV)}).` : myV < 150 ? ` The position is about equal now (${show(myV)}).` : ` You are still better (${show(myV)}), but the best move wins much more.`;
+        msg(`${oppName()} answers ${r.san}.${why} Take the move back and find a stronger one.`, 'err');
+        bEl.classList.remove('shake'); void bEl.offsetWidth; bEl.classList.add('shake'); done();
+      }, 450);
+    } else { msg('That move doesn’t work. Take it back and try again.', 'err'); done() }
+  }
+  function takeBack() {
+    if (!backFen) return; game = new window.Chess(backFen); backFen = null; lastMove = null; sel = null; draw(); busy = false;
+    $('#pzBack').hidden = true; msg(`Your move: find the best move for ${side()}.`, '');
+  }
+  function finish(alt) {
     const clean = mistakes === 0 && !hinted;
     if (clean && !failed[cur.id]) { solved[cur.id] = 1; store.set('solved', solved); streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) }
     else if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
-    msg(clean ? (game.in_checkmate() ? 'Checkmate! Puzzle solved.' : 'Puzzle solved!') : 'Solved, with help. Try the next one.', 'ok');
+    if (!alt) msg(clean ? (game.in_checkmate() ? 'Checkmate! Puzzle solved.' : 'Puzzle solved!') : 'Solved, with help. Try the next one.', 'ok');
+    if (clean && window.PQ_CELEBRATE) PQ_CELEBRATE({ title: 'Congratulations!', sub: game.in_checkmate() ? `Checkmate! Streak ${streak}` : `Puzzle solved · streak ${streak}`, size: 'big' });
     $('#pzMeta').classList.remove('hidden-themes');
     bEl.classList.remove('win'); void bEl.offsetWidth; bEl.classList.add('win'); busy = true; paintSide();
   }
   function showSolution() {
-    if (!cur) return; busy = true; mistakes++;
+    if (!cur) return; if (backFen) { game = new window.Chess(backFen); backFen = null; $('#pzBack').hidden = true; draw() } busy = true; mistakes++;
     const step = () => { if (idx >= moves.length) { msg('Solution shown. Try the next puzzle.', ''); $('#pzMeta').classList.remove('hidden-themes'); if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) } streak = 0; store.set('streak', 0); paintSide(); return } const m = play(moves[idx]); lastMove = m; idx++; draw(m); setTimeout(step, 750) };
     step();
   }
@@ -158,6 +218,7 @@
     const tb = e.target.closest('#pzThemes button'); if (tb) { theme = tb.dataset.t; load(pick()); return }
   });
   $('#pzNext').onclick = () => load(pick());
+  $('#pzBack').onclick = takeBack;
   $('#pzRetry').onclick = () => cur && load(cur);
   $('#pzShow').onclick = showSolution;
   $('#pzHint').onclick = () => { if (!cur || busy || idx >= moves.length) return; hinted = true; const f = moves[idx].slice(0, 2); sel = f; draw(); msg('Hint: move the highlighted piece.', '') };
@@ -166,5 +227,5 @@
     ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c) c.textContent = ALL.length.toLocaleString('en');
     const q = new URLSearchParams(location.search).get('id'); load(ALL.find(p => p.id === q) || pick());
   }).catch(() => { msg('Puzzles could not be loaded. Refresh the page to try again.', 'err') });
-  window.PQ_PUZZLES = { get state() { return { cur, idx, moves, level, theme, streak, orient, fen: game && game.fen() } }, userMove, load, pick };
+  window.PQ_PUZZLES = { Engine, takeBack, get state() { return { cur, idx, moves, level, theme, streak, orient, fen: game && game.fen() } }, userMove, load, pick };
 })();
