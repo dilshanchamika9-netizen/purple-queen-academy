@@ -21,6 +21,8 @@ OLD = []
 if os.path.exists('assets/data/puzzles.json'):
     OLD = json.load(open('assets/data/puzzles.json'))['puzzles']
 OLD_IDS = {p['id'] for p in OLD}
+if len(OLD) >= 2500:
+    PUB_EXTRA = 0   # the public additions were already made; keep them as they are
 
 
 class Res:
@@ -93,6 +95,9 @@ for lid, lo, hi, cnt in LEVELS:
         if len(lvl) + len(other) == HW_PER_LEVEL:
             break
     lvl += other
+    if len(lvl) < HW_PER_LEVEL:  # top up without the theme cap
+        have = {x['id'] for x in lvl}
+        lvl += [x for x in rest if x['id'] not in have][:HW_PER_LEVEL - len(lvl)]
     for it in lvl:
         it = dict(it); it['l'] = lid; hw.append(it)
     print(f'level {lid}: +{sum(1 for e in extra if e["l"] == lid)} public, {len(lvl)} homework (seen {seen[lid]})', file=sys.stderr)
