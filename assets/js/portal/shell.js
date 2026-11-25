@@ -40,3 +40,16 @@ export function mountUser(p) {
   m.addEventListener('click', (e) => { if (e.target.closest('a')) set(false) });
   box.querySelector('#spOut').onclick = logout;
 }
+
+// Lesson marks: the server copy plus anything saved on this device that is not uploaded yet.
+// After an admin reset (higher epoch on the server) the old marks kept on this device are thrown away, not merged back.
+export function withLocalMarks(prog) {
+  prog = prog || {};
+  try {
+    const ep = +JSON.parse(localStorage.getItem('pq-epoch') || '0') || 0;
+    if ((prog.epoch || 0) > ep) { localStorage.setItem('pq-progress', '{}'); localStorage.setItem('pq-xp', '0'); localStorage.setItem('pq-epoch', String(prog.epoch)) }
+    const lp = JSON.parse(localStorage.getItem('pq-progress') || '{}'); prog.lessons = { ...(prog.lessons || {}) };
+    Object.keys(lp).forEach(k => prog.lessons[k] = Math.max(lp[k], prog.lessons[k] || 0));
+  } catch { prog.lessons = prog.lessons || {} }
+  return prog;
+}

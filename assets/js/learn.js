@@ -105,10 +105,9 @@
   const modDone = (k) => MODS[k].lessons.every(l => (progress[l.id] || 0) >= PASS);
   const access = () => { try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
   const isCoach = () => { try { return access() && localStorage.getItem('pq-role') === 'coach' } catch { return false } };
-  // the coach sets the student's level: earlier levels stay open for review, and the first module of the student's level opens
-  const stuLv = () => { try { return +localStorage.getItem('pq-level') || 1 } catch { return 1 } }, lvOf = (k) => (window.PQ_MOD ? PQ_MOD(MODS, k).lv : 1);
-  const modOpen = (k) => access() ? ((coachView && isCoach()) || k === 0 || modDone(k - 1) || lvOf(k) < stuLv() || (lvOf(k) === stuLv() && lvOf(k - 1) < stuLv())) : k === 0;
-  const unlocked = (i) => (coachView && isCoach()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
+  // strict order: a module opens only when the one before it is fully passed; a lesson only when every earlier lesson is passed
+  const modOpen = (k) => access() ? ((coachView && isCoach()) || PQ_MODOPEN(MODS, progress, k, PASS)) : k === 0;
+  const unlocked = (i) => (coachView && isCoach()) || PQ_LESSONOPEN(MODS, progress, mi, i, PASS);
   const done = () => M.lessons.filter(l => (progress[l.id] || 0) >= PASS).length;
 
   function paintStatic() {
@@ -302,6 +301,6 @@
     if (qm != null && MODS[+qm] && modOpen(+qm)) { mi = +qm; M = MODS[mi]; li = 0; if (!unlocked(0)) li = 0; if (ql != null && M.lessons[+ql] && unlocked(+ql)) li = +ql; else li = Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)); if (!unlocked(li)) li = 0; store.set('mi', mi); store.set(lkey(), li) } }
   renderWatch(false);
   window.addEventListener('pq-auth', () => { if (!modOpen(mi)) { mi = 0; M = MODS[0]; li = 0; renderWatch(false) } else paintStatic() });
-  window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
+  window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); if (!modOpen(mi)) { mi = Math.max(0, MODS.findIndex((m, k) => !modDone(k))); M = MODS[mi]; li = 0 } if (!unlocked(li)) li = Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)); renderWatch(false); paintStatic() });
   window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { mi, li, si, mode, ti, score } } };
 })();

@@ -321,7 +321,13 @@ ok(fden.write === 'permission-denied' && fden.other === 'permission-denied' && f
 // admin job: sends queued e-mails (stub) and creates the automatic reminders once
 const adminEnv = { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P, MAIL_STUB: '1', REMIND_NOW: '1' };
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: adminEnv });
-execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: adminEnv });
+const rs = await fsDoc('meta/lessonReset'), pr1 = await fsDoc('progress/' + uid1);
+ok(rs.fields && +rs.fields.epoch.integerValue === 1, 'the one-time lesson reset ran');
+ok(pr1.fields && pr1.fields.epoch && +pr1.fields.epoch.integerValue === 1 && !(pr1.fields.lessons.mapValue.fields && Object.keys(pr1.fields.lessons.mapValue.fields).length), 'reset cleared the student’s lesson marks');
+// the student's own browser must not bring the old marks back
+await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
+ok(await pg.locator('#portalCourse .sp-ls a').count() === 1 && (await pg.textContent('#portalCourse .sp-mod.act')).includes('0/12'), 'after the reset only lesson 1 is open and old marks do not return');
+ok(await pg.locator('#portalCourse .sp-lvtabs button.lk').count() === 2, 'Level 2 and Level 3 are locked until the level before is finished');
 const outbox = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/outbox`, { headers: owner }).then(r => r.json());
 const docsO = outbox.documents || [];
 ok(docsO.length >= 2 && docsO.every(d => d.fields.status.stringValue === 'done'), 'queued e-mails are processed (' + docsO.length + ')');

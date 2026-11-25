@@ -2,7 +2,7 @@
 import { db, F, whoAmI, auth, esc, markSignedIn, logout } from './fb.js';
 import './pay.js';
 import { feesBlock, attStat, attTable, PASS } from './lms.js';
-import { mountUser, avatar, SVG } from './shell.js';
+import { mountUser, avatar, SVG, withLocalMarks } from './shell.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalProfile');
 const MODS = window.PQ_MODULES || [];
@@ -23,7 +23,7 @@ const TABS = [['profile', 'My profile', SVG.user], ['fees', 'Fees and payments',
   const p = me.profile || {}, uid = me.user.uid;
   mountUser(p);
   let prog = {}; try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) prog = s.data() } catch {}
-  try { const lp = JSON.parse(localStorage.getItem('pq-progress') || '{}'); prog.lessons = { ...(prog.lessons || {}) }; Object.keys(lp).forEach(k => prog.lessons[k] = Math.max(lp[k], prog.lessons[k] || 0)) } catch {}
+  prog = withLocalMarks(prog);
   let tm = {}; try { const s = await F.getDoc(F.doc(db, 'time', uid)); if (s.exists()) tm = s.data() } catch {}
   let sess = []; try { const q = await F.getDocs(F.query(F.collection(db, 'attendance'), F.where('uids', 'array-contains', uid))); sess = q.docs.map(d => d.data()) } catch {}
   let invs = []; try { const q = await F.getDocs(F.query(F.collection(db, 'invoices'), F.where('uid', '==', uid))); invs = q.docs.map(d => ({ id: d.id, ...d.data() })) } catch {}

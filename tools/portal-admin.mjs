@@ -18,6 +18,24 @@ if (list.length) {
   console.log(`coaches: ${list.length} listed`);
 } else console.log('COACH_EMAILS not set: coach list unchanged.');
 
+
+// --- one-time lesson reset (RESET_EPOCH) ---
+// Wipes every student's lesson marks and XP so the strict lesson order starts clean. Puzzles, study time, homework ticks, attendance and fees are kept.
+// Raising RESET_EPOCH runs it once more. Devices wipe their own saved marks when they see the higher epoch (assets/js/portal/sync.js).
+const RESET_EPOCH = 1;
+{
+  const ref = db.doc('meta/lessonReset'), cur = await ref.get();
+  if (!cur.exists || (cur.data().epoch || 0) < RESET_EPOCH) {
+    const us = await db.collection('users').where('role', '==', 'student').get(); let n = 0;
+    for (const u of us.docs) {
+      const pr = db.doc(`progress/${u.id}`), old = await pr.get(), d = old.exists ? old.data() : {};
+      await pr.set({ lessons: {}, xp: 0, puzzles: d.puzzles || { solved: {}, best: 0 }, epoch: RESET_EPOCH, updatedAt: admin.firestore.FieldValue.serverTimestamp() }); n++;
+    }
+    await ref.set({ epoch: RESET_EPOCH, doneAt: admin.firestore.FieldValue.serverTimestamp(), students: n });
+    console.log(`lesson reset: ${n} students`);
+  } else console.log('lesson reset: already done');
+}
+
 // --- queue ---
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const temp = () => words[Math.floor(Math.random() * words.length)] + '-' + String(Math.floor(1000 + Math.random() * 9000));

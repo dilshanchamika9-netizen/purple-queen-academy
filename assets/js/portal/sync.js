@@ -5,7 +5,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} },
 };
 const local = () => ({
-  lessons: LS.get('pq-progress', {}), xp: LS.get('pq-xp', 0),
+  lessons: LS.get('pq-progress', {}), xp: LS.get('pq-xp', 0), epoch: LS.get('pq-epoch', 0),
   puzzles: { solved: LS.get('pqz-solved', {}), best: LS.get('pqz-best', 0) },
 });
 function merge(a, b) {
@@ -41,6 +41,8 @@ addEventListener('pagehide', push);
   if (!me || me.role !== 'student') return
   uid = me.user.uid;
   let cloud = {}; try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) cloud = s.data() } catch {}
+  // a coach/admin reset (epoch raised on the server) wipes lesson marks and XP kept on this device, so old marks cannot come back
+  if ((cloud.epoch || 0) > LS.get('pq-epoch', 0)) { LS.set('pq-progress', {}); LS.set('pq-xp', 0); LS.set('pq-epoch', cloud.epoch); try { Object.keys(localStorage).filter(k => /^pq-(li|mi)/.test(k)).forEach(k => localStorage.removeItem(k)) } catch {} }
   const m = merge(local(), cloud);
   LS.set('pq-progress', m.lessons); LS.set('pq-xp', m.xp); LS.set('pqz-solved', m.puzzles.solved); LS.set('pqz-best', m.puzzles.best);
   window.dispatchEvent(new Event('pq-reload'));

@@ -2,7 +2,7 @@
 import { db, F, whoAmI, auth, esc, markSignedIn } from './fb.js';
 import { hwView, hwSteps, nextStep as hwNext, dueLabel } from './hw.js';
 import { assignStat, PASS, PZ_LEVELS } from './lms.js';
-import { mountUser, SVG } from './shell.js';
+import { mountUser, SVG, withLocalMarks } from './shell.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalAccount');
 const MODS = window.PQ_MODULES || [];
@@ -18,8 +18,7 @@ export const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: '
   const p = me.profile || {}, uid = me.user.uid;
   mountUser(p);
   let prog = {}; try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) prog = s.data() } catch {}
-  // include anything saved on this device that is not uploaded yet
-  try { const lp = JSON.parse(localStorage.getItem('pq-progress') || '{}'); prog.lessons = { ...(prog.lessons || {}) }; Object.keys(lp).forEach(k => prog.lessons[k] = Math.max(lp[k], prog.lessons[k] || 0)) } catch {}
+  prog = withLocalMarks(prog);
   const LS = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v) } catch { return d } };
   prog.puzzles = { solved: { ...LS('pqz-solved', {}), ...((prog.puzzles && prog.puzzles.solved) || {}) }, best: Math.max(LS('pqz-best', 0), (prog.puzzles && prog.puzzles.best) || 0) };
   let tm = {}; try { const s = await F.getDoc(F.doc(db, 'time', uid)); if (s.exists()) tm = s.data() } catch {}
@@ -27,19 +26,17 @@ export const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: '
   try { const q = await F.getDocs(F.query(F.collection(db, 'assignments'), F.where('uids', 'array-contains', uid))); assigns = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999')) } catch {}
   try { const q = await F.getDocs(F.query(F.collection(db, 'astatus'), F.where('uid', '==', uid))); q.docs.forEach(d => st[d.id] = d.data()) } catch {}
 
-  // ---- lessons: the student's level (set by the coach); modules open one after another ----
+  // ---- lessons: strict order, so the current level is the level of the first module that is not finished ----
   const L = prog.lessons || {}, passed = (l) => (L[l.id] || 0) >= PASS;
-  const lvNow = +p.level || 1, lvOf = (k) => PQ_MOD(MODS, k).lv;
+  const lvOf = (k) => PQ_MOD(MODS, k).lv, modDone = (k) => MODS[k].lessons.every(passed);
+  const curK = MODS.findIndex((m, k) => !modDone(k)), lvNow = curK < 0 ? lvOf(MODS.length - 1) : lvOf(curK);
   try { localStorage.setItem('pq-level', String(lvNow)) } catch {}
   const idx = MODS.map((m, k) => k).filter(k => lvOf(k) === lvNow);
-  const modDone = (k) => MODS[k].lessons.every(passed);
-  const modOpen = (k) => k === 0 || lvOf(k) < lvNow || modDone(k - 1) || (lvOf(k) === lvNow && lvOf(k - 1) < lvNow);
   const lTot = idx.reduce((a, k) => a + MODS[k].lessons.length, 0), lDn = idx.reduce((a, k) => a + MODS[k].lessons.filter(passed).length, 0);
   const mDn = idx.filter(modDone).length;
-  const curK = idx.find(k => modOpen(k) && !modDone(k));
-  const curL = curK != null ? MODS[curK].lessons.findIndex(l => !passed(l)) : -1;
+  const curL = curK >= 0 ? MODS[curK].lessons.findIndex(l => !passed(l)) : -1;
   const segs = idx.map(k => `<i><b style="width:${Math.round(MODS[k].lessons.filter(passed).length / MODS[k].lessons.length * 100)}%"></b></i>`).join('');
-  const lessonGo = curK != null
+  const lessonGo = curK >= 0
     ? `<a class="sp-go" href="lesson.html?m=${curK}&l=${curL}"><div><span>Up next</span><b>${PQ_MOD(MODS, curK).label.replace(/^Level \d+ · /, '')} · ${esc(MODS[curK].title.en)}</b></div><span class="circ">${SVG.arrow}</span></a>`
     : `<a class="sp-go" href="course.html"><div><span>All done</span><b>Every lesson in ${LEVEL[lvNow] || 'your level'} is passed</b></div><span class="circ">${SVG.arrow}</span></a>`;
 

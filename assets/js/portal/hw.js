@@ -35,7 +35,7 @@ export function hwSteps(a, x, L) {
       const l = byId[r.it.id], p = lessonPos(r.it.id);
       s.title = l ? l.title.en : r.it.id;
       s.sub = r.mark == null ? 'Not started' : `Best mark ${r.mark}%${r.done ? '' : ` · pass mark ${PASS}%`}`;
-      const prev = p && p.l > 0 ? MODS[p.m].lessons[p.l - 1] : null;
+      const prev = p ? (p.l > 0 ? MODS[p.m].lessons[p.l - 1] : p.m > 0 ? MODS[p.m - 1].lessons[MODS[p.m - 1].lessons.length - 1] : null) : null;
       if (blockBy && !r.done) s.lock = `Opens after “${blockBy}”`;
       else if (prev && (L[prev.id] || 0) < PASS && !r.done) s.lock = `Pass “${prev.title.en}” first`;
       else s.href = lessonHref(r.it.id, a.id);

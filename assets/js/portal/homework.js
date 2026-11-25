@@ -2,7 +2,7 @@
 import { auth, db, F, whoAmI, esc, markSignedIn, fmtTime } from './fb.js';
 import { assignStat, statePill } from './lms.js';
 import { hwView, hwSteps, nextStep, dueLabel } from './hw.js';
-import { mountUser } from './shell.js';
+import { mountUser, withLocalMarks } from './shell.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalHw');
 const aid = new URLSearchParams(location.search).get('a');
@@ -28,7 +28,7 @@ const KIND = { lesson: 'Lesson', puzzles: 'Puzzles', task: 'Board task', text: '
   try { const q = await F.getDocs(F.query(F.collection(db, 'assignments'), F.where('uids', 'array-contains', uid))); const d = q.docs.find(d => d.id === aid); if (d) a = { id: d.id, ...d.data() } } catch {}
   if (!a) { root.innerHTML = '<div class="acc-card"><h3>Homework</h3><p class="muted">This homework was not found. It may have been removed by your coach.</p><a class="btn btn-ghost btn-sm" href="account.html">Back to my portal</a></div>'; return }
   try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) prog = s.data() } catch {}
-  try { const lp = JSON.parse(localStorage.getItem('pq-progress') || '{}'); prog.lessons = { ...(prog.lessons || {}) }; Object.keys(lp).forEach(k => prog.lessons[k] = Math.max(lp[k], prog.lessons[k] || 0)) } catch {}
+  prog = withLocalMarks(prog);
   try { const s = await F.getDoc(F.doc(db, 'time', uid)); if (s.exists()) tm = s.data() } catch {}
   try { const s = await F.getDoc(F.doc(db, 'astatus', aid + '_' + uid)); if (s.exists()) st = s.data() } catch {}
 
