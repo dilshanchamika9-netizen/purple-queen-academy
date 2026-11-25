@@ -430,3 +430,4 @@ html[data-theme="dark"] .dhw li { background:var(--surf) }
   .hst { grid-template-columns:30px minmax(0, 1fr); } .hst .hic { display:none } .hst .ha { grid-column:1 / -1 } .hst .ha .btn { width:100%; justify-content:center } }
 html[data-theme="dark"] .hwring { background:radial-gradient(closest-side, var(--surf) 78%, transparent 80% 100%), conic-gradient(var(--accent) calc(var(--p) * 1%), var(--lav-2) 0) }
 html[data-theme="dark"] .hst .hn, html[data-theme="dark"] .stepper button { background:var(--surf) }
+@media (max-width:640px) { .hst.lk .ha { display:none } }
