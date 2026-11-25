@@ -167,7 +167,7 @@ ok(pzSets.length === 2 && pzSets.every(a => a.length === 5), 'coach gave two puz
 ok(pzSets.length === 2 && !pzSets[0].some(id => pzSets[1].includes(id)), 'the second puzzle set repeats nothing from the first');
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
 const hwtxt = await pg.textContent('#hwBox');
-ok(hwtxt.includes('Puzzles: 5 × Beginner') && hwtxt.includes('0/5'), 'student sees the puzzle homework with 0/5 solved');
+ok(hwtxt.includes('Puzzles: 5 to solve') && !hwtxt.includes('Beginner') && hwtxt.includes('0/5'), 'student sees the puzzle homework with 0/5 solved');
 ok((await pg.getAttribute('#hwBox a[href*="puzzle.html?hw="]', 'href')).includes('&set='), 'puzzle homework links to the puzzle page with its set');
 
 // profile photo: saved on the student's own profile, size-limited, not writable for others
@@ -336,7 +336,7 @@ await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(tr
 
 // removing a student also removes the parent login, study time and ticks
 const delBtn = `#stuTable tr[data-uid="${uid2}"] button[data-a="delete"]`;
-await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
+await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 const after = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/users`, { headers: owner }).then(r => r.json());
 ok(!after.documents.some(d => d.fields.sid && /^PQ0002/.test(d.fields.sid.stringValue)), 'removing a student also removes the parent login');
