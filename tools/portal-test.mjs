@@ -56,7 +56,7 @@ await pg.fill('#sId', 'pq0001'); await pg.fill('#sPw', tmp); await pg.click('#st
 await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(true, 'first login asks for a new password');
 await pg.fill('#ch1', 'mypass99'); await pg.fill('#ch2', 'mypass99'); await pg.click('#changeForm button[type=submit]');
 await pg.waitForURL('**/account.html', { timeout: 15000 });
-await pg.waitForSelector('.stats6', { timeout: 15000 });
+await pg.waitForSelector('.sp-doors', { timeout: 15000 });
 ok((await pg.textContent('#portalAccount')).includes('Kavindu'), 'account page shows the student');
 
 // 4) progress sync: pass lesson 1 practice on learn.html, then check Firestore

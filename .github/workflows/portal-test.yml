@@ -11,6 +11,9 @@ on:
       - 'coach.html'
       - 'parent.html'
       - 'account.html'
+      - 'course.html'
+      - 'profile.html'
+      - 'homework.html'
       - '.github/workflows/portal-test.yml'
 jobs:
   test:
