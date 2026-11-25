@@ -835,3 +835,8 @@ h1 em, h2 em { padding-inline:.04em; background:linear-gradient(100deg, #5B2C91 
 .acc-card.locked { opacity:.8 }
 .acc-tag { font:700 11px var(--body); letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:20px; background:var(--paper); color:var(--muted); vertical-align:middle; margin-left:8px }
 .acc-tag.open { background:var(--purple); color:#fff }
+
+/* student portal link: always reachable */
+.nav-portal { display:none }
+@media (max-width:1040px) { .hdr.open .nav a.nav-portal { display:block; margin-top:8px; background:var(--purple,#5B2C91); color:#fff; border-radius:12px; text-align:center; font-weight:700 } }
+@media (min-width:1041px) and (max-width:1460px) { .hdr-cta .btn-ghost { display:inline-flex; font-size:0; gap:0; padding:9px 12px } .hdr-cta .btn-ghost svg { margin:0 } }
