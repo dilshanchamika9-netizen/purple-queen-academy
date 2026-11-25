@@ -882,3 +882,14 @@ details.mrep { border:1px solid var(--line); border-radius:14px; padding:10px 14
 .seg3 label:has(input:checked).p { background:#E4F4EA; color:#1E6B3A; border-color:#9FD3B2 } .seg3 label:has(input:checked).l { background:#FFF3DA; color:#7A5410; border-color:#E8CB8B } .seg3 label:has(input:checked).a { background:#FBE6EA; color:#A3213C; border-color:#E8A9B6 }
 .seg3 label:has(input:focus-visible) { outline:2px solid var(--purple); outline-offset:2px }
 .seg3 label { position:relative }
+
+/* ===== board task builder / task page ===== */
+details.tbd { margin:6px 0 16px; border:1px dashed var(--lilac); border-radius:14px; padding:10px 14px; background:#fff } details.tbd summary { cursor:pointer; font:600 14px var(--body); color:var(--purple) }
+.tb { display:grid; gap:12px; padding-top:12px } .tb-head { display:flex; gap:10px; flex-wrap:wrap; align-items:baseline }
+.tb-wrap { display:grid; grid-template-columns:minmax(260px, 400px) 1fr; gap:18px; align-items:start } .tb-board { width:100%; max-width:400px }
+.tb-pal { display:flex; flex-wrap:wrap; gap:6px } .tbp { width:46px; height:46px; display:grid; place-items:center; border:1px solid var(--line); border-radius:10px; background:#fff; cursor:pointer; font:700 16px var(--body); color:var(--muted) } .tbp.on { border-color:var(--purple); background:var(--mist); box-shadow:0 0 0 2px var(--lilac) }
+.tb-acts, .tb-modes { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 } .tb-modes .mini.on { background:var(--purple); color:#fff; border-color:var(--purple) } .tb-ans { margin-top:8px }
+.tblist { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px } .chip .x { border:0; background:none; cursor:pointer; font-size:16px; line-height:1; color:#A3213C; padding:0 0 0 6px }
+.plist { list-style:none; padding:0; margin:0 0 12px; display:grid; gap:6px } .plist li { padding:8px 12px; border-radius:10px; background:var(--paper); font-size:14px } .plist li.ok { background:#EAF6EF }
+.q.big { font:700 20px/1.35 var(--body); color:var(--night); margin:0 0 6px } .lp-boardwrap.tk { max-width:520px; margin:14px 0 }
+@media (max-width:720px) { .tb-wrap { grid-template-columns:1fr } .tbp { width:42px; height:42px } }

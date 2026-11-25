@@ -69,6 +69,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}
         <ul class="hw-items">${x.items.map((r, i) => r.it.t === 'lesson'
           ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${(() => { const l = byId[r.it.id]; return l ? `<a href="learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}">${esc(itemLabel(r.it))}</a>` : esc(r.it.id) })()}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>`
+          : r.it.t === 'task' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it))}</a><b>${r.done ? 'Solved' : 'Open'}</b></li>`
           : `<li class="${r.done ? 'ok' : ''}"><label><input type="checkbox" data-a="${a.id}" data-i="${i}" ${r.done ? 'checked' : ''}> ${esc(r.it.text)}</label></li>`).join('')}</ul></li>` }).join('') + '</ul>' : '<p class="muted">No homework right now.</p>');
   }
   $('#hwBox').addEventListener('change', async (e) => {

@@ -19,7 +19,7 @@ export function assignStat(a, uid, prog, st, tm) {
   const complete = done === items.length, late = !complete && a.due && a.due < today();
   return { items, done, total: items.length, secs, complete, late, state: complete ? 'done' : late ? 'late' : 'open' };
 }
-export const itemLabel = (it) => it.t === 'lesson' ? lessonName(it.id) : it.text;
+export const itemLabel = (it) => it.t === 'lesson' ? lessonName(it.id) : it.t === 'task' ? 'Board task: ' + it.q : it.text;
 export const lessonSecs = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].s) || 0;
 export const lessonAtt = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].a) || 0;
 export function secsInLastDays(tm, n) {

@@ -98,7 +98,7 @@ await pp.fill('#ch1', 'parentpw1'); await pp.fill('#ch2', 'parentpw1'); await pp
 await pp.waitForURL('**/parent.html', { timeout: 15000 });
 await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
 const ptxt = await pp.textContent('#portalParent');
-ok(ptxt.includes('Kavindu') && ptxt.includes('1/40'), 'parent page shows the child and 1/40 lessons');
+ok(ptxt.includes('Kavindu') && ptxt.includes('1/41'), 'parent page shows the child and 1/41 lessons');
 const pden = await pp.evaluate(async ([uid1, uid2]) => {
   const m = await import('./assets/js/portal/fb.js'); const r = {};
   const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
@@ -175,10 +175,47 @@ ok((await pp.textContent('#portalParent')).includes('50%') && (await pp.textCont
 const aden = await pg.evaluate(async () => { const m = await import('./assets/js/portal/fb.js'); try { await m.F.setDoc(m.F.doc(m.db, 'attendance', 'x'), { date: '2026-01-01', batch: 'x', marks: {}, uids: [] }); return 'allowed' } catch (e) { return e.code } });
 ok(aden === 'permission-denied', 'student cannot write attendance');
 
+// coach builds a board task and gives it as homework; the student solves it
+await coachPage.click('#tbDet summary'); await coachPage.waitForSelector('#tbBoard .lsq');
+await coachPage.fill('#tbQ', 'White to move. Win the queen.');
+await coachPage.click('#tbClear');
+for (const [p, sq] of [['wK', 'e1'], ['bK', 'h8'], ['wR', 'a1'], ['bQ', 'a8']]) { await coachPage.click(`#tbPal .tbp[data-p="${p}"]`); await coachPage.click(`#tbBoard .lsq[data-sq="${sq}"]`) }
+await coachPage.click('#tbPal + .tb-acts, #tbStart', { trial: true }).catch(() => {});
+await coachPage.click('.tb-modes [data-m="ans"]');
+await coachPage.click('#tbBoard .lsq[data-sq="a1"]'); await coachPage.click('#tbBoard .lsq[data-sq="h1"]');
+ok((await coachPage.textContent('#tbMsg')).includes('not legal') || (await coachPage.textContent('#tbAns')) === '', 'builder does not accept an illegal answer move');
+await coachPage.click('#tbBoard .lsq[data-sq="a1"]'); await coachPage.click('#tbBoard .lsq[data-sq="a8"]');
+await coachPage.click('#tbAdd');
+ok((await coachPage.textContent('#tbList')).includes('Win the queen'), 'board task is added to the homework');
+await coachPage.fill('#hTitle', 'Board homework'); await coachPage.fill('#hDue', '2099-02-01');
+await coachPage.click('#hwForm button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#hMsg').textContent.includes('given to'), null, { timeout: 15000 });
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
+await pg.click('#hwBox a[href^="task.html"]'); await pg.waitForSelector('#board .lpc', { timeout: 15000 });
+ok((await pg.textContent('#portalTask')).includes('Win the queen'), 'student opens the board task');
+await pg.click('#board .lsq[data-sq="a1"]'); await pg.click('#board .lsq[data-sq="h1"]');
+ok((await pg.textContent('#fb')).includes('Try again'), 'wrong move is refused');
+await pg.click('#board .lsq[data-sq="a1"]'); await pg.click('#board .lsq[data-sq="a8"]');
+await pg.waitForFunction(() => document.querySelector('#fb').textContent.includes('Right'), null, { timeout: 10000 });
+await pg.waitForTimeout(1200);
+const bt = await fsDoc(`astatus/${(await pg.evaluate(() => new URLSearchParams(location.search).get('a')))}_${uid1}`);
+ok(!!(bt.fields && bt.fields.checks), 'solving the board task is saved');
+
+// Level 1 promotion: test mark + supervised games, then the coach promotes
+await fsSet('progress/' + uid2, { lessons: { mapValue: { fields: { 'l1-promotion': { integerValue: '90' } } } } });
+await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
+await coachPage.click(`#stuTable tr[data-uid="${uid2}"] button[data-a="report"]:not(.nm)`);
+await coachPage.waitForSelector('#promoBtn', { timeout: 10000 });
+ok(await coachPage.isDisabled('#promoBtn'), 'promote is locked until the supervised games are ticked');
+await coachPage.check('#l1g'); await coachPage.waitForSelector('#promoBtn:not([disabled])', { timeout: 10000 });
+await coachPage.click('#promoBtn');
+await coachPage.waitForFunction((u) => document.querySelector(`#stuTable tr[data-uid="${u}"] select.lv`).value === '2', uid2, { timeout: 10000 });
+ok(true, 'coach promotes the student to Level 2');
+
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('1/40') && row.includes('100%'), 'coach table shows 1/40 lessons and 100%');
+ok(row.includes('1/41') && row.includes('100%'), 'coach table shows 1/41 lessons and 100%');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
 const det = await coachPage.textContent('#detail');

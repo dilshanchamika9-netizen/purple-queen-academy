@@ -1,3 +1,4 @@
+import { initBuilder } from './taskbuilder.js';
 import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn, fmtTime, today } from './fb.js';
 import { MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, attStat, attTable, attLabel } from './lms.js';
 const $ = (s) => document.querySelector(s);
@@ -5,7 +6,7 @@ const root = $('#portalCoach');
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const tempPw = () => words[Math.floor(Math.random() * words.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
-let sessions = [], students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
+let custom = [], sessions = [], students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
 
 (async () => {
   const me = await whoAmI();
@@ -45,6 +46,8 @@ function render() {
     <div class="pickbox" id="hPick" hidden></div>
     <p class="lab">Lessons to complete (a lesson counts as done at ${PASS}% or more)</p>
     <div class="lesspick" id="hLessons">${MODS.map((m, k) => `<details ${k === 2 ? 'open' : ''}><summary><label><input type="checkbox" data-mod="${k}"> <b>Module ${k + 1}</b> ${esc(m.title.en)}</label></summary>${m.lessons.map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"> ${esc(l.title.en)}</label>`).join('')}</details>`).join('')}</div>
+    <p class="lab">Board tasks you made</p><div id="tbList" class="tblist"><span class="muted small">None yet.</span></div>
+    <details class="tbd" id="tbDet"><summary>＋ Make a board task (set up a position and the right answer)</summary><div id="tbBox"></div></details>
     <label for="hText">Extra tasks, one per line (the student ticks them off)<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label>
     <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p></form>
   <section class="acc-card" id="hwList"><h3>Homework given</h3><p class="muted">Loading…</p></section>
@@ -58,12 +61,17 @@ function render() {
   $('#csvBtn').onclick = exportCsv;
   $('#hDue').min = today();
   $('#hWho').onchange = paintWho;
+  let built = false; $('#tbDet').addEventListener('toggle', () => { if ($('#tbDet').open && !built) { built = true; initBuilder($('#tbBox'), (t) => { custom.push(t); paintCustom() }) } });
   $('#atForm').onsubmit = saveAtt; $('#atDate').value = today(); $('#atDate').max = today();
   $('#atDate').onchange = paintAtt; $('#atBatch').onchange = paintAtt;
   $('#atAll').onclick = () => $$('#atList input[value="p"]').forEach(r => r.checked = true);
   $('#hLessons').addEventListener('change', (e) => { const m = e.target.dataset.mod; if (m != null) $$(`#hLessons input[data-m="${m}"]`).forEach(c => c.checked = e.target.checked) });
 }
 const $$ = (s) => [...document.querySelectorAll(s)];
+function paintCustom() {
+  $('#tbList').innerHTML = custom.length ? custom.map((t, i) => `<span class="chip">${esc(t.q)} · ${t.kind === 'move' ? 'move' : 'square'} <button type="button" class="x" data-rm="${i}" aria-label="Remove this task">×</button></span>`).join(' ') : '<span class="muted small">None yet.</span>';
+}
+root.addEventListener('click', (e) => { const b = e.target.closest('button[data-rm]'); if (b) { custom.splice(+b.dataset.rm, 1); paintCustom() } });
 function paintWho() {
   const w = $('#hWho').value, val = $('#hWhoVal');
   $('#hWhoWrap').hidden = !(w === 'level' || w === 'batch'); $('#hPick').hidden = w !== 'pick';
@@ -209,20 +217,20 @@ async function addHomework(e) {
   e.preventDefault(); const m = $('#hMsg'); m.className = 'pmsg2';
   const title = $('#hTitle').value.trim(), due = $('#hDue').value, note = $('#hNote').value.trim();
   const items = $$('#hLessons input[data-les]:checked').map(c => ({ t: 'lesson', id: c.dataset.les }))
-    .concat($('#hText').value.split('\n').map(x => x.trim()).filter(Boolean).map(text => ({ t: 'text', text })));
+    .concat(custom).concat($('#hText').value.split('\n').map(x => x.trim()).filter(Boolean).map(text => ({ t: 'text', text })));
   const w = $('#hWho').value; let list = students, label = 'All students';
   if (w === 'level') { const v = +$('#hWhoVal').value; list = students.filter(s => +s.level === v); label = LEVELS[v] }
   if (w === 'batch') { const v = $('#hWhoVal').value; list = students.filter(s => s.batch === v); label = 'Batch: ' + v }
   if (w === 'pick') { const ids = $$('#hPick input:checked').map(c => c.value); list = students.filter(s => ids.includes(s.uid)); label = list.length === 1 ? list[0].name : list.length + ' students' }
   if (!title || !due) { m.className = 'pmsg2 err'; m.textContent = 'Enter a title and a due date.'; return }
-  if (!items.length) { m.className = 'pmsg2 err'; m.textContent = 'Choose at least one lesson or write one task.'; return }
+  if (!items.length) { m.className = 'pmsg2 err'; m.textContent = 'Choose at least one lesson, board task or written task.'; return }
   if (!list.length) { m.className = 'pmsg2 err'; m.textContent = 'No student matches this choice.'; return }
   m.textContent = 'Saving…';
   try {
     const data = { title, note, due, items, uids: list.map(s => s.uid), target: label, createdBy: coach.user.email, createdAt: F.serverTimestamp() };
     const ref = await F.addDoc(F.collection(db, 'assignments'), data);
     assigns.unshift({ id: ref.id, ...data, createdAt: { toMillis: () => Date.now() } });
-    e.target.reset(); $('#hDue').min = today(); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
+    e.target.reset(); custom = []; paintCustom(); $('#hDue').min = today(); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
     m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.`;
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
 }
@@ -256,11 +264,16 @@ function showDetail(uid) {
     <p class="muted small">Active time counts only while the page is open and in use. Idle for more than 2 minutes is not counted.</p>
     <h4>Last 14 days (minutes of active study)</h4>${dayBars(tm)}
     ${weak.length ? `<h4>Needs work</h4><p>${weak.map(w => `<span class="chip bad">${esc(lessonName(w.l.id))} · ${w.v}%</span>`).join(' ')}</p>` : ''}
+    ${+s.level === 1 ? (() => { const ex = L['l1-promotion']; const ready = (ex || 0) >= PASS && s.l1games; return `<h4>Level 1 promotion</h4><ul class="plist"><li class="${(ex || 0) >= PASS ? 'ok' : ''}">Promotion test (30 tasks): ${ex == null ? 'not taken' : ex + '%' + ((ex || 0) >= PASS ? ' · passed' : ' · needs ' + PASS + '%')}</li>
+      <li class="${s.l1games ? 'ok' : ''}"><label><input type="checkbox" id="l1g" ${s.l1games ? 'checked' : ''}> Supervised games with notation completed</label></li></ul>
+      <button type="button" class="btn btn-primary btn-sm" id="promoBtn" ${ready ? '' : 'disabled'}>Promote to Level 2</button>` })() : ''}
     <h4>Attendance</h4>${(() => { const a = attStat(sessions, uid); return a.total ? `<p><b>${a.pct}%</b> attended · ${a.present} present, ${a.late} late, ${a.absent} absent (${a.total} classes)</p>` + attTable(a, uid) : '<p class="muted">No classes marked yet.</p>' })()}
     <h4>Homework</h4>${mine.length ? `<table class="stu mini-t"><thead><tr><th>Homework</th><th>Due</th><th>Done</th><th>Status</th></tr></thead><tbody>${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<tr><td>${esc(a.title)}</td><td>${dueText(a)}</td><td>${st.done}/${st.total}</td><td>${statePill(st.state)}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">None given yet.</p>'}
     <h4>Modules and lessons</h4>${lessonTable(p, tm)}
     <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
   $('#dClose').onclick = () => { d.hidden = true; openUid = null };
+  const g = $('#l1g'); if (g) g.onchange = async () => { try { await F.updateDoc(F.doc(db, 'users', uid), { l1games: g.checked }); s.l1games = g.checked; showDetail(uid) } catch { g.checked = !g.checked } };
+  const pb = $('#promoBtn'); if (pb) pb.onclick = async () => { try { await F.updateDoc(F.doc(db, 'users', uid), { level: 2 }); s.level = 2; paintTable(); showDetail(uid) } catch { pb.textContent = 'Could not save' } };
   d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function exportCsv() {
