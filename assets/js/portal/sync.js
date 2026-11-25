@@ -25,7 +25,10 @@ addEventListener('pagehide', push);
 
 (async () => {
   const me = await whoAmI();
-  if (!me || me.role !== 'student') { if (!me) markSignedIn(false); return }
+  const okAccess = !!me && (me.role === 'student' || me.role === 'coach');
+  if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0') } catch {} }
+  window.dispatchEvent(new Event('pq-auth'));
+  if (!me || me.role !== 'student') return
   uid = me.user.uid;
   let cloud = {}; try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) cloud = s.data() } catch {}
   const m = merge(local(), cloud);

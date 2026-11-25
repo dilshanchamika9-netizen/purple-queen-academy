@@ -23,6 +23,9 @@
 
   let ALL = [], level = store.get('level', 1), theme = 'all', solved = store.get('solved', {}), failed = store.get('failed', {});
   let streak = store.get('streak', 0), best = store.get('best', 0);
+  const access = () => { try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
+  const FREE_PER_LEVEL = 10; const free = new Set(); let nextT = null, autoNext = store.get('auto', true);
+  const qp = new URLSearchParams(location.search), hwId = qp.get('hw'), hwSet = hwId && qp.get('set') ? new Set(qp.get('set').split(',').filter(Boolean)) : null;
   let cur = null, game = null, moves = [], idx = 0, orient = 'w', sel = null, busy = false, mistakes = 0, lastMove = null, hinted = false;
 
   root.innerHTML = `
@@ -43,6 +46,8 @@
           <button type="button" class="btn btn-primary btn-sm" id="pzNext">Next puzzle →</button>
         </div>
       </div>
+      <div class="pz-gate" id="pzGate" hidden></div>
+      <label class="pz-auto" for="pzAutoChk"><input type="checkbox" id="pzAutoChk"> Open the next puzzle automatically</label>
       <div class="pz-prog"><div class="pz-prog-h"><span id="pzLvName"></span><span id="pzLvCount"></span></div><i><b id="pzLvBar"></b></i></div>
       <p class="pz-src">Puzzles from the Lichess open puzzle database (public domain).</p>
     </div>
@@ -80,15 +85,19 @@
   const play = (u) => game.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' });
 
   /* ---------- flow ---------- */
-  const pool = () => ALL.filter(p => p.l === level && (theme === 'all' || p.t.includes(theme)));
+  const allowed = (p) => access() || free.has(p.id);
+  const pool = () => hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : ALL.filter(p => p.l === level && (theme === 'all' || p.t.includes(theme)) && allowed(p));
   function pick() {
     const list = pool(); if (!list.length) return null;
-    const unsolved = list.filter(p => !solved[p.id]);
-    const from = unsolved.length ? unsolved : list;
-    return from[Math.floor(Math.random() * from.length)];
+    let unsolved = list.filter(p => !solved[p.id]);
+    if (cur && unsolved.length > 1) unsolved = unsolved.filter(p => p.id !== cur.id);
+    if (!unsolved.length) { if (hwSet || !access()) return null; unsolved = list }
+    return unsolved[Math.floor(Math.random() * unsolved.length)];
   }
   function load(p) {
-    cur = p; if (!p) { msg('No puzzles for this theme at this level. Choose another theme.', ''); return }
+    clearTimeout(nextT);
+    if (!p) { cur = null; const hwDone = hwSet && access(); msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
+    cur = p;
     $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
     orient = game.turn() === 'w' ? 'b' : 'w';  // the solver plays the side that moves after the first move
@@ -188,9 +197,11 @@
     if (clean && window.PQ_CELEBRATE) PQ_CELEBRATE({ title: 'Congratulations!', sub: game.in_checkmate() ? `Checkmate! Streak ${streak}` : `Puzzle solved · streak ${streak}`, size: 'big' });
     $('#pzMeta').classList.remove('hidden-themes');
     bEl.classList.remove('win'); void bEl.offsetWidth; bEl.classList.add('win'); busy = true; paintSide();
+    clearTimeout(nextT); const me = cur;
+    if (autoNext) nextT = setTimeout(() => { if (cur === me) load(pick()) }, clean ? 2800 : 3600);
   }
   function showSolution() {
-    if (!cur) return; if (backFen) { game = new window.Chess(backFen); backFen = null; $('#pzBack').hidden = true; draw() } busy = true; mistakes++;
+    if (!cur) return; clearTimeout(nextT); if (backFen) { game = new window.Chess(backFen); backFen = null; $('#pzBack').hidden = true; draw() } busy = true; mistakes++;
     const step = () => { if (idx >= moves.length) { msg('Solution shown. Try the next puzzle.', ''); $('#pzMeta').classList.remove('hidden-themes'); if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) } streak = 0; store.set('streak', 0); paintSide(); return } const m = play(moves[idx]); lastMove = m; idx++; draw(m); setTimeout(step, 750) };
     step();
   }
@@ -204,15 +215,19 @@
 
   /* ---------- side panels ---------- */
   function paintSide() {
-    const lv = LEVELS[level - 1], list = ALL.filter(p => p.l === level), done = list.filter(p => solved[p.id]).length;
+    const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => solved[p.id]).length;
+    const gate = $('#pzGate'); gate.hidden = access() && !hwSet;
+    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="account.html">Back to my homework</a>` : !access() ? `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. <a href="login.html?next=puzzle.html">Student sign in</a> to unlock all ${ALL.length.toLocaleString('en')}.` : '';
+    $('#pzAutoChk').checked = autoNext;
     $('#pzStreak').textContent = streak; $('#pzBest').textContent = best; $('#pzSolved').textContent = Object.keys(solved).length;
-    $('#pzLvName').textContent = `Level ${lv.id} · ${lv.name}`; $('#pzLvCount').textContent = `${done} / ${list.length} solved`;
+    $('#pzLvName').textContent = hwSet && access() ? 'Homework puzzles' : `Level ${lv.id} · ${lv.name}`; $('#pzLvCount').textContent = `${done} / ${list.length} solved`;
     $('#pzLvBar').style.width = (list.length ? done / list.length * 100 : 0) + '%';
-    $('#pzLevels').innerHTML = LEVELS.map(l => { const n = ALL.filter(p => p.l === l.id).length, d = ALL.filter(p => p.l === l.id && solved[p.id]).length;
+    $('#pzLevels').innerHTML = LEVELS.map(l => { const n = inLv(l.id).length, d = inLv(l.id).filter(p => solved[p.id]).length;
       return `<button type="button" data-l="${l.id}" aria-pressed="${l.id === level}"><span class="pc">${l.piece}&#xFE0E;</span><b>Level ${l.id} · ${l.name}</b><small>Rating ${l.range}</small><em>${l.tip}</em><i><u style="width:${n ? d / n * 100 : 0}%"></u></i><span class="ct">${d}/${n}</span></button>` }).join('');
-    $('#pzThemes').innerHTML = THEMES.map(([k, n]) => { const c = k === 'all' ? ALL.filter(p => p.l === level).length : ALL.filter(p => p.l === level && p.t.includes(k)).length;
+    $('#pzThemes').innerHTML = THEMES.map(([k, n]) => { const c = k === 'all' ? inLv(level).length : inLv(level).filter(p => p.t.includes(k)).length;
       return c ? `<button type="button" data-t="${k}" aria-pressed="${k === theme}">${n} <small>${c}</small></button>` : '' }).join('');
   }
+  $('#pzAutoChk').onchange = (e) => { autoNext = e.target.checked; store.set('auto', autoNext); if (!autoNext) clearTimeout(nextT) };
   root.addEventListener('click', e => {
     const lb = e.target.closest('#pzLevels button'); if (lb) { level = +lb.dataset.l; store.set('level', level); theme = 'all'; load(pick()); return }
     const tb = e.target.closest('#pzThemes button'); if (tb) { theme = tb.dataset.t; load(pick()); return }
@@ -225,8 +240,11 @@
 
   fetch('assets/data/puzzles.json').then(r => { if (!r.ok) throw 0; return r.json() }).then(d => {
     ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c) c.textContent = ALL.length.toLocaleString('en');
-    const q = new URLSearchParams(location.search).get('id'); load(ALL.find(p => p.id === q) || pick());
+    LEVELS.forEach(l => ALL.filter(p => p.l === l.id).slice(0, FREE_PER_LEVEL).forEach(p => free.add(p.id)));
+    if (hwSet && access()) root.classList.add('pz-hw');
+    const q = new URLSearchParams(location.search).get('id'); const want = ALL.find(p => p.id === q); if (want && allowed(want)) level = want.l; load(want && allowed(want) ? want : pick());
   }).catch(() => { msg('Puzzles could not be loaded. Refresh the page to try again.', 'err') });
+  window.addEventListener('pq-auth', () => { if (!ALL.length) return; root.classList.toggle('pz-hw', !!(hwSet && access())); if (cur && !allowed(cur)) load(pick()); else paintSide() });
   window.addEventListener('pq-reload', () => { solved = store.get('solved', {}); best = store.get('best', 0); if (ALL.length) paintSide() });
   window.PQ_PUZZLES = { Engine, takeBack, get state() { return { cur, idx, moves, level, theme, streak, orient, fen: game && game.fen() } }, userMove, load, pick };
 })();

@@ -49,7 +49,7 @@ export function whoAmI() {
     });
   });
 }
-export const markSignedIn = (v) => { try { v ? localStorage.setItem('pq-auth', '1') : localStorage.removeItem('pq-auth') } catch {} };
+export const markSignedIn = (v, role) => { try { v ? (localStorage.setItem('pq-auth', '1'), role && localStorage.setItem('pq-access', role === 'student' || role === 'coach' ? '1' : '0')) : (localStorage.removeItem('pq-auth'), localStorage.removeItem('pq-access')) } catch {} };
 export async function logout() { markSignedIn(false); await F.signOut(auth); location.href = 'login.html' }
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const money = (n, cur = 'LKR') => cur + ' ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

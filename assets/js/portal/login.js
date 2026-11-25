@@ -3,17 +3,17 @@ const $ = (s) => document.querySelector(s);
 const box = $('#portalLogin');
 const say = (el, t, cls = '') => { el.className = 'pmsg2 ' + cls; el.textContent = t };
 
-function go(role) { location.href = role === 'coach' ? 'coach.html' : role === 'parent' ? 'parent.html' : 'account.html' }
+function go(role) { const nx = new URLSearchParams(location.search).get('next'); if (role === 'student' && /^(learn|puzzle)\.html$/.test(nx || '')) { location.href = nx; return } location.href = role === 'coach' ? 'coach.html' : role === 'parent' ? 'parent.html' : 'account.html' }
 
 async function afterSignIn() {
   const me = await whoAmI();
   if (!me) return;
   if (me.role === 'student' || me.role === 'parent') {
-    markSignedIn(true);
+    markSignedIn(true, me.role);
     if (me.profile && me.profile.mustChange) return showChange(me);
     return go(me.role);
   }
-  if (me.role === 'coach') { markSignedIn(true); return go('coach') }
+  if (me.role === 'coach') { markSignedIn(true, 'coach'); return go('coach') }
   // signed in but not a student and not a listed coach
   if (!me.user.emailVerified && !isStudentEmail(me.user.email) && !isParentEmail(me.user.email)) {
     showTab('coach'); say($('#cMsg'), 'Please verify your email first: open the link we sent you, then sign in again.', 'err');

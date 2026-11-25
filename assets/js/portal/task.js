@@ -5,7 +5,7 @@ const root = $('#portalTask');
   const me = await whoAmI();
   if (!me) return (location.href = 'login.html');
   if (me.role !== 'student') return (location.href = me.role === 'coach' ? 'coach.html' : me.role === 'parent' ? 'parent.html' : 'login.html');
-  markSignedIn(true);
+  markSignedIn(true, 'student');
   const q = new URLSearchParams(location.search), aid = q.get('a'), idx = +q.get('i');
   let a = null; try { const s = await F.getDoc(F.doc(db, 'assignments', aid)); if (s.exists()) a = s.data() } catch {}
   const it = a && a.items && a.items[idx];

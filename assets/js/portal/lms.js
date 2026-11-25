@@ -8,19 +8,21 @@ export const lessonName = (id) => byId[id] ? `M${byId[id].mod + 1} · ${byId[id]
 export const PASS = 70;
 
 // one item of an assignment: {t:'lesson', id} or {t:'text', text}
-export function itemState(a, i, prog, st) {
+export const PZ_LEVELS = { 1: 'Beginner', 2: 'Improver', 3: 'Club player', 4: 'Advanced', 5: 'Expert' };
+export function itemState(a, i, prog, st, uid) {
   const it = a.items[i];
+  if (it.t === 'puzzles') { const ids = (it.sets && it.sets[uid]) || [], sv = ((prog || {}).puzzles || {}).solved || {}, n = ids.filter(x => sv[x]).length; return { done: ids.length > 0 && n === ids.length, mark: null, n, total: ids.length, ids } }
   if (it.t === 'lesson') { const m = ((prog || {}).lessons || {})[it.id]; return { done: (m || 0) >= PASS, mark: m == null ? null : m } }
   return { done: !!(st && st.checks && st.checks[i]), mark: null };
 }
 export function assignStat(a, uid, prog, st, tm) {
-  const items = a.items.map((it, i) => ({ it, ...itemState(a, i, prog, st) }));
+  const items = a.items.map((it, i) => ({ it, ...itemState(a, i, prog, st, uid) }));
   const done = items.filter(x => x.done).length;
   let secs = 0; a.items.forEach(it => { if (it.t === 'lesson' && tm && tm.lessons && tm.lessons[it.id]) secs += tm.lessons[it.id].s || 0 });
   const complete = done === items.length, late = !complete && a.due && a.due < today();
   return { items, done, total: items.length, secs, complete, late, state: complete ? 'done' : late ? 'late' : 'open' };
 }
-export const itemLabel = (it) => it.t === 'lesson' ? lessonName(it.id) : it.t === 'task' ? 'Board task: ' + it.q : it.text;
+export const itemLabel = (it) => it.t === 'lesson' ? lessonName(it.id) : it.t === 'task' ? 'Board task: ' + it.q : it.t === 'puzzles' ? 'Puzzles: ' + Object.entries(it.counts || {}).map(([l, c]) => c + ' × ' + (PZ_LEVELS[l] || 'Level ' + l)).join(', ') : it.text;
 export const lessonSecs = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].s) || 0;
 export const lessonAtt = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].a) || 0;
 export function secsInLastDays(tm, n) {

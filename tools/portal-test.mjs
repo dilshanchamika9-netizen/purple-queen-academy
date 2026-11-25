@@ -149,6 +149,44 @@ ok(sden.makeHomework === 'permission-denied', 'student cannot create homework');
 ok(sden.tickForOther === 'permission-denied', 'student cannot tick another student’s homework');
 ok(sden.otherTime === 'permission-denied', 'student cannot read another student’s study time');
 
+// puzzle homework by number: two rounds to the same student must never repeat a puzzle
+await tab('homework');
+for (const name of ['Puzzles A', 'Puzzles B']) {
+  await coachPage.fill('#hTitle', name); await coachPage.fill('#hDue', '2099-01-02');
+  await coachPage.selectOption('#hWho', 'pick'); await coachPage.check(`#hPick input[value="${uid1}"]`);
+  await coachPage.fill('#hPz input[data-pz="1"]', '5');
+  await coachPage.click('#hwForm button[type=submit]');
+  await coachPage.waitForFunction((n) => [...document.querySelectorAll('#hwList summary b')].some(b => b.textContent === n), name, { timeout: 20000 });
+  await coachPage.waitForTimeout(500);
+}
+const pzSets = await coachPage.evaluate(async (uid) => {
+  const m = await import('./assets/js/portal/fb.js'); const q = await m.F.getDocs(m.F.collection(m.db, 'assignments')); const out = [];
+  q.docs.forEach(d => { const x = d.data(); (x.items || []).forEach(it => { if (it.t === 'puzzles' && it.sets && it.sets[uid]) out.push(it.sets[uid]) }) }); return out;
+}, uid1);
+ok(pzSets.length === 2 && pzSets.every(a => a.length === 5), 'coach gave two puzzle sets of 5 to the student');
+ok(pzSets.length === 2 && !pzSets[0].some(id => pzSets[1].includes(id)), 'the second puzzle set repeats nothing from the first');
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
+const hwtxt = await pg.textContent('#hwBox');
+ok(hwtxt.includes('Puzzles: 5 × Beginner') && hwtxt.includes('0/5'), 'student sees the puzzle homework with 0/5 solved');
+ok((await pg.getAttribute('#hwBox a[href*="puzzle.html?hw="]', 'href')).includes('&set='), 'puzzle homework links to the puzzle page with its set');
+
+// profile photo: saved on the student's own profile, size-limited, not writable for others
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+await pg.setInputFiles('#avFile', { name: 'me.png', mimeType: 'image/png', buffer: PNG }); await pg.waitForTimeout(2000);
+const udoc = await fsDoc('users/' + uid1);
+ok(!!(udoc.fields && udoc.fields.photo && udoc.fields.photo.stringValue.startsWith('data:image/jpeg')), 'profile photo is saved');
+const pden2 = await pg.evaluate(async ([uid2]) => {
+  const m = await import('./assets/js/portal/fb.js'); const r = {};
+  const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
+  await t('otherPhoto', () => m.F.updateDoc(m.F.doc(m.db, 'users', uid2), { photo: 'data:image/jpeg;base64,AAAA' }));
+  await t('hugePhoto', () => m.F.updateDoc(m.F.doc(m.db, 'users', m.auth.currentUser.uid), { photo: 'x'.repeat(70000) }));
+  await t('roleChange', () => m.F.updateDoc(m.F.doc(m.db, 'users', m.auth.currentUser.uid), { role: 'coach' }));
+  return r;
+}, [uid2]);
+ok(pden2.otherPhoto === 'permission-denied', 'student cannot change another student’s photo');
+ok(pden2.hugePhoto === 'permission-denied', 'a photo over the size limit is refused');
+ok(pden2.roleChange === 'permission-denied', 'student still cannot change their own role');
+
 // study time: only active seconds count
 await pg.goto(`${SITE}/learn.html`); await pg.waitForTimeout(1500);
 for (let i = 0; i < 12; i++) { await pg.mouse.move(100 + i * 5, 200 + i * 3); await pg.waitForTimeout(500) }

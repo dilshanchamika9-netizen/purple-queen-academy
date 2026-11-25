@@ -193,3 +193,19 @@ html[data-theme="dark"] .seg button, html[data-theme="dark"] .seg label { color:
 html[data-theme="dark"] .lp-ctl button, html[data-theme="dark"] .lp-nav button, html[data-theme="dark"] .lp-panel button:not(.btn):not([data-k]) { background: var(--surf2); color: var(--ink); border-color: var(--line) }
 html[data-theme="dark"] .pill, html[data-theme="dark"] .chip { background: rgba(181,140,255,.16); color: #D9C6F3 }
 html[data-theme="dark"] .page-top h1 em, html[data-theme="dark"] h1 em, html[data-theme="dark"] h2 em { color: #C9A4FF }
+.lp-gate { margin: 10px 0 6px; padding: 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(122,63,208,.35), rgba(201,164,92,.25)); border: 1px solid rgba(255,255,255,.18); color: #fff; font: 600 13px/1.45 var(--body) }
+.lp-gate p { margin: 0 0 10px }
+.pz-gate { padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(122,63,208,.16), rgba(201,164,92,.18)); border: 1px solid var(--edge); font-size: 13.5px; margin-bottom: 10px }
+.pz-gate a { color: var(--accent); font-weight: 700 }
+.pz-auto { display: flex; gap: 8px; align-items: center; font: 600 13px var(--body); color: var(--muted); margin: 0 0 10px; cursor: pointer }
+.pz-hw #pzLevels, .pz-hw #pzThemes { display: none }
+.pzpick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 6px 0 }
+.pzpick label { font: 600 12px var(--body); display: grid; gap: 4px } .pzpick input { width: 100% }
+.pzpre { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px }
+@media (max-width: 700px) { .pzpick { grid-template-columns: repeat(2, 1fr) } }
+
+.avring .av { border: 0; cursor: pointer; overflow: hidden; padding: 0 }
+.avring .av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50% }
+.avring .av .cam { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; background: rgba(26,11,46,.55); opacity: 0; transition: opacity .2s; border-radius: 50% }
+.avring .av:hover .cam, .avring .av:focus-visible .cam { opacity: 1 }
+.phimg { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px }

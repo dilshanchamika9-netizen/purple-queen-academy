@@ -22,7 +22,8 @@ service cloud.firestore {
       allow create: if isCoach() && request.resource.data.role in ['student', 'parent'];
       allow update: if isCoach()
         || ((isStudent() || isParent()) && request.auth.uid == uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen', 'photo'])
+            && (!('photo' in request.resource.data) || (request.resource.data.photo is string && request.resource.data.photo.size() < 60000))
             && (request.resource.data.mustChange == false || request.resource.data.mustChange == resource.data.mustChange));
       allow delete: if false;
     }

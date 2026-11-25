@@ -13,7 +13,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
   if (me.role === 'coach') return (location.href = 'coach.html');
   if (me.role !== 'student') { await F.signOut(auth); return (location.href = 'login.html') }
   if (me.profile && me.profile.mustChange) return (location.href = 'login.html');
-  markSignedIn(true);
+  markSignedIn(true, 'student');
   const p = me.profile || {};
   let prog = {}; try { const s = await F.getDoc(F.doc(db, 'progress', me.user.uid)); if (s.exists()) prog = s.data() } catch {}
   // include anything saved on this device that is not uploaded yet
@@ -72,7 +72,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
     return `<details class="lvl l${lv} rv-p" ${openIt ? 'open' : ''}><summary><div class="lv-ic">${lv}</div><div><h3>${LEVEL[lv]}</h3><p class="lv-sub">${dn}/${tot} lessons passed</p></div>${ICO.chev}</summary><div class="mods">${cards}</div></details>` }).join('');
   root.innerHTML = `
     <div class="hud">
-      <div class="avring"><svg viewBox="0 0 36 36"><defs><linearGradient id="gXp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6E3AE"/><stop offset="1" stop-color="#C9A45C"/></linearGradient><linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B5FC2"/><stop offset="1" stop-color="#C9A45C"/></linearGradient></defs><circle class="rg-bg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2"/><circle class="rg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="${Math.round(xpIn / 200 * 103.7)} 104"/></svg><div class="av">${ini}</div><span class="lv">LV ${lvN}</span></div>
+      <div class="avring"><svg viewBox="0 0 36 36"><defs><linearGradient id="gXp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6E3AE"/><stop offset="1" stop-color="#C9A45C"/></linearGradient><linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B5FC2"/><stop offset="1" stop-color="#C9A45C"/></linearGradient></defs><circle class="rg-bg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2"/><circle class="rg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="${Math.round(xpIn / 200 * 103.7)} 104"/></svg><button type="button" class="av" id="avBtn" title="Change profile photo" aria-label="Change profile photo">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : ini}<span class="cam" aria-hidden="true">📷</span></button><input type="file" id="avFile" accept="image/*" hidden><span class="lv">LV ${lvN}</span></div>
       <div><p class="eyebrow">Student portal · ${esc(p.sid || '')}</p><h1>Hello, <em>${esc((p.name || 'student').split(' ')[0])}</em></h1>
         <p class="sub">${esc(LEVEL[p.level] || 'Level ' + (p.level || 1))}${p.batch ? ' · ' + esc(p.batch) : ''}</p>
         <div class="xpbar"><div class="t"><span>XP ${xpIn} / 200</span><span>NEXT: LV ${lvN + 1}</span></div><i><b data-w="${Math.round(xpIn / 2)}"></b></i></div></div>
@@ -115,6 +115,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}
         <ul class="hw-items">${x.items.map((r, i) => r.it.t === 'lesson'
           ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${(() => { const l = byId[r.it.id]; return l ? `<a href="learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}">${esc(itemLabel(r.it))}</a>` : esc(r.it.id) })()}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>`
+          : r.it.t === 'puzzles' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${r.total ? `<a href="puzzle.html?hw=${a.id}&set=${r.ids.join(',')}">${esc(itemLabel(r.it))}</a>` : esc(itemLabel(r.it)) + ' (none left to assign)'}<b>${r.n}/${r.total}</b></li>`
           : r.it.t === 'task' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it))}</a><b>${r.done ? 'Solved' : 'Open'}</b></li>`
           : `<li class="${r.done ? 'ok' : ''}"><label><input type="checkbox" data-a="${a.id}" data-i="${i}" ${r.done ? 'checked' : ''}> ${esc(r.it.text)}</label></li>`).join('')}</ul></li>` }).join('') + '</ul>' : '<p class="muted">No homework right now.</p>');
   }
@@ -125,6 +126,19 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
     const next = { aid: c.dataset.a, uid: me.user.uid, checks };
     try { await F.setDoc(F.doc(db, 'astatus', key), { ...next, updatedAt: F.serverTimestamp() }); st[key] = next; paintHw() } catch { c.checked = !c.checked }
   });
+  $('#avBtn').onclick = () => $('#avFile').click();
+  $('#avFile').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const img = await new Promise((ok, no) => { const i = new Image(), u = URL.createObjectURL(f); i.onload = () => { URL.revokeObjectURL(u); ok(i) }; i.onerror = no; i.src = u });
+      const c = document.createElement('canvas'); c.width = c.height = 160; const k = Math.min(img.width, img.height), x = c.getContext('2d');
+      x.drawImage(img, (img.width - k) / 2, (img.height - k) / 2, k, k, 0, 0, 160, 160);
+      const data = c.toDataURL('image/jpeg', .82);
+      await F.updateDoc(F.doc(db, 'users', me.user.uid), { photo: data }); p.photo = data;
+      $('#avBtn').innerHTML = `<img src="${data}" alt=""><span class="cam" aria-hidden="true">📷</span>`;
+    } catch { alert('Could not save the photo. Try a smaller picture.') }
+    e.target.value = '';
+  };
   $('#accOut').onclick = logout;
   $('#accPw').onclick = () => { $('#pwForm').hidden = !$('#pwForm').hidden };
   $('#pwForm').onsubmit = async (e) => {

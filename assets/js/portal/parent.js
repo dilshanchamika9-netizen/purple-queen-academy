@@ -11,7 +11,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
   if (me.role === 'student') return (location.href = 'account.html');
   if (me.role !== 'parent') { await F.signOut(auth); return (location.href = 'login.html') }
   if (me.profile && me.profile.mustChange) return (location.href = 'login.html');
-  markSignedIn(true);
+  markSignedIn(true, 'parent');
   const p = me.profile || {}, kid = p.childUid;
   let child = {}, prog = {}, tm = {}, assigns = [], st = {};
   try { const s = await F.getDoc(F.doc(db, 'users', kid)); if (s.exists()) child = s.data() } catch {}
@@ -32,7 +32,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       <div class="acc-actions"><button type="button" class="btn btn-ghost btn-sm" id="accPw">Change password</button><button type="button" class="btn btn-ghost btn-sm" id="accOut">Sign out</button></div></div>
     <div class="acc-stats"><div><b>${passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${avg}%</b><span>Average mark</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study time, 7 days</span></div><div><b>${late}</b><span>Homework overdue</span></div><div><b>${att.pct == null ? '—' : att.pct + '%'}</b><span>Attendance</span></div></div>
     <section class="acc-card"><h3>Homework</h3>${assigns.length ? `<ul class="hw-list">${assigns.map(a => { const x = assignStat(a, kid, prog, st[a.id + '_' + kid], tm);
-      return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<ul class="hw-items">${x.items.map(r => `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><span>${esc(itemLabel(r.it))}</span><b>${r.mark == null ? '' : r.mark + '%'}</b></li>`).join('')}</ul></li>` }).join('')}</ul>` : '<p class="muted">No homework given yet.</p>'}</section>
+      return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<ul class="hw-items">${x.items.map(r => `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><span>${esc(itemLabel(r.it))}</span><b>${r.total != null ? r.n + '/' + r.total : r.mark == null ? '' : r.mark + '%'}</b></li>`).join('')}</ul></li>` }).join('')}</ul>` : '<p class="muted">No homework given yet.</p>'}</section>
     <section class="acc-card" id="feeBox"><h3>Fees</h3>${feesBlock(invs, { payBtn: true })}</section>
     <section class="acc-card"><h3>Attendance</h3>${att.total ? `<p><b>${att.pct}%</b> attended · ${att.present} present, ${att.late} late, ${att.absent} absent</p>` : ''}${attTable(att, kid)}</section>
     <section class="acc-card"><h3>Study time</h3><p class="muted small">Active time only: the page open and in use. Total ${fmtTime(tm.total || 0)}.</p>${dayBars(tm)}</section>

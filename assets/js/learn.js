@@ -53,7 +53,8 @@
       <div class="lp-xp"><span>XP</span><b id="xpTxt">0</b></div>
     </div>
     <ol class="lp-list" id="lessonList"></ol>
-    <label class="lp-coach"><input type="checkbox" id="coachView"> <span data-t="coach"></span></label>
+    <div class="lp-gate" id="lpGate" hidden></div>
+    <label class="lp-coach" id="coachWrap"><input type="checkbox" id="coachView"> <span data-t="coach"></span></label>
     <button class="lp-cert" type="button" id="certBtn" hidden></button>
   </aside>
   <section class="lp-main">
@@ -73,6 +74,9 @@
   const UI = {
     get level() { return M.level }, get module() { return M.title },
     mod: { en: 'Module', si: 'මොඩියුලය' }, nextMod: { en: 'Next module', si: 'ඊළඟ මොඩියුලය' },
+    gate: { en: 'Free preview: Level 1 · Module 1. Sign in with your student ID to open every module.', si: 'නොමිලේ පෙරදසුන: මට්ටම 1 · මොඩියුලය 1. සියලුම මොඩියුල විවෘත කරන්න ඔයාගේ ශිෂ්‍ය ID එකෙන් ඇතුල් වෙන්න.' },
+    signIn: { en: 'Student sign in', si: 'ශිෂ්‍ය පිවිසුම' },
+    needLogin: { en: 'Student sign in to open this module.', si: 'මේ මොඩියුලය විවෘත කරන්න ශිෂ්‍ය පිවිසුම අවශ්‍යයි.' },
     lockedMod: { en: 'Finish the previous module to open this one.', si: 'මේක විවෘත වෙන්න කලින් මොඩියුලය අවසන් කරන්න ඕන.' },
     pcQ: { en: 'Queen', si: 'රැජින' }, pcR: { en: 'Rook', si: 'රුක්' }, pcB: { en: 'Bishop', si: 'බිෂොප්' }, pcN: { en: 'Knight', si: 'නයිට්' },
     pickNew: { en: 'Now choose the new piece.', si: 'දැන් අලුත් ඉත්තා තෝරන්න.' },
@@ -99,8 +103,9 @@
 
   const lkey = () => mi ? 'li' + (mi + 1) : 'li';
   const modDone = (k) => MODS[k].lessons.every(l => (progress[l.id] || 0) >= PASS);
-  const modOpen = (k) => coachView || k === 0 || modDone(k - 1);
-  const unlocked = (i) => coachView || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
+  const access = () => { try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
+  const modOpen = (k) => access() ? (coachView || k === 0 || modDone(k - 1)) : k === 0;
+  const unlocked = (i) => (coachView && access()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
   const done = () => M.lessons.filter(l => (progress[l.id] || 0) >= PASS).length;
 
   function paintStatic() {
@@ -108,6 +113,8 @@
     $$('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
     $$('.mode button').forEach(b => { b.textContent = tx(UI[b.dataset.mode]); b.setAttribute('aria-selected', b.dataset.mode === mode) });
     $('#coachView').checked = coachView;
+    $('#coachWrap').hidden = !access();
+    const gt = $('#lpGate'); gt.hidden = access(); if (!access()) gt.innerHTML = `<p>${tx(UI.gate)}</p><a class="btn btn-primary btn-sm" href="login.html?next=learn.html">${tx(UI.signIn)}</a>`;
     const vb = $('#voiceBtn'); vb.setAttribute('aria-pressed', voiceOn); vb.innerHTML = (voiceOn ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>') + '<span>' + tx(voiceOn ? UI.voiceOn : UI.voiceOff) + '</span>';
     document.documentElement.lang = lang === 'si' ? 'si' : 'en';
     const n = done(), pct = Math.round(n / M.lessons.length * 100);
@@ -273,7 +280,7 @@
   function openLesson(i) { if (!unlocked(i)) return; li = i; store.set(lkey(), li); renderWatch(true); root.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
   root.addEventListener('click', e => {
     const l = e.target.closest('#lessonList button'); if (l) { const i = +l.dataset.i; if (unlocked(i)) openLesson(i); else { l.classList.add('shake'); setTimeout(() => l.classList.remove('shake'), 500); l.title = tx(UI.locked) } }
-    const mt = e.target.closest('#modTabs button'); if (mt) { const k = +mt.dataset.m; if (modOpen(k)) switchModule(k); else { mt.classList.add('shake'); setTimeout(() => mt.classList.remove('shake'), 500); mt.title = tx(UI.lockedMod) } }
+    const mt = e.target.closest('#modTabs button'); if (mt) { const k = +mt.dataset.m; if (modOpen(k)) switchModule(k); else { mt.classList.add('shake'); setTimeout(() => mt.classList.remove('shake'), 500); mt.title = tx(access() ? UI.lockedMod : UI.needLogin); if (!access()) location.href = 'login.html?next=learn.html' } }
     const lg = e.target.closest('.lang button'); if (lg) { hush(); lang = lg.dataset.lang; store.set('lang', lang); mode === 'watch' ? (paintStatic(), showStep(si, false), stop()) : (paintStatic(), showTask()) }
     const md = e.target.closest('.mode button'); if (md) md.dataset.mode === 'practice' ? renderPractice() : renderWatch(true);
   });
@@ -290,6 +297,7 @@
   { const qp = new URLSearchParams(location.search), qm = qp.get('m'), ql = qp.get('l');
     if (qm != null && MODS[+qm] && modOpen(+qm)) { mi = +qm; M = MODS[mi]; li = 0; if (!unlocked(0)) li = 0; if (ql != null && M.lessons[+ql] && unlocked(+ql)) li = +ql; else li = Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)); if (!unlocked(li)) li = 0; store.set('mi', mi); store.set(lkey(), li) } }
   renderWatch(false);
+  window.addEventListener('pq-auth', () => { if (!modOpen(mi)) { mi = 0; M = MODS[0]; li = 0; renderWatch(false) } else paintStatic() });
   window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
   window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { mi, li, si, mode, ti, score } } };
 })();
