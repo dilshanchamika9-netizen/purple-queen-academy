@@ -78,7 +78,9 @@ export const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: '
       <div class="sp-hwf"><div class="sp-tr"><b style="width:${pc}%"></b></div><em>${dn} / ${all} done</em>${nx ? `<a class="sp-btn p" href="${nx.href}">${dn ? 'Continue' : 'Start'} ${SVG.arrow}</a>` : `<a class="sp-btn" href="homework.html?a=${a.id}">Open ${SVG.arrow}</a>`}</div></li>`;
   }
   function paintHw() {
-    const s2 = assigns.map(a => ({ a, x: assignStat(a, uid, prog, st[a.id + '_' + uid], tm) }));
+    // the coach may have given the very same homework twice: show it once (same lessons / puzzle sets / tasks)
+    const sig = (a) => JSON.stringify((a.items || []).map(it => it.t === 'lesson' ? ['l', it.id] : it.t === 'puzzles' ? ['p', (it.sets && it.sets[uid]) || []] : it.t === 'task' ? ['k', it.q] : ['t', it.text])), seen = new Set();
+    const s2 = assigns.filter(a => { const k = sig(a); if (seen.has(k)) return false; seen.add(k); return true }).map(a => ({ a, x: assignStat(a, uid, prog, st[a.id + '_' + uid], tm) }));
     const op = s2.filter(s => s.x.state !== 'done'), dn = s2.filter(s => s.x.state === 'done');
     $('#hwBox').innerHTML = `<p class="sp-eyb">Homework from your coach<span>${op.length ? op.length + ' to do' : s2.length ? 'All done' : ''}</span></p>`
       + (op.length ? `<ul class="sp-hwgrid">${op.map(hwCard).join('')}</ul>` : `<div class="sp-empty">${s2.length ? 'No homework to do right now. Well done!' : 'No homework yet. Your coach will add it here.'}</div>`)
