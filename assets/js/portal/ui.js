@@ -12,7 +12,12 @@
     const paint = () => { b.innerHTML = de.dataset.theme === 'dark' ? ICON.sun : ICON.moon };
     paint(); b.onclick = () => { de.dataset.theme = de.dataset.theme === 'dark' ? 'light' : 'dark'; ls.set('pq-theme', de.dataset.theme); paint() };
     b.className = 'themebtn'; const cta = document.querySelector('.hdr-cta');
-    if (cta) cta.appendChild(b); else { fab.appendChild(b); document.body.appendChild(fab) }
+    // desktop: top right of the header; phone: small round button at the bottom right (no room in the header)
+    const b2 = b.cloneNode(true); b2.className = ''; b2.onclick = b.onclick; const paint2 = paint; 
+    if (cta) { cta.appendChild(b); fab.classList.add('fab-m') }
+    fab.appendChild(b2); document.body.appendChild(fab);
+    const sync = () => { b.innerHTML = b2.innerHTML = de.dataset.theme === 'dark' ? ICON.sun : ICON.moon };
+    b.onclick = b2.onclick = () => { de.dataset.theme = de.dataset.theme === 'dark' ? 'light' : 'dark'; ls.set('pq-theme', de.dataset.theme); sync() }; sync();
     // ripple
     document.addEventListener('pointerdown', (e) => {
       const t = e.target.closest('.btn, .mission .go'); if (!t) return;
