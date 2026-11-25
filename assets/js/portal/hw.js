@@ -13,6 +13,19 @@ export function dueLabel(a) {
   return d < 0 ? { t: `Overdue by ${-d} day${d === -1 ? '' : 's'}`, c: 'late' } : d === 0 ? { t: 'Due today', c: 'soon' } : d === 1 ? { t: 'Due tomorrow', c: 'soon' } : { t: `Due in ${d} days · ${dueText(a)}`, c: '' };
 }
 
+// A homework made only of lessons from one module is a module study plan: show the module name, no due date.
+export function hwView(a, x) {
+  const its = x.items.map(r => r.it);
+  const lessonOnly = its.length > 0 && its.every(t => t.t === 'lesson');
+  let title = a.title;
+  if (lessonOnly) {
+    const ms = [...new Set(its.map(t => lessonPos(t.id)).filter(Boolean).map(p => p.m))];
+    if (ms.length === 1) title = `${PQ_MOD(MODS, ms[0]).label} · ${MODS[ms[0]].title.en}`;
+    else if (ms.length > 1) title = 'Lessons from your coach';
+  }
+  return { title, lessonOnly };
+}
+
 // x = assignStat(...) ; L = lesson marks {id: %}
 export function hwSteps(a, x, L) {
   let blockBy = null; // title of the first earlier lesson in this homework that is not passed

@@ -1,7 +1,7 @@
 // One homework, step by step (opened from the student portal).
 import { auth, db, F, whoAmI, esc, markSignedIn, fmtTime } from './fb.js';
 import { assignStat, statePill } from './lms.js';
-import { hwSteps, nextStep, dueLabel } from './hw.js';
+import { hwView, hwSteps, nextStep, dueLabel } from './hw.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalHw');
 const aid = new URLSearchParams(location.search).get('a');
@@ -31,11 +31,11 @@ const KIND = { lesson: 'Lesson', puzzles: 'Puzzles', task: 'Board task', text: '
   try { const s = await F.getDoc(F.doc(db, 'astatus', aid + '_' + uid)); if (s.exists()) st = s.data() } catch {}
 
   function paint() {
-    const x = assignStat(a, uid, prog, st, tm), steps = hwSteps(a, x, prog.lessons || {}), nx = nextStep(steps), du = dueLabel(a);
+    const x = assignStat(a, uid, prog, st, tm), hv = hwView(a, x), steps = hwSteps(a, x, prog.lessons || {}), nx = nextStep(steps), du = dueLabel(a);
     const pc = x.total ? Math.round(x.done / x.total * 100) : 0;
     root.innerHTML = `<nav class="crumb hwcrumb" aria-label="Breadcrumb"><a href="account.html">My portal</a><span>/</span><span>Homework</span></nav>
       <section class="hwhead acc-card"><div class="hwring" style="--p:${pc}"><b>${x.done}/${x.total}</b><small>done</small></div>
-        <div class="hwh-t"><p class="eyebrow">Homework from your coach</p><h1>${esc(a.title)}</h1><p class="hwh-due ${x.state === 'done' ? '' : du.c}">${x.state === 'done' ? 'Completed' : du.t}${x.secs ? ' · ' + fmtTime(x.secs) + ' studied' : ''}</p>${a.note ? `<p class="hwnote">${esc(a.note)}</p>` : ''}</div>
+        <div class="hwh-t"><p class="eyebrow">Homework from your coach</p><h1>${esc(hv.title)}</h1><p class="hwh-due ${x.state === 'done' || hv.lessonOnly ? '' : du.c}">${x.state === 'done' ? 'Completed' : hv.lessonOnly ? '' : du.t}${x.secs ? (hv.lessonOnly && x.state !== 'done' ? '' : ' · ') + fmtTime(x.secs) + ' studied' : ''}</p>${a.note ? `<p class="hwnote">${esc(a.note)}</p>` : ''}</div>
         <div class="hwh-a">${statePill(x.state)}${nx ? `<a class="btn btn-primary" id="hwGo" href="${nx.href}">${x.done ? 'Continue' : 'Start'} ${ICON.arrow}</a>` : ''}</div></section>
       <section class="acc-card"><h3>Steps</h3><ol class="hwsteps">${steps.map((s, k) => `<li class="hst ${s.done ? 'ok' : s.lock ? 'lk' : nx && nx.i === s.i ? 'now' : ''}">
           <span class="hn">${s.done ? '✓' : s.lock ? ICON.lock : k + 1}</span>

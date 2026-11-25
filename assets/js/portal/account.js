@@ -1,6 +1,6 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn, fmtTime, today } from './fb.js';
 import './pay.js';
-import { hwSteps, nextStep as hwNext, dueLabel as hwDue, lessonHref as lHref } from './hw.js';
+import { hwView, hwSteps, nextStep as hwNext, dueLabel as hwDue, lessonHref as lHref } from './hw.js';
 import { feesBlock, attStat, attTable, assignStat, itemLabel, secsInLastDays, dueText, statePill, byId, MODS as LMODS } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalAccount');
@@ -122,17 +122,16 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
           ${att.total ? `<div class="stat" style="grid-column:1/-1">${ICO.cal}<b>${att.pct}%</b><span>Attendance · ${att.total} classes</span></div>` : ''}
         </div>
         <a class="pzcta rv-p" href="practice.html"><span class="pzi">${ICO.puzzle}</span><span><b>Puzzle training</b><small>2,500 puzzles in five levels · ${solved} solved</small></span>${ICO.arrow}</a>
-        <section class="acc-card rv-p"><h3>Study activity</h3><div class="heat">${heat}</div><div class="heatcap"><span>6 weeks ago</span><span>Today</span></div></section>
         <section class="acc-card rv-p"><h3>Achievements</h3><div class="badges">${BADGES.map(b => `<div class="bdg${b[1] ? ' on' : ''}"><i>${b[2]}</i>${b[0]}</div>`).join('')}</div></section>
       </aside>
     </div>`;
   root.querySelectorAll('.modcard .tg').forEach(t => t.onclick = () => t.closest('.modcard').classList.toggle('open'));
   paintHw(); if (window.PQ_UI) PQ_UI.enhance(root);
   function hwCard({ a, x }) {
-    const du = hwDue(a), pc = x.total ? Math.round(x.done / x.total * 100) : 0, steps = hwSteps(a, x, L), nx = x.state !== 'done' && hwNext(steps);
+    const hv = hwView(a, x), du = hwDue(a), pc = x.total ? Math.round(x.done / x.total * 100) : 0, steps = hwSteps(a, x, L), nx = x.state !== 'done' && hwNext(steps);
     const kinds = { lesson: 0, puzzles: 0, task: 0, text: 0 }; x.items.forEach(r => kinds[r.it.t] = (kinds[r.it.t] || 0) + (r.it.t === 'puzzles' ? (r.total || 0) : 1));
     const what = [kinds.lesson ? kinds.lesson + (kinds.lesson > 1 ? ' lessons' : ' lesson') : '', kinds.puzzles ? kinds.puzzles + ' puzzles' : '', kinds.task ? kinds.task + (kinds.task > 1 ? ' board tasks' : ' board task') : '', kinds.text ? kinds.text + (kinds.text > 1 ? ' tasks' : ' task') : ''].filter(Boolean).join(' · ');
-    return `<li class="hwc ${x.state}"><div class="hw-top"><div class="hwt"><a class="hwlink" href="homework.html?a=${a.id}"><b>${esc(a.title)}</b></a><span class="due ${x.state === 'done' ? '' : du.c}">${x.state === 'done' ? 'Completed' : du.t}</span></div>${statePill(x.state)}</div>
+    return `<li class="hwc ${x.state}"><div class="hw-top"><div class="hwt"><a class="hwlink" href="homework.html?a=${a.id}"><b>${esc(hv.title)}</b></a>${hv.lessonOnly && x.state !== 'done' ? '' : `<span class="due ${x.state === 'done' ? '' : du.c}">${x.state === 'done' ? 'Completed' : du.t}</span>`}</div>${statePill(x.state)}</div>
       ${a.note && x.state !== 'done' ? `<p class="hwnote">${esc(a.note)}</p>` : ''}
       <p class="hwwhat">${what}</p>
       <div class="hwprog"><i><b style="width:${pc}%"></b></i><em>${x.done}/${x.total} done</em><a class="btn btn-ghost btn-sm" href="homework.html?a=${a.id}">Open</a>${nx ? `<a class="btn btn-primary btn-sm" href="${nx.href}">${x.done ? 'Continue' : 'Start'} ${ICO.arrow}</a>` : ''}</div></li>`;
