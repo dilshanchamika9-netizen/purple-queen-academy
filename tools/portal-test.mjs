@@ -307,8 +307,8 @@ const rhref = await pg.getAttribute('#feeBox a[href^="receipt.html"]', 'href');
 await pg.goto(`${SITE}/${rhref}`); await pg.waitForSelector('.receipt', { timeout: 15000 });
 const rt = await pg.textContent('.receipt');
 ok(rt.includes('Payment receipt') && rt.includes('2,000.00') && rt.includes('REF123') && rt.includes('3,000.00'), 'receipt shows amount, reference and the balance after payment');
-await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#feeBox .fee-list', { timeout: 15000 });
-ok((await pp.textContent('#feeBox')).includes('Balance to pay'), 'parent sees the fees');
+await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
+ok(await pp.locator('#feeBox').count() === 0 && !(await pp.textContent('#portalParent')).includes('Balance to pay'), 'parent portal shows no fees, only the child’s progress');
 const fden = await pg.evaluate(async ([uid2]) => {
   const m = await import('./assets/js/portal/fb.js'); const r = {};
   const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
@@ -330,23 +330,56 @@ ok(await pg.locator('#portalCourse .sp-ls a').count() === 1 && (await pg.textCon
 ok(await pg.locator('#portalCourse .sp-lvtabs button.lk').count() === 2, 'Level 2 and Level 3 are locked until the level before is finished');
 const outbox = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/outbox`, { headers: owner }).then(r => r.json());
 const docsO = outbox.documents || [];
-ok(docsO.length >= 2 && docsO.every(d => d.fields.status.stringValue === 'done'), 'queued e-mails are processed (' + docsO.length + ')');
-ok(docsO.filter(d => d.fields.kind.stringValue === 'reminder').length === 1, 'the overdue fee reminder is created exactly once even after two runs');
+ok(docsO.length >= 1 && docsO.every(d => d.fields.status.stringValue === 'done'), 'queued e-mails are processed (' + docsO.length + ')');
+ok(docsO.filter(d => d.fields.kind.stringValue === 'reminder').length === 0, 'no automatic fee reminder e-mails are sent to parents');
 ok(docsO.every(d => d.fields.to.stringValue === 'p1@test.lk'), 'e-mails go only to the saved parent address');
 
-// monthly fee: set once on the student card, then tick Received (cash/bank) for this month
+// coach progress control: open a module, start from a module, reset everything
 await tab('students');
+await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
+await coachPage.waitForSelector('.dctl', { timeout: 10000 });
+await coachPage.click('details.mrow[data-k="1"] > summary');
+await coachPage.click('button[data-pc="openmod"][data-k="1"]');
+await coachPage.waitForSelector('button[data-pc="lockmod"][data-k="1"]', { timeout: 10000 });
+let ud = await fsDoc('users/' + uid1);
+ok(ud.fields.unlock && ud.fields.unlock.mapValue.fields.m.arrayValue.values[0].integerValue === '1', 'coach opens a locked module for one student');
+await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
+ok(await pg.locator('#portalCourse .sp-mod[data-k="1"].lk').count() === 0 && await pg.locator('#portalCourse .sp-mod[data-k="2"].lk').count() === 1, 'the student sees that module open and the next one still locked');
+await coachPage.click('details.mrow[data-k="3"] > summary');
+await coachPage.click('button[data-pc="openles"][data-k="3"][data-i="1"]');
+await coachPage.waitForSelector('button[data-pc="lockles"][data-k="3"][data-i="1"]', { timeout: 10000 });
+ok(true, 'coach opens a single lesson');
+await coachPage.click('details.mrow[data-k="2"] > summary');
+await coachPage.click('button[data-pc="startfrom"][data-k="2"]'); await coachPage.click('button[data-pc="startfrom"][data-k="2"]');
+await coachPage.waitForFunction(() => document.querySelector('#pcMsg') && document.querySelector('#pcMsg').textContent.startsWith('Saved'), null, { timeout: 10000 });
+let pv = await fsDoc('progress/' + uid1), n0 = Object.keys(pv.fields.lessons.mapValue.fields || {}).length;
+const before2 = await pg.evaluate(() => window.PQ_MODULES[0].lessons.length + window.PQ_MODULES[1].lessons.length);
+ok(n0 === before2, '“Start course from here” marks every lesson before that module as passed (' + n0 + ')');
+await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
+ok(await pg.locator('#portalCourse .sp-mod[data-k="2"].act').count() === 1, 'the student now starts at that module');
+await coachPage.click('details.mrow[data-k="2"] > summary', { force: true }).catch(() => {});
+await coachPage.click('button[data-pc="resetall"]'); await coachPage.click('button[data-pc="resetall"]');
+await coachPage.waitForFunction(() => document.querySelector('#pcMsg') && document.querySelector('#pcMsg').textContent.startsWith('Saved'), null, { timeout: 10000 });
+pv = await fsDoc('progress/' + uid1);
+ok(!Object.keys(pv.fields.lessons.mapValue.fields || {}).length && +pv.fields.epoch.integerValue > 1, 'coach resets all lessons to 0 (epoch raised so the student’s device wipes old marks)');
+await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
+ok((await pg.textContent('#portalCourse .sp-mod.act')).includes('0/'), 'after the reset the student is back at the first module');
+await coachPage.click('button[data-pc="lockall"]'); await coachPage.waitForFunction(() => !document.querySelector('button[data-pc="lockall"]'), null, { timeout: 10000 });
+await coachPage.click('#dClose');
+
+// monthly fee: set once on the student card, then tick Received (cash/bank) for this month
+await tab('fees');
 const ym = new Date().toISOString().slice(0, 7);
-await coachPage.evaluate((u) => { const c = document.querySelector(`#stuTable [data-uid="${u}"]`); c.querySelector('.cp-fee .mf').value = '3500'; c.querySelector('.cp-fee button[data-a="savefee"]').click() }, uid1);
-await coachPage.waitForSelector(`#stuTable [data-uid="${uid1}"] button[data-a="recv"]`, { timeout: 10000 });
+await coachPage.evaluate((u) => { const c = document.querySelector(`#monthBox [data-uid="${u}"]`); c.querySelector('.cp-fee .mf').value = '3500'; c.querySelector('.cp-fee button[data-a="savefee"]').click() }, uid1);
+await coachPage.waitForSelector(`#monthBox [data-uid="${uid1}"] button[data-a="recv"]`, { timeout: 10000 });
 let mi = await fsDoc(`invoices/m-${ym}-${uid1}`);
 ok(mi.fields && +mi.fields.amount.integerValue === 3500 && mi.fields.open.booleanValue === true, 'setting a monthly fee creates this month’s fee');
-await coachPage.selectOption(`#stuTable [data-uid="${uid1}"] select.fm`, 'bank');
-await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="recv"]`);
-await coachPage.waitForSelector(`#stuTable [data-uid="${uid1}"] .cp-got`, { timeout: 10000 });
+await coachPage.selectOption(`#monthBox [data-uid="${uid1}"] select.fm`, 'bank');
+await coachPage.click(`#monthBox [data-uid="${uid1}"] button[data-a="recv"]`);
+await coachPage.waitForSelector(`#monthBox [data-uid="${uid1}"] .cp-got`, { timeout: 10000 });
 mi = await fsDoc(`invoices/m-${ym}-${uid1}`);
 ok(mi.fields.open.booleanValue === false && mi.fields.payments.arrayValue.values[0].mapValue.fields.method.stringValue === 'bank', 'ticking Received marks the month paid by bank');
-ok((await coachPage.textContent(`#stuTable [data-uid="${uid1}"] .cp-got`)).includes('Bank'), 'student card shows the fee as received');
+ok((await coachPage.textContent(`#monthBox [data-uid="${uid1}"] .cp-got`)).includes('Bank'), 'fee shows the fee as received');
 await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable [data-uid]', { timeout: 15000 });

@@ -37,8 +37,10 @@ export function whoAmI() {
       off(); if (!user) return res(null);
       if (isStudentEmail(user.email)) {
         let profile = null; try { const s = await F.getDoc(F.doc(db, 'users', user.uid)); profile = s.exists() ? s.data() : null } catch {}
+        try { localStorage.setItem('pq-unlock', JSON.stringify((profile && profile.unlock) || {})) } catch {}
         return res({ user, role: 'student', profile });
       }
+      try { localStorage.removeItem('pq-unlock') } catch {}
       if (isParentEmail(user.email)) {
         let profile = null; try { const s = await F.getDoc(F.doc(db, 'users', user.uid)); profile = s.exists() ? s.data() : null } catch {}
         return res({ user, role: 'parent', profile });

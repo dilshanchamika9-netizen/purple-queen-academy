@@ -24,7 +24,7 @@ const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: 'Level 3
   const modOpen = (k) => PQ_MODOPEN(MODS, L, k, PASS); // strict order: a module opens when the one before it is fully passed
   const levels = [...new Set(MODS.map((m, k) => lvOf(k)))].sort();
   const firstK = (v) => MODS.findIndex((m, k) => lvOf(k) === v);
-  const levelOpen = (v) => modOpen(firstK(v));
+  const levelOpen = (v) => MODS.some((m, k) => lvOf(k) === v && modOpen(k));
   const curMod = MODS.findIndex((m, k) => !modDone(k)), lvNow = curMod < 0 ? levels[levels.length - 1] : lvOf(curMod);
   let lv = +new URLSearchParams(location.search).get('lv') || lvNow; if (!levels.includes(lv) || !levelOpen(lv)) lv = lvNow;
 
@@ -38,7 +38,7 @@ const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: 'Level 3
         const st = dn ? '<span class="sp-st d">Done</span>' : act ? '<span class="sp-st a">Active</span>' : open ? '<span class="sp-st a">Open</span>' : '<span class="sp-st l">Locked</span>';
         const nxt = m.lessons.findIndex(l => !passed(l));
         const ls = open ? m.lessons.map((l, i) => {
-          const ok = passed(l), on = nxt === -1 || i <= nxt, v = L[l.id], isNext = i === nxt; // strictly one after another
+          const ok = passed(l), on = nxt === -1 || i <= nxt || PQ_LESSONOPEN(MODS, L, k, i, PASS), v = L[l.id], isNext = i === nxt; // strictly one after another, unless the coach opened it
           const inner = `<i>${ok ? SVG.check : on ? i + 1 : SVG.lock}</i><span>${i + 1} · ${esc(l.title.en)}</span>${ok ? `<span class="s">${v}%</span>` : isNext ? `<span class="s">${v != null ? 'Continue' : 'Start'}</span>` : ''}`;
           return on ? `<li class="${ok ? 'd' : isNext ? 'a' : ''}"><a href="lesson.html?m=${k}&l=${i}">${inner}</a></li>` : `<li class="l"><div>${inner}</div></li>`;
         }).join('') : '';

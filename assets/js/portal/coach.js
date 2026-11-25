@@ -55,7 +55,7 @@ function render() {
   <div class="cp-head" data-tab="students"><div><h1>Students</h1><p id="stuSub">Loading…</p></div><div class="cp-hb"><div class="cp-view" role="group" aria-label="Show students as"><button type="button" data-view="grid" aria-pressed="true" title="Blocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Blocks</button><button type="button" data-view="list" aria-pressed="false" title="List"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor"/></svg>List</button></div><button type="button" class="sp-btn" id="csvBtn">Download CSV</button><button type="button" class="sp-btn p" id="addToggle">＋ Add student</button></div></div>
   <div class="cp-head" data-tab="homework"><div><h1>Homework</h1><p>Give lessons or puzzles, and see who has finished.</p></div></div>
   <div class="cp-head" data-tab="attendance"><div><h1>Attendance</h1><p>Mark each class: present, late or absent.</p></div></div>
-  <div class="cp-head" data-tab="fees"><div><h1>Fees</h1><p>Monthly fees are created on the 1st. Tick “Received” on each student card; special charges and part payments are here.</p></div></div>
+  <div class="cp-head" data-tab="fees"><div><h1>Fees</h1><p>Monthly fees are created on the 1st. Tick “Received” in the monthly list below; special charges and part payments are here.</p></div></div>
   <div class="cp-head" data-tab="profile"><div><h1>My profile</h1><p>Your coach card. The sign-in email cannot be changed here.</p></div></div>
   <div class="cp-stats" id="cStats" data-tab="students"></div>
   <form class="acc-card" id="atForm" data-tab="attendance"><h3>Attendance</h3>
@@ -107,6 +107,7 @@ function render() {
   </div>
   <section class="acc-card" id="detail" data-tab="students" hidden></section>
   <div class="cp-grid" id="stuTable" data-tab="students"><p class="muted">Loading…</p></div>
+  <div id="monthBox" data-tab="fees"></div>
   <div id="feesBox" data-tab="fees"></div>
   <div id="cpProfile" data-tab="profile"></div>`;
   try { tab = sessionStorage.getItem('pq-ctab') || 'students' } catch {}
@@ -249,11 +250,12 @@ function paintStats() {
   let given = 0, fin = 0, late = 0; assigns.forEach(a => (a.uids || []).forEach(u => { if (!students.some(x => x.uid === u)) return; const st = assignStat(a, u, progress[u], statuses[a.id + '_' + u], times[u]); if (a.due >= today()) { given++; if (st.complete) fin++ } if (st.late) late++ }));
   const last = sessions[0], lm = last ? Object.values(last.marks || {}) : [], lp = lm.length ? Math.round(lm.filter(v => v !== 'a').length / lm.length * 100) : null;
   const fees = students.filter(s => +s.monthlyFee > 0), unpaid = fees.filter(s => { const i = monthInv[s.uid]; return i && i.open !== false && (i.amount - (i.paid || 0)) > 0.001 });
+  const passedAll = students.reduce((a, s) => a + stat(s.uid).passed, 0), prog_pct = n && LESSONS.length ? Math.round(passedAll / (n * LESSONS.length) * 100) : 0;
   const toGet = unpaid.reduce((a, s) => a + (monthInv[s.uid].amount - (monthInv[s.uid].paid || 0)), 0);
   $('#cStats').innerHTML = `<div class="cp-st">${ring(n ? active / n * 100 : 0, n ? Math.round(active / n * 100) + '%' : '0')}<div><b>${active} / ${n}</b><small>studied this week</small></div></div>
     <div class="cp-st">${ring(lp || 0, lp == null ? '—' : lp + '%')}<div><b>Attendance</b><small>${last ? 'last class, ' + new Date(last.date + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'no class marked yet'}</small></div></div>
     <div class="cp-st">${ring(given ? fin / given * 100 : 0, given ? fin + '/' + given : '0')}<div><b>${open.length} homework</b><small>open${late ? ' · ' + late + ' overdue' : ''}</small></div></div>
-    <div class="cp-st">${ring(fees.length ? unpaid.length / fees.length * 100 : 0, String(unpaid.length), true)}<div><b>${shortMonth(ymNow())} fees due</b><small>${fees.length ? money0(toGet) + ' to collect' : 'no monthly fees set'}</small></div></div>`;
+    <div class="cp-st">${ring(prog_pct, prog_pct + '%')}<div><b>Course progress</b><small>${passedAll} lessons passed in total</small></div></div>`;
   const set = (id, v) => { const e = document.getElementById(id); if (e) { e.textContent = v; e.hidden = !v } };
   set('nStu', n || ''); set('nHw', open.length || ''); set('nFee', unpaid.length || ''); set('nAtt', '');
   const b = [...new Set(students.map(s => s.batch).filter(Boolean))].length;
@@ -278,22 +280,30 @@ function feeRow(s) {
     <span class="cp-recv"><select class="fm" aria-label="Paid by"><option value="cash">Cash</option><option value="bank">Bank</option></select><button type="button" class="cp-tick" data-a="recv">Received</button></span></div>`;
 }
 function card(s) {
-  const c = curLevel(s.uid), a = attStat(sessions, s.uid), on = isOnline(s), i = monthInv[s.uid];
-  const feeLate = i && i.due < today() && (i.amount - (i.paid || 0)) > 0.001, warn = (a.pct != null && a.pct < 70) || feeLate;
+  const c = curLevel(s.uid), a = attStat(sessions, s.uid), on = isOnline(s), t = stat(s.uid);
+  const mine = assigns.filter(x => (x.uids || []).includes(s.uid)).map(x => assignStat(x, s.uid, progress[s.uid], statuses[x.id + '_' + s.uid], times[s.uid]));
+  const hwDone = mine.filter(x => x.state === 'done').length, hwLate = mine.filter(x => x.late).length;
+  const warn = (a.pct != null && a.pct < 70) || hwLate > 0;
+  const cap = c.ck < 0 ? 'All modules done' : `Module ${PQ_MOD(MODS, c.ck).num} of ${c.idx.length} now`;
   return `<article class="cp-card${warn ? ' warn' : ''}" data-uid="${s.uid}">
     <div class="top"><span class="sp-av">${s.photo ? `<img src="${esc(s.photo)}" alt="">` : ini(s.name)}${on ? '<i class="dot" title="Online now"></i>' : ''}</span>
       <div class="who"><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button><small>${esc(s.sid)}${s.batch ? ' · ' + esc(s.batch) : ''}${s.mustChange ? ' · new password pending' : ''}</small></div><span class="lvp l${c.lv}">Level ${c.lv}</span></div>
     <div class="cp-rank" title="Level ${c.lv} modules">${c.idx.map(k => `<i class="${c.done(k) ? 'd' : k === c.ck ? 'a' : ''}" title="${esc(PQ_MOD(MODS, k).label)}"></i>`).join('')}</div>
-    <div class="cp-kv"><div><b>${c.dn}/${c.tot}</b><small>lessons</small></div><div><b class="${a.pct != null && a.pct < 70 ? 'lo' : ''}">${a.pct == null ? '—' : a.pct + '%'}</b><small>attendance</small></div>
+    <p class="cp-cap">${cap}</p>
+    <div class="cp-kv"><div><b>${c.dn}/${c.tot}</b><small>lessons</small></div><div><b>${t.puzzles}</b><small>puzzles solved</small></div><div><b class="${hwLate ? 'lo' : ''}">${mine.length ? hwDone + '/' + mine.length : '—'}</b><small>${hwLate ? hwLate + ' overdue' : 'homework'}</small></div></div>
+    <div class="cp-kv"><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><small>average mark</small></div><div><b class="${a.pct != null && a.pct < 70 ? 'lo' : ''}">${a.pct == null ? '—' : a.pct + '%'}</b><small>attendance</small></div>
       <div>${on ? `<b class="on">Online</b><small>${esc(s.onPage || 'now')}</small>` : `<b>${ago(s.lastSeen)}</b><small>last active</small>`}</div></div>
-    ${feeRow(s)}
     <div class="cp-ft acts"><button type="button" class="sp-btn" data-a="report">Report</button><button type="button" class="sp-btn" data-a="hw">Give homework</button>
       <details class="rowmenu cp-more"><summary class="mini" aria-label="More actions">•••</summary><div>
         <label>Level<select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></label>
         <label>Batch<input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></label>
-        <label>Monthly fee (LKR)<span class="cp-fset"><input class="mf" type="number" min="0" step="1" value="${+s.monthlyFee || ''}" aria-label="Monthly fee for ${esc(s.name)}"><button type="button" class="mini" data-a="savefee">Save</button></span></label>
         <hr><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></div>
   </article>`;
+}
+function paintMonth() {
+  const box = $('#monthBox'); if (!box) return;
+  box.innerHTML = `<section class="acc-card cp-month"><h3>${monthName(ymNow())} · monthly fees</h3><p class="muted small">Set each student’s monthly fee once. It is created on the 1st of every month. Tick Received when it is paid.</p>
+    ${students.length ? students.map(s => `<div class="cp-mrow" data-uid="${s.uid}"><span class="who"><b>${esc(s.name)}</b><small>${esc(s.sid)}</small></span>${feeRow(s)}</div>`).join('') : '<p class="muted">No students yet.</p>'}</section>`;
 }
 function paintTable() {
   const box = $('#stuTable'); if (!box) return;
@@ -302,6 +312,7 @@ function paintTable() {
   const rows = students.filter(s => !f || [s.sid, s.name, s.batch].join(' ').toLowerCase().includes(f));
   box.innerHTML = rows.length ? rows.map(card).join('') : `<p class="cp-empty">${students.length ? 'No student matches the search.' : 'No students yet. Press “Add student” above.'}</p>`;
   open.forEach(u => { const d = box.querySelector(`[data-uid="${u}"] details.cp-more`); if (d) d.open = true });
+  paintMonth();
 }
 root.addEventListener('change', async (e) => {
   const tr = e.target.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable')) return;
@@ -310,7 +321,7 @@ root.addEventListener('change', async (e) => {
   try { await F.updateDoc(F.doc(db, 'users', uid), { [field]: v }); const s = students.find(x => x.uid === uid); s[field] = v; if (field === 'batch') paintAtt(true); e.target.classList.add('saved'); setTimeout(() => e.target.classList.remove('saved'), 900) } catch { alertRow(tr, 'Could not save. Try again.') }
 });
 root.addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable')) return; const s = students.find(x => x.uid === tr.dataset.uid);
+  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable, #monthBox')) return; const s = students.find(x => x.uid === tr.dataset.uid);
   const a = b.dataset.a;
   if (a === 'report') return showDetail(s.uid);
   if (a === 'hw') { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === s.uid }); paintLessons(); paintSum(); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
@@ -468,6 +479,7 @@ root.addEventListener('click', async (e) => {
 /* ---------- student report ---------- */
 function showDetail(uid) {
   openUid = uid; const s = students.find(x => x.uid === uid); if (!s) return;
+  const dd = $('#detail'); const openMods = new Set(dd && openUid === dd.dataset.uid ? [...dd.querySelectorAll('details.mrow[open]')].map(x => +x.dataset.k) : []); dd.dataset.uid = uid;
   const t = stat(uid), tm = times[uid] || {}, p = progress[uid] || {}, L = p.lessons || {};
   const tries = LESSONS.reduce((n, l) => n + ((tm.lessons && tm.lessons[l.id] && tm.lessons[l.id].a) || 0), 0);
   const weak = LESSONS.filter(l => L[l.id] != null && L[l.id] < PASS).map(l => ({ l, v: L[l.id] })).sort((a, b) => a.v - b.v).slice(0, 5);
@@ -475,15 +487,19 @@ function showDetail(uid) {
   const d = $('#detail'); d.hidden = false;
   const ini = esc((s.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
   const lv = +s.level || 1, att = attStat(sessions, uid);
+  const UL = { m: [...((s.unlock || {}).m || [])], l: [...((s.unlock || {}).l || [])] }, ulMod = (k) => UL.m.includes(k), ulLes = (k, i) => UL.l.includes(k + ':' + i);
   const modRow = (m, k, open) => { const ls = m.lessons, done = ls.filter(l => (L[l.id] || 0) >= PASS).length, pct = Math.round(done / ls.length * 100);
-    return `<details class="mrow"${open ? ' open' : ''}><summary><span class="mt"><small>${PQ_MOD(MODS, k).label}</small><b>${esc(m.title.en)}</b></span><span class="mbar"><span style="width:${pct}%"></span></span><em>${done}/${ls.length}</em></summary>
-      <ul class="mls">${ls.map(l => { const v = L[l.id]; return `<li class="${v == null ? '' : v >= PASS ? 'ok' : 'bad'}"><span>${esc(l.title.en)}</span><b>${v == null ? '—' : v + '%'}</b><small>${lessonAtt(tm, l.id) || '—'} ${lessonAtt(tm, l.id) === 1 ? 'try' : 'tries'} · ${lessonSecs(tm, l.id) ? fmtTime(lessonSecs(tm, l.id)) : '—'}</small></li>` }).join('')}</ul></details>` };
+    return `<details class="mrow" data-k="${k}"${open || openMods.has(k) ? ' open' : ''}><summary><span class="mt"><small>${PQ_MOD(MODS, k).label}${ulMod(k) ? ' · opened by you' : ''}</small><b>${esc(m.title.en)}</b></span><span class="mbar"><span style="width:${pct}%"></span></span><em>${done}/${ls.length}</em></summary>
+      <div class="mctl"><button type="button" class="mini" data-pc="${ulMod(k) ? 'lockmod' : 'openmod'}" data-k="${k}">${ulMod(k) ? 'Lock again' : 'Open whole module'}</button><button type="button" class="mini" data-pc="resetmod" data-k="${k}">Reset this module</button><button type="button" class="mini" data-pc="startfrom" data-k="${k}">Start course from here</button></div>
+      <ul class="mls">${ls.map((l, i) => { const v = L[l.id], ok = v != null && v >= PASS; return `<li class="${v == null ? '' : ok ? 'ok' : 'bad'}"><span>${esc(l.title.en)}</span><b>${v == null ? '—' : v + '%'}</b><small>${lessonAtt(tm, l.id) || '—'} ${lessonAtt(tm, l.id) === 1 ? 'try' : 'tries'} · ${lessonSecs(tm, l.id) ? fmtTime(lessonSecs(tm, l.id)) : '—'}</small>${ok ? '<span></span>' : ulLes(k, i) ? `<button type="button" class="mini on" data-pc="lockles" data-k="${k}" data-i="${i}">Unlocked ✓</button>` : `<button type="button" class="mini" data-pc="openles" data-k="${k}" data-i="${i}">Unlock</button>`}</li>` }).join('')}</ul></details>` };
   const myMods = MODS.map((m, k) => ({ m, k })).filter(x => PQ_MOD(MODS, x.k).lv === lv), other = MODS.map((m, k) => ({ m, k })).filter(x => PQ_MOD(MODS, x.k).lv !== lv);
   const firstOpen = (myMods.find(x => x.m.lessons.some(l => (L[l.id] || 0) < PASS)) || {}).k;
   d.innerHTML = `<div class="dhead"><div class="dwho">${s.photo ? `<img class="dav" src="${esc(s.photo)}" alt="">` : `<span class="ini dav">${ini}</span>`}<div><p class="eyebrow">Student report</p><h3 class="dname">${esc(s.name)}</h3><p class="dsub">${esc(s.sid)} · ${LEVELS[s.level] || ''}${s.batch ? ' · ' + esc(s.batch) : ''}</p></div></div>
       <div class="dact"><button type="button" class="btn btn-primary btn-sm" id="dAssign">Assign homework</button><button type="button" class="btn btn-ghost btn-sm" id="dClose">Close</button></div></div>
     <div class="acc-stats dkpi"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
     <div class="dgrid"><div class="dcol">
+      <section class="dbox dctl"><h4>Progress control <small>lessons for this student</small></h4><p class="muted small">Open any locked lesson or module, or reset marks. Open a module below to use its buttons. The student sees the change when the page is next opened.${UL.m.length || UL.l.length ? `<br><b>Opened by you:</b> ${[...UL.m.map(k => PQ_MOD(MODS, k).label), ...UL.l.map(x => { const [k, i] = x.split(':'); return PQ_MOD(MODS, +k).label + ' · lesson ' + (+i + 1) }) ].join(', ')}` : ''}</p>
+        <div class="mctl"><button type="button" class="mini danger" data-pc="resetall">Reset all lessons to 0</button>${UL.m.length || UL.l.length ? '<button type="button" class="mini" data-pc="lockall">Lock everything again</button>' : ''}<span class="pmsg2" id="pcMsg"></span></div></section>
       <section class="dbox"><h4>Study activity <small>last 14 days, minutes</small></h4>${dayBars(tm)}<p class="muted small">Counts only while a page is open and in use (idle over 2 minutes is not counted).</p></section>
       <section class="dbox"><h4>Progress by module <small>${LEVELS[lv] || ''}</small></h4>${myMods.map(x => modRow(x.m, x.k, x.k === firstOpen)).join('')}
         <details class="more"><summary>Other levels</summary>${other.map(x => modRow(x.m, x.k, false)).join('')}</details></section>
@@ -506,6 +522,29 @@ function showDetail(uid) {
   $('#dpSave').onclick = async () => { const ph = $('#dpPhone').value.trim(), em = $('#dpEmail').value.trim().toLowerCase(); try { await F.updateDoc(F.doc(db, 'users', uid), { parentPhone: ph, parentEmail: em }); s.parentPhone = ph; s.parentEmail = em; $('#dpMsg').className = 'pmsg2 ok'; $('#dpMsg').textContent = 'Saved.' } catch { $('#dpMsg').className = 'pmsg2 err'; $('#dpMsg').textContent = 'Could not save.' } };
   const g = $('#l1g'); if (g) g.onchange = async () => { const key = 'l' + (+s.level) + 'games'; try { await F.updateDoc(F.doc(db, 'users', uid), { [key]: g.checked }); s[key] = g.checked; showDetail(uid) } catch { g.checked = !g.checked } };
   const pb = $('#promoBtn'); if (pb) pb.onclick = async () => { try { const nl = (+s.level || 1) + 1; await F.updateDoc(F.doc(db, 'users', uid), { level: nl }); s.level = nl; paintTable(); showDetail(uid) } catch { pb.textContent = 'Could not save' } };
+  d.onclick = async (e) => {
+    const b = e.target.closest('button[data-pc]'); if (!b) return; const a = b.dataset.pc, k = +b.dataset.k, i = +b.dataset.i;
+    const arm = (txt) => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; const o = b.textContent; b.textContent = txt; setTimeout(() => { b.dataset.sure = ''; b.textContent = o }, 4000); return false };
+    const modIds = (n) => MODS[n].lessons.map(l => l.id);
+    try {
+      if (a === 'openmod' || a === 'lockmod' || a === 'openles' || a === 'lockles' || a === 'lockall') {
+        const u = { m: [...UL.m], l: [...UL.l] };
+        if (a === 'openmod') u.m.push(k); if (a === 'lockmod') u.m = u.m.filter(x => x !== k);
+        if (a === 'openles') u.l.push(k + ':' + i); if (a === 'lockles') u.l = u.l.filter(x => x !== k + ':' + i);
+        if (a === 'lockall') { u.m = []; u.l = [] }
+        await F.updateDoc(F.doc(db, 'users', uid), { unlock: u }); s.unlock = u; return showDetail(uid);
+      }
+      let lessons = { ...L }, xp = null;
+      if (a === 'resetall') { if (!arm('Press again: reset to 0')) return; lessons = {}; xp = 0 }
+      else if (a === 'resetmod') { if (!arm('Press again to reset')) return; modIds(k).forEach(id => delete lessons[id]) }
+      else if (a === 'startfrom') { if (!arm('Press again to confirm')) return; for (let n = 0; n < MODS.length; n++) modIds(n).forEach(id => { if (n < k) lessons[id] = Math.max(lessons[id] || 0, PASS); else delete lessons[id] }) }
+      else return;
+      const epoch = Date.now(), ref = F.doc(db, 'progress', uid), body = { lessons, epoch, updatedAt: F.serverTimestamp() }; if (xp != null) body.xp = xp;
+      try { await F.updateDoc(ref, body) } catch (er) { if (er.code === 'not-found') await F.setDoc(ref, { xp: xp || 0, ...body }); else throw er }
+      progress[uid] = { ...(progress[uid] || {}), lessons, epoch, ...(xp != null ? { xp } : {}) };
+      paintTable(); paintStats(); showDetail(uid); const m = $('#pcMsg'); if (m) { m.className = 'pmsg2 ok'; m.textContent = 'Saved. The student sees it next time the page opens.' }
+    } catch { const m = $('#pcMsg'); if (m) { m.className = 'pmsg2 err'; m.textContent = 'Could not save. Try again.' } }
+  };
   d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function exportCsv() {

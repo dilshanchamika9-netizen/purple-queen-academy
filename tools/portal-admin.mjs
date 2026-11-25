@@ -107,14 +107,7 @@ if (hour === 8 || process.env.REMIND_NOW === '1') {
       n += await queueOnce(`hw_${a.id}_${uid}`, { to: u.parentEmail, subject: `Homework due ${A.due}: ${A.title}`, text: `Hello,\n\nA reminder that the homework "${A.title}" for ${u.name} is due on ${A.due} and is not finished yet.\nThe student can open it after signing in: ${SITE}login.html\n\nPurple Queen Chess Academy`, kind: 'reminder' });
     }
   }
-  const invs = await db.collection('invoices').where('open', '==', true).get();
-  for (const d of invs.docs) {
-    const I = d.data(), bal = Math.round((I.amount - (I.paid || 0)) * 100) / 100; if (bal <= 0) continue;
-    const days = diffDays(I.due, today); if (days > 3) continue;
-    const u = await parentOf(I.uid); if (!u || !u.parentEmail) continue;
-    const late = days < 0, key = late ? `fee_${d.id}_late_${Math.floor(-days / 7)}` : `fee_${d.id}_soon`;
-    n += await queueOnce(key, { to: u.parentEmail, subject: late ? `Fee overdue: ${I.title}` : `Fee due ${I.due}: ${I.title}`, text: `Hello,\n\nThe fee "${I.title}" for ${I.name} (${I.currency || 'LKR'} ${bal.toFixed(2)} balance) ${late ? 'was due on' : 'is due on'} ${I.due}.\nYou can see it and pay it after signing in with the parent login: ${SITE}login.html\n\nPurple Queen Chess Academy`, kind: 'reminder' });
-  }
+  // fee reminder e-mails to parents are switched off (the coach decided parents see progress only)
   console.log(`reminders queued: ${n}`);
 }
 

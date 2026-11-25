@@ -111,3 +111,19 @@ html[data-theme="dark"] .cp-kv div { background:#1C1233 } html[data-theme="dark"
 @media (max-width:1366px) { .cp-grid.list .cp-card { grid-template-columns:minmax(160px, 1.2fr) minmax(190px, 1.2fr) minmax(210px, 1.2fr) auto } .cp-grid.list .cp-rank { display:none } }
 .cp-grid.list .cp-card > * { min-width:0 } .cp-grid.list .cp-ft { gap:6px } .cp-grid.list .cp-ft .sp-btn { padding:7px 10px; font-size:12.5px } .cp-grid.list .cp-fee { font-size:12.5px; gap:6px } .cp-grid.list .cp-fee small { font-size:11px } .cp-grid.list .cp-recv select { min-width:64px; height:30px } .cp-grid.list .cp-tick { height:30px; padding:0 10px; font-size:12px } .cp-grid.list .cp-kv small { font-size:10.5px }
 @media (max-width:900px) { .cp-grid.list .cp-card { grid-template-columns:1fr; gap:10px } .cp-grid.list .cp-rank { display:grid } .cp-view button { padding:7px 10px } }
+
+/* student card: progress only (no fees) */
+.cp-cap { margin:-4px 0 0; font:600 12px var(--body); color:#6B6080 }
+.cp-card .cp-kv + .cp-kv { margin-top:-2px }
+.cp-grid.list .cp-cap { display:none }
+/* monthly fees live in the Fees tab */
+.cp-month { margin-bottom:18px } .cp-month h3 { margin:0 0 4px } .cp-month .muted { margin:0 0 14px }
+.cp-mrow { display:grid; grid-template-columns:minmax(150px, 220px) minmax(0, 1fr); gap:14px; align-items:center; padding:10px 0; border-top:1px solid #EDE8F5 }
+.cp-mrow:first-of-type { border-top:0 } .cp-mrow .who b { display:block; font:700 14.5px var(--body); color:#1E1030 } .cp-mrow .who small { font:600 12px var(--body); color:#8A7FA0 }
+@media (max-width:640px) { .cp-mrow { grid-template-columns:1fr; gap:8px } }
+/* coach progress control in the student report */
+#detail .mctl { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:4px 0 10px }
+#detail .mini.on { background:#EAF6EF; border-color:#CFE6D8; color:#1F7A4D }
+#detail .mls li { grid-template-columns:minmax(0, 1fr) 54px 120px 92px }
+@media (max-width:560px) { #detail .mls li { grid-template-columns:minmax(0, 1fr) 48px 88px } #detail .mls li small { display:none } }
+html[data-theme="dark"] #detail .mini.on { background:#12301F; border-color:#245A3A; color:#9BE0B8 }
