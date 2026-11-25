@@ -12,6 +12,8 @@ service cloud.firestore {
     function isStudent() { return signedIn() && myEmail().matches('.*@pq-students[.]example[.]com'); }
     function isParent() { return signedIn() && myEmail().matches('.*@pq-parents[.]example[.]com'); }
     function myChild() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childUid; }
+    // optional profile text a student fills in: short strings only
+    function okText(k) { return !(k in request.resource.data) || (request.resource.data[k] is string && request.resource.data[k].size() <= 80); }
 
     match /coaches/{email} {
       allow read: if signedIn() && (myEmail() == email || isCoach());
@@ -22,7 +24,9 @@ service cloud.firestore {
       allow create: if isCoach() && request.resource.data.role in ['student', 'parent'];
       allow update: if isCoach()
         || ((isStudent() || isParent()) && request.auth.uid == uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen', 'photo', 'onPage'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen', 'photo', 'onPage', 'dob', 'school', 'grade', 'city', 'phone', 'parentPhone', 'parentEmail'])
+            && (isStudent() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dob', 'school', 'grade', 'city', 'phone', 'parentPhone', 'parentEmail']))
+            && okText('dob') && okText('school') && okText('grade') && okText('city') && okText('phone') && okText('parentPhone') && okText('parentEmail')
             && (!('onPage' in request.resource.data) || (request.resource.data.onPage is string && request.resource.data.onPage.size() < 40))
             && (!('photo' in request.resource.data) || (request.resource.data.photo is string && request.resource.data.photo.size() < 60000))
             && (request.resource.data.mustChange == false || request.resource.data.mustChange == resource.data.mustChange));

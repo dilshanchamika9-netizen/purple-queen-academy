@@ -129,7 +129,7 @@ await coachPage.waitForFunction(() => document.querySelector('#hMsg').textConten
 ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach sees the new homework in the list');
 
 // student sees it, the passed lesson is done, the written task can be ticked
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .sp-hwgrid', { timeout: 15000 });
 ok((await pg.textContent('#hwBox')).includes('Week 1 homework'), 'student sees the homework');
 const hwHref = await pg.getAttribute('#hwBox a.hwlink', 'href'); ok(/^homework\.html\?a=/.test(hwHref), 'homework card opens its own homework page');
 await pg.goto(`${SITE}/${hwHref}`); await pg.waitForSelector('#portalHw .hwsteps', { timeout: 15000 });
@@ -167,9 +167,9 @@ const pzSets = await coachPage.evaluate(async (uid) => {
 }, uid1);
 ok(pzSets.length === 2 && pzSets.every(a => a.length === 5), 'coach gave two puzzle sets of 5 to the student');
 ok(pzSets.length === 2 && !pzSets[0].some(id => pzSets[1].includes(id)), 'the second puzzle set repeats nothing from the first');
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .sp-hwgrid', { timeout: 15000 });
 ok((await pg.textContent('#hwBox')).includes('5 puzzles') && !(await pg.textContent('#hwBox')).includes('Beginner'), 'student portal shows the puzzle homework as a short summary');
-const pzHw = await pg.getAttribute('#hwBox .hwc:has-text("Puzzles B") a.hwlink', 'href');
+const pzHw = await pg.getAttribute('#hwBox .sp-hw:has-text("Puzzles B") a.hwlink', 'href');
 await pg.goto(`${SITE}/${pzHw}`); await pg.waitForSelector('#portalHw .hwsteps', { timeout: 15000 });
 const hwtxt = await pg.textContent('#portalHw');
 ok(hwtxt.includes('Puzzles: 5 to solve') && !hwtxt.includes('Beginner') && hwtxt.includes('0 of 5 solved'), 'homework page shows the puzzle step with 0 of 5 solved');
@@ -177,7 +177,7 @@ ok((await pg.getAttribute('#portalHw a[href*="practice.html?hw="]', 'href')).inc
 
 // profile photo: saved on the student's own profile, size-limited, not writable for others
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#avFile', { state: 'attached', timeout: 15000 });
+await pg.goto(`${SITE}/profile.html#profile`); await pg.waitForSelector('#avFile', { state: 'attached', timeout: 15000 });
 await pg.setInputFiles('#avFile', { name: 'me.png', mimeType: 'image/png', buffer: PNG }); await pg.waitForTimeout(2000);
 const udoc = await fsDoc('users/' + uid1);
 ok(!!(udoc.fields && udoc.fields.photo && udoc.fields.photo.stringValue.startsWith('data:image/jpeg')), 'profile photo is saved');
@@ -192,6 +192,17 @@ const pden2 = await pg.evaluate(async ([uid2]) => {
 ok(pden2.otherPhoto === 'permission-denied', 'student cannot change another student’s photo');
 ok(pden2.hugePhoto === 'permission-denied', 'a photo over the size limit is refused');
 ok(pden2.roleChange === 'permission-denied', 'student still cannot change their own role');
+// profile details (all optional): saved by the student, short text only, shown to the coach
+await pg.fill('#pf_school', 'Bandaranayake College'); await pg.fill('#pf_city', 'Gampaha'); await pg.fill('#pf_dob', '2014-05-02');
+await pg.click('#pfForm button[type=submit]'); await pg.waitForFunction(() => document.querySelector('#pfMsg').textContent === 'Saved.', null, { timeout: 10000 });
+const udoc2 = await fsDoc('users/' + uid1);
+ok(udoc2.fields.school && udoc2.fields.school.stringValue === 'Bandaranayake College' && udoc2.fields.dob.stringValue === '2014-05-02', 'student saves optional profile details');
+const pden3 = await pg.evaluate(async () => { const m = await import('./assets/js/portal/fb.js'); try { await m.F.updateDoc(m.F.doc(m.db, 'users', m.auth.currentUser.uid), { school: 'x'.repeat(200) }); return 'allowed' } catch (e) { return e.code } });
+ok(pden3 === 'permission-denied', 'over-long profile text is refused');
+await pg.click('#spUBtn'); ok(await pg.isVisible('#spMenu a[href="profile.html#fees"]') && await pg.isVisible('#spOut'), 'avatar menu shows profile links and sign out');
+await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
+ok(await pg.locator('#portalCourse .sp-mod.lk').count() >= 1 && await pg.locator('#portalCourse .sp-lvtabs button.lk').count() >= 1, 'lessons page shows locked modules and locked higher levels');
+ok(await pg.locator('#portalCourse .sp-ls a[href^="lesson.html?m=0&l=0"]').count() === 1, 'lessons page opens the first lesson in the lesson player');
 
 // study time: only active seconds count
 await pg.goto(`${SITE}/learn.html`); await pg.waitForTimeout(1500);
@@ -215,8 +226,8 @@ await coachPage.click('#atList .seg3 label.a');
 await coachPage.click('#atForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
 ok((await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox', { timeout: 15000 }); await pg.waitForTimeout(1000);
-ok((await pg.textContent('.stats6')).includes('50%') && (await pg.textContent('#portalAccount')).includes('Absent'), 'student sees 50% attendance and the absent class');
+await pg.goto(`${SITE}/profile.html#attendance`); await pg.waitForSelector('#spAtt', { timeout: 15000 }); await pg.waitForTimeout(500);
+ok((await pg.textContent('#spAtt')).includes('50%') && (await pg.textContent('#spAtt')).includes('Absent'), 'student sees 50% attendance and the absent class');
 await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
 ok((await pp.textContent('#portalParent')).includes('50%') && (await pp.textContent('#portalParent')).includes('Late'), 'parent sees attendance');
 const aden = await pg.evaluate(async () => { const m = await import('./assets/js/portal/fb.js'); try { await m.F.setDoc(m.F.doc(m.db, 'attendance', 'x'), { date: '2026-01-01', batch: 'x', marks: {}, uids: [] }); return 'allowed' } catch (e) { return e.code } });
@@ -238,7 +249,7 @@ ok((await coachPage.textContent('#tbList')).includes('Win the queen'), 'board ta
 await coachPage.fill('#hTitle', 'Board homework'); await coachPage.fill('#hDue', '2099-02-01');
 await coachPage.click('#hwForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#hMsg').textContent.includes('given to'), null, { timeout: 15000 });
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .sp-hwgrid', { timeout: 15000 });
 await pg.click('#hwBox a[href^="task.html"]'); await pg.waitForSelector('#board .lpc', { timeout: 15000 });
 ok((await pg.textContent('#portalTask')).includes('Win the queen'), 'student opens the board task');
 await pg.click('#board .lsq[data-sq="a1"]'); await pg.click('#board .lsq[data-sq="h1"]');
@@ -289,7 +300,7 @@ await coachPage.click('.payf button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#fTable').textContent.includes('Part paid'), null, { timeout: 10000 });
 ok(await coachPage.locator('#fTable a[href^="receipt.html"]').count() === 1, 'a receipt link appears after recording a payment');
 // student and parent see the balance and the receipt
-await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#feeBox .fee-list', { timeout: 15000 });
+await pg.goto(`${SITE}/profile.html#fees`); await pg.waitForSelector('#feeBox .fee-list', { timeout: 15000 });
 const ft = await pg.textContent('#feeBox');
 ok(ft.includes('Balance to pay') && ft.includes('4,000.00') && ft.includes('Receipt 1'), 'student sees the balance (5,000 + 1,000 - 2,000 = 4,000) and the receipt');
 const rhref = await pg.getAttribute('#feeBox a[href^="receipt.html"]', 'href');
@@ -351,7 +362,7 @@ ok(after.documents.some(d => d.fields.sid && d.fields.sid.stringValue === 'PQ000
 
 // 7) phone width: no sideways scroll on portal pages
 await pg.setViewportSize({ width: 390, height: 844 });
-for (const p of ['login.html', 'account.html', 'parent.html']) { await pg.goto(`${SITE}/${p}`); await pg.waitForTimeout(1500); const sw = await pg.evaluate(() => document.documentElement.scrollWidth); ok(sw <= 390, `${p} fits a phone (${sw}px)`) }
+for (const p of ['login.html', 'account.html', 'course.html', 'profile.html', 'parent.html']) { await pg.goto(`${SITE}/${p}`); await pg.waitForTimeout(1500); const sw = await pg.evaluate(() => document.documentElement.scrollWidth); ok(sw <= 390, `${p} fits a phone (${sw}px)`) }
 await coachPage.setViewportSize({ width: 390, height: 844 }); await coachPage.waitForTimeout(500);
 ok(await coachPage.evaluate(() => document.documentElement.scrollWidth) <= 390, 'coach panel fits a phone');
 

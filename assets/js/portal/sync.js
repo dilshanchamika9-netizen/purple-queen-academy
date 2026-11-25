@@ -47,7 +47,7 @@ addEventListener('pagehide', push);
   await push();
   // presence: the coach panel shows who is online and where
   const qs = new URLSearchParams(location.search), path = location.pathname;
-  const onPage = /learn|lesson/.test(path) ? 'Lessons' : /homework/.test(path) ? 'Homework' : /puzzle|practice/.test(path) ? (qs.get('hw') ? 'Homework puzzles' : 'Puzzles') : /task/.test(path) ? 'Board task' : 'My account';
+  const onPage = /learn|lesson|course/.test(path) ? 'Lessons' : /profile/.test(path) ? 'My profile' : /homework/.test(path) ? 'Homework' : /puzzle|practice/.test(path) ? (qs.get('hw') ? 'Homework puzzles' : 'Puzzles') : /task/.test(path) ? 'Board task' : 'My account';
   const beat = () => { if (document.visibilityState === 'visible') F.updateDoc(F.doc(db, 'users', uid), { lastSeen: F.serverTimestamp(), onPage }).catch(() => {}) };
   beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
   const chip = document.getElementById('pqUserChip');

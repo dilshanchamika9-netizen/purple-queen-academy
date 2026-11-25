@@ -1,0 +1,187 @@
+/* Student portal (my portal, lessons, profile, homework): app shell, separate from the public website look. */
+body.sp-body { background:#F5F3FA; min-height:100vh; color:#1E1030 }
+body.sp-body.pqp::after { display:none }
+.sp-body .fab { bottom:16px; right:16px }
+
+/* top bar */
+.sp-bar { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:18px; height:72px; padding:0 24px; background:#fff; border-bottom:1px solid #E7E2F0 }
+.sp-brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; min-width:0 }
+.sp-brand img { width:42px; height:42px; border-radius:50%; background:#F4EEFB; padding:3px; flex:none }
+.sp-brand small { display:block; font:700 11.5px var(--body); letter-spacing:.1em; text-transform:uppercase; color:#8A7FA0; white-space:nowrap }
+.sp-brand b { display:block; font:700 19px var(--body); color:#1E1030; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.sp-back { display:inline-flex; align-items:center; gap:6px; padding:9px 14px 9px 10px; border-radius:12px; border:1px solid #E7E2F0; color:#2A1240; font:700 14.5px var(--body); text-decoration:none; white-space:nowrap }
+.sp-back:hover { background:#F5F3FA }
+.sp-sp { flex:1 }
+
+/* avatar menu */
+.sp-user { position:relative }
+.sp-ubtn { display:flex; align-items:center; gap:10px; padding:5px 6px 5px 14px; border-radius:999px; border:1px solid #E7E2F0; background:#fff; cursor:pointer; font:700 14.5px var(--body); color:#1E1030 }
+.sp-ubtn:hover, .sp-ubtn[aria-expanded="true"] { border-color:#CDBDE3; background:#FBF9FE }
+.sp-av { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; overflow:hidden; flex:none; background:linear-gradient(135deg, #7A3FD0, #C9A45C); color:#fff; font:800 14px var(--body) }
+.sp-av img { width:100%; height:100%; object-fit:cover }
+.sp-ubtn .chev { width:16px; height:16px; color:#8A7FA0; transition:transform .2s } .sp-ubtn[aria-expanded="true"] .chev { transform:rotate(180deg) }
+.sp-menu { position:absolute; right:0; top:calc(100% + 10px); width:270px; background:#fff; border:1px solid #E7E2F0; border-radius:16px; box-shadow:0 24px 60px -20px rgba(42,18,64,.35); padding:8px; display:none }
+.sp-menu.on { display:block }
+.sp-mh { display:flex; gap:12px; align-items:center; padding:10px 10px 14px; border-bottom:1px solid #EFEBF5; margin-bottom:6px }
+.sp-mh .sp-av { width:46px; height:46px; font-size:16px }
+.sp-mh b { display:block; font:700 15.5px var(--body) } .sp-mh small { font:600 12.5px var(--body); color:#6B6080 }
+.sp-menu a, .sp-menu button { display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px; border-radius:10px; border:0; background:none; font:600 14.5px var(--body); color:#2A1240; text-decoration:none; cursor:pointer; text-align:left }
+.sp-menu a:hover, .sp-menu button:hover { background:#F5F3FA }
+.sp-menu svg { width:18px; height:18px; color:#7A3FD0; flex:none }
+.sp-menu hr { border:0; border-top:1px solid #EFEBF5; margin:6px 0 }
+.sp-menu .out { color:#9A2C46 } .sp-menu .out svg { color:#9A2C46 }
+
+/* page */
+.sp-main { max-width:1360px; margin:0 auto; padding:30px 26px 60px }
+.sp-hello { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:24px }
+.sp-hello h1 { font:700 clamp(30px, 3.4vw, 40px)/1.1 var(--display); margin:0; color:#2A1240 }
+.sp-hello p { margin:6px 0 0; color:#6B6080; font:600 15px var(--body) }
+.sp-tag { display:inline-flex; align-items:center; padding:8px 15px; border-radius:999px; background:#fff; border:1px solid #E7E2F0; font:700 13px var(--body); color:#5B2C91; white-space:nowrap }
+.sp-eyb { display:flex; align-items:center; gap:10px; margin:0 0 14px; font:600 13px var(--caps); letter-spacing:.2em; text-transform:uppercase; color:#5B2C91 }
+.sp-eyb::before { content:""; width:8px; height:8px; background:#C9A45C; transform:rotate(45deg) }
+.sp-eyb span { margin-left:auto; font:700 13px var(--body); letter-spacing:0; text-transform:none; color:#6B6080 }
+.sp-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:999px; padding:12px 20px; font:700 14.5px var(--body); border:1.5px solid #E7E2F0; background:#fff; color:#1E1030; white-space:nowrap; text-decoration:none; cursor:pointer }
+.sp-btn.p { background:linear-gradient(135deg, #5B2C91, #8F5BDB); color:#fff; border-color:transparent; box-shadow:0 8px 20px -8px #7A3FD0 }
+.sp-btn.p:hover { filter:brightness(1.08) }
+.sp-btn svg { width:16px; height:16px }
+
+/* the two doors */
+.sp-doors { display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-bottom:36px }
+.sp-door { position:relative; isolation:isolate; display:flex; flex-direction:column; min-height:300px; padding:28px; border-radius:24px; overflow:hidden; color:#fff;
+  background:linear-gradient(140deg, #2A1240 0%, #4A2280 60%, #7A3FD0 100%); box-shadow:0 30px 60px -30px #2A1240; transition:transform .25s, box-shadow .25s }
+.sp-door:hover { transform:translateY(-3px); box-shadow:0 36px 70px -30px #2A1240 }
+.sp-door.pz { background:linear-gradient(140deg, #2A1240 0%, #3D1D6B 55%, #8A6A1E 130%) }
+.sp-door .ghost { position:absolute; right:-30px; bottom:-40px; width:270px; opacity:.13; filter:brightness(10); z-index:-1; pointer-events:none }
+.sp-door small { font:600 13px var(--caps); letter-spacing:.22em; text-transform:uppercase; color:#C9A45C }
+.sp-door h2 { margin:8px 0 6px; font:700 clamp(34px, 3.4vw, 44px)/1 var(--display); color:#fff }
+.sp-door h2 a { color:inherit; text-decoration:none }
+.sp-door h2 a::after { content:""; position:absolute; inset:0; z-index:1 }
+.sp-door p { margin:0; color:#D9CCF0; font:600 15px var(--body) }
+.sp-stat { display:flex; gap:34px; margin:24px 0 }
+.sp-stat b { display:block; font:800 34px/1 var(--body); font-variant-numeric:tabular-nums }
+.sp-stat span { font:600 12.5px var(--body); color:#C9B8E6; text-transform:uppercase; letter-spacing:.08em }
+.sp-segs { display:flex; gap:6px; margin-bottom:22px }
+.sp-segs i { flex:1; height:8px; border-radius:6px; background:rgba(255,255,255,.16); overflow:hidden }
+.sp-segs i b { display:block; height:100%; background:#C9A45C }
+.sp-go { position:relative; z-index:2; margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 16px; border-radius:16px; text-decoration:none;
+  background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14); transition:background .2s }
+.sp-go:hover { background:rgba(255,255,255,.16) }
+.sp-go span { font:600 14px var(--body); color:#E8DDF7 } .sp-go b { display:block; color:#fff; font:700 15.5px var(--body) }
+.sp-go .circ { width:48px; height:48px; border-radius:50%; background:#C9A45C; color:#2A1240; display:grid; place-items:center; flex:none }
+.sp-go .circ svg { width:18px; height:18px }
+
+/* homework cards */
+.sp-hwgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 480px), 1fr)); gap:20px; list-style:none; margin:0; padding:0 }
+.sp-hw { display:grid; gap:14px; padding:20px 22px; background:#fff; border:1px solid #E7E2F0; border-radius:18px }
+.sp-hw.late { border-color:#F0C9C4 }
+.sp-hwh { display:flex; justify-content:space-between; align-items:flex-start; gap:12px }
+.sp-hwh a { font:700 18px/1.3 var(--body); color:#1E1030; text-decoration:none } .sp-hwh a:hover { color:#5B2C91 }
+.sp-due { flex:none; display:inline-flex; align-items:center; font:700 12.5px var(--body); padding:5px 11px; border-radius:999px; background:#EEF6F1; color:#2F8A5B; white-space:nowrap }
+.sp-due.soon { background:#FFF2E0; color:#B5651D } .sp-due.late { background:#FCE8E6; color:#B3261E } .sp-due.none { background:#F1EEF6; color:#6B6080 }
+.sp-pend { display:flex; gap:10px; flex-wrap:wrap }
+.sp-pc { flex:1; min-width:170px; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; background:#F5F3FA; border:1px solid #E7E2F0 }
+.sp-pc i { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:#EFE7FB; color:#7A3FD0; flex:none }
+.sp-pc i svg { width:18px; height:18px }
+.sp-pc.pz i { background:#FBF3E0; color:#8A6A1E } .sp-pc.tk i { background:#E8F3EE; color:#2F8A5B }
+.sp-pc strong { font:800 20px var(--body) } .sp-pc span { font:600 13px var(--body); color:#6B6080 }
+.sp-pc.ok { opacity:.7 } .sp-pc.ok i { background:#2F8A5B; color:#fff }
+.sp-hwf { display:flex; align-items:center; gap:14px }
+.sp-tr { flex:1; height:8px; background:#ECE7F4; border-radius:8px; overflow:hidden } .sp-tr b { display:block; height:100%; border-radius:8px; background:linear-gradient(90deg, #7A3FD0, #C9A45C) }
+.sp-hwf em { font:700 13px var(--body); color:#5B2C91; font-style:normal; white-space:nowrap }
+.sp-empty { padding:26px; border:1px dashed #DCD2EA; border-radius:18px; background:#fff; color:#6B6080; font:600 15px var(--body); text-align:center }
+.sp-fold { margin-top:14px; border:1px dashed #DCD2EA; border-radius:14px; background:rgba(255,255,255,.6) }
+.sp-fold summary { display:flex; justify-content:space-between; padding:14px 18px; cursor:pointer; list-style:none; color:#6B6080; font:600 14.5px var(--body) }
+.sp-fold summary::-webkit-details-marker { display:none } .sp-fold summary::after { content:"Show ▾" } .sp-fold[open] summary::after { content:"Hide ▴" }
+.sp-fold ul { list-style:none; margin:0; padding:0 10px 10px; display:grid; gap:6px }
+.sp-fold li a { display:flex; justify-content:space-between; gap:12px; padding:11px 12px; border-radius:10px; background:#fff; border:1px solid #EFEBF5; text-decoration:none; color:#1E1030; font:600 14.5px var(--body) }
+.sp-fold li a span { color:#2F8A5B; font-weight:700; white-space:nowrap }
+
+/* lessons page */
+.sp-lvtabs { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:22px }
+.sp-lvtabs button { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:15px 20px; border-radius:999px; border:1px solid #E7E2F0; background:#fff; cursor:pointer; font:600 19px var(--display); color:#1E1030; text-align:left }
+.sp-lvtabs button.on { background:linear-gradient(135deg, #2A1240, #5B2C91); color:#fff; border-color:transparent }
+.sp-lvtabs button em { font:700 14px var(--body); font-style:normal; color:#C9A45C; white-space:nowrap }
+.sp-lvtabs button.lk { opacity:.6; cursor:not-allowed }
+.sp-lvnote { margin:-8px 0 18px; color:#6B6080; font:600 14px var(--body) }
+.sp-mods { display:grid; gap:12px }
+.sp-mod { background:#fff; border:1px solid #E7E2F0; border-radius:18px }
+.sp-mod > button { width:100%; display:grid; grid-template-columns:46px minmax(0, 1fr) minmax(160px, 380px); align-items:center; gap:16px; padding:16px 20px; border:0; background:none; cursor:pointer; text-align:left; font:inherit; color:inherit }
+.sp-mod.lk > button { cursor:default }
+.sp-num { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:#EFE7FB; color:#5B2C91; font:800 17px var(--body) }
+.sp-num svg { width:20px; height:20px }
+.sp-mod.dn .sp-num { background:#2F8A5B; color:#fff } .sp-mod.lk { opacity:.62 } .sp-mod.lk .sp-num { background:#F1EEF6; color:#9C93AE }
+.sp-mod small { display:block; font:700 11.5px var(--body); letter-spacing:.08em; text-transform:uppercase; color:#8A7FA0 }
+.sp-mod .t b { font:700 17px/1.3 var(--body) }
+.sp-row { display:flex; align-items:center; gap:12px } .sp-row .sp-tr { height:7px } .sp-mod.dn .sp-tr b { background:#2F8A5B }
+.sp-row em { font:700 13px var(--body); font-style:normal; color:#6B6080; white-space:nowrap }
+.sp-st { font:700 12px var(--body); padding:5px 10px; border-radius:999px; white-space:nowrap } .sp-st.d { background:#EEF6F1; color:#2F8A5B } .sp-st.a { background:#EFE7FB; color:#5B2C91 } .sp-st.l { background:#F1EEF6; color:#8A7FA0 }
+.sp-mod.act { border:2px solid #D4C1F2; box-shadow:0 20px 50px -30px #7A3FD0 }
+.sp-mod.act .sp-tr b { background:linear-gradient(90deg, #7A3FD0, #C9A45C) }
+.sp-ls { display:none; grid-template-columns:1fr 1fr; gap:8px; padding:0 20px 20px; list-style:none; margin:0 }
+.sp-mod.open .sp-ls { display:grid }
+.sp-ls li > * { display:flex; align-items:center; gap:12px; min-height:54px; padding:10px 14px; border-radius:12px; border:1px solid #E7E2F0; font:600 14.5px/1.3 var(--body); color:#1E1030; text-decoration:none }
+.sp-ls a:hover { border-color:#CDBDE3; background:#FBF9FE }
+.sp-ls i { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; flex:none; font:800 12px var(--body); font-style:normal; border:1.5px solid #D9D2E6; color:#6B6080 }
+.sp-ls i svg { width:14px; height:14px }
+.sp-ls .d i { background:#2F8A5B; border-color:#2F8A5B; color:#fff }
+.sp-ls .a > * { background:#EFE7FB; border-color:#D4C1F2 } .sp-ls .a i { background:#7A3FD0; border-color:#7A3FD0; color:#fff }
+.sp-ls .l > * { color:#9C93AE }
+.sp-ls .s { margin-left:auto; font:700 12.5px var(--body); color:#2F8A5B; white-space:nowrap } .sp-ls .a .s { color:#fff; background:#7A3FD0; padding:6px 12px; border-radius:999px }
+
+/* profile page */
+.sp-prof { display:grid; grid-template-columns:250px minmax(0, 1fr); gap:24px; align-items:start }
+.sp-tabs { position:sticky; top:96px; display:grid; gap:4px; padding:10px; background:#fff; border:1px solid #E7E2F0; border-radius:18px }
+.sp-tabs a { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; font:700 14.5px var(--body); color:#3D3150; text-decoration:none }
+.sp-tabs a svg { width:18px; height:18px; color:#7A3FD0 }
+.sp-tabs a:hover { background:#F5F3FA } .sp-tabs a.on { background:#EFE7FB; color:#2A1240; box-shadow:inset 3px 0 0 #7A3FD0 }
+.sp-card { background:#fff; border:1px solid #E7E2F0; border-radius:20px; padding:26px }
+.sp-card h2 { margin:0 0 4px; font:700 30px/1.1 var(--display); color:#2A1240 }
+.sp-card > p.sub { margin:0 0 22px; color:#6B6080; font:600 14.5px var(--body) }
+.sp-photo { display:flex; align-items:center; gap:20px; padding:18px; margin-bottom:22px; border-radius:16px; background:#F5F3FA }
+.sp-photo .sp-av { width:88px; height:88px; font-size:28px }
+.sp-photo b { display:block; font:700 18px var(--body) } .sp-photo small { display:block; margin:2px 0 10px; color:#6B6080; font:600 13px var(--body) }
+.sp-photo .acts { display:flex; gap:8px; flex-wrap:wrap }
+.sp-fixed { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:22px }
+.sp-fixed div { padding:12px 14px; border-radius:12px; border:1px solid #EFEBF5 }
+.sp-fixed small { display:block; font:700 11.5px var(--body); letter-spacing:.06em; text-transform:uppercase; color:#8A7FA0 } .sp-fixed b { font:700 15px var(--body) }
+.sp-form { display:grid; grid-template-columns:1fr 1fr; gap:16px 18px }
+.sp-form h3 { grid-column:1/-1; margin:8px 0 -4px; font:700 13px var(--body); letter-spacing:.08em; text-transform:uppercase; color:#8A7FA0 }
+.sp-form label { display:grid; gap:6px; font:700 13.5px var(--body); color:#3D3150 }
+.sp-form label span { font-weight:600; color:#8A7FA0 }
+.sp-form input, .sp-form select { width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid #E2DAEE; background:#fff; font:600 15px var(--body); color:#1E1030 }
+.sp-form input:focus, .sp-form select:focus { outline:0; border-color:#8F5BDB; box-shadow:0 0 0 4px rgba(143,91,219,.15) }
+.sp-form .full { grid-column:1/-1 }
+.sp-save { grid-column:1/-1; display:flex; align-items:center; gap:14px; margin-top:6px }
+.sp-msg { font:700 14px var(--body) } .sp-msg.ok { color:#2F8A5B } .sp-msg.err { color:#B3261E }
+.sp-badges { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px }
+.sp-badge { display:grid; justify-items:center; gap:10px; padding:20px 12px; border-radius:16px; border:1px solid #EFEBF5; text-align:center; font:700 14px var(--body); color:#9C93AE }
+.sp-badge i { width:56px; height:56px; border-radius:16px; display:grid; place-items:center; background:#F1EEF6 } .sp-badge i svg { width:26px; height:26px }
+.sp-badge.on { color:#2A1240; border-color:#EADBB8; background:#FFFCF5 } .sp-badge.on i { background:linear-gradient(135deg, #F6E3AE, #C9A45C); color:#2A1240 }
+.sp-badge small { font:600 12px var(--body); color:#8A7FA0 }
+.sp-attsum { display:flex; align-items:center; gap:20px; margin-bottom:18px }
+.sp-attsum b { font:800 44px/1 var(--body); color:#2A1240 } .sp-attsum span { color:#6B6080; font:600 14.5px var(--body) }
+
+@media (max-width:1020px) {
+  .sp-doors { grid-template-columns:1fr }
+  .sp-prof { grid-template-columns:1fr } .sp-tabs { position:static; grid-auto-flow:column; overflow-x:auto } .sp-tabs a { white-space:nowrap }
+  .sp-mod > button { grid-template-columns:46px minmax(0, 1fr) } .sp-mod > button .sp-row { grid-column:1/-1 }
+  .sp-badges { grid-template-columns:repeat(2, 1fr) }
+}
+@media (max-width:640px) {
+  .sp-bar { height:62px; padding:0 12px; gap:10px } .sp-brand small { display:none } .sp-brand b { font-size:16px } .sp-brand img { width:36px; height:36px }
+  .sp-ubtn { padding:4px } .sp-ubtn .nm, .sp-ubtn .chev { display:none } .sp-back span { display:none } .sp-back { padding:9px }
+  .sp-main { padding:18px 14px 50px }
+  .sp-hello { flex-direction:column; align-items:flex-start }
+  .sp-door { padding:22px; min-height:0 } .sp-stat { gap:22px; margin:18px 0 } .sp-stat b { font-size:28px }
+  .sp-lvtabs { grid-template-columns:1fr } .sp-ls { grid-template-columns:1fr; padding:0 14px 14px } .sp-mod > button { padding:14px }
+  .sp-form, .sp-fixed { grid-template-columns:1fr } .sp-card { padding:18px }
+  .sp-hwf { flex-wrap:wrap } .sp-hwf .sp-tr { flex-basis:100% }
+  .sp-photo { flex-direction:column; text-align:center } .sp-photo .acts { justify-content:center }
+}
+html[data-theme="dark"] body.sp-body { background:#0D0719; color:#F4ECFF }
+html[data-theme="dark"] .sp-bar, html[data-theme="dark"] .sp-hw, html[data-theme="dark"] .sp-mod, html[data-theme="dark"] .sp-card, html[data-theme="dark"] .sp-tabs, html[data-theme="dark"] .sp-menu, html[data-theme="dark"] .sp-ubtn, html[data-theme="dark"] .sp-lvtabs button:not(.on), html[data-theme="dark"] .sp-tag, html[data-theme="dark"] .sp-empty { background:#150C28; border-color:rgba(181,140,255,.16); color:#F4ECFF }
+html[data-theme="dark"] .sp-brand b, html[data-theme="dark"] .sp-hello h1, html[data-theme="dark"] .sp-hwh a, html[data-theme="dark"] .sp-card h2, html[data-theme="dark"] .sp-menu a, html[data-theme="dark"] .sp-menu button, html[data-theme="dark"] .sp-tabs a, html[data-theme="dark"] .sp-ls li > *, html[data-theme="dark"] .sp-back { color:#F4ECFF }
+html[data-theme="dark"] .sp-pc, html[data-theme="dark"] .sp-photo, html[data-theme="dark"] .sp-form input, html[data-theme="dark"] .sp-form select { background:#1C1233; border-color:rgba(181,140,255,.16); color:#F4ECFF }
+.sp-hwsec { padding:0 }
+.sp-form label em { font-style:normal }
+@media (max-width:640px) { .sp-hwf .sp-btn { margin-left:auto } }
