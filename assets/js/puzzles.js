@@ -47,7 +47,7 @@
         </div>
       </div>
       <div class="pz-gate" id="pzGate" hidden></div>
-      <label class="pz-auto" for="pzAutoChk"><input type="checkbox" id="pzAutoChk"> Open the next puzzle automatically</label>
+      <label class="pz-auto" for="pzAutoChk"><span><b>Auto next</b><small>Open the next puzzle after a correct answer</small></span><input type="checkbox" id="pzAutoChk" role="switch"></label>
       <div class="pz-prog"><div class="pz-prog-h"><span id="pzLvName"></span><span id="pzLvCount"></span></div><i><b id="pzLvBar"></b></i></div>
       <p class="pz-src">Puzzles from the Lichess open puzzle database (public domain).</p>
     </div>
