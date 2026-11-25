@@ -1,4 +1,4 @@
-/* Purple Queen puzzle trainer — 2,000 Lichess puzzles (CC0) in 5 levels */
+/* Purple Queen puzzle trainer — 2,500 Lichess puzzles (CC0) in 5 levels */
 (function () {
   const root = document.getElementById('puzzleApp');
   if (!root || !window.Chess) return;
@@ -94,6 +94,12 @@
     if (!unsolved.length) { if (hwSet || !access()) return null; unsolved = list }
     return unsolved[Math.floor(Math.random() * unsolved.length)];
   }
+  function keepInView() {
+    const w = document.querySelector('.pz-boardwrap'); if (!w || !cur) return;
+    const hd = document.querySelector('.hdr'), top = hd ? hd.getBoundingClientRect().bottom : 90, r = w.getBoundingClientRect();
+    if (window.__pzFirst !== false) { window.__pzFirst = false; return }
+    if (r.top < top || r.bottom > innerHeight) { scrollBy({ top: r.top - top - 8, behavior: 'smooth' }) }
+  }
   function load(p) {
     clearTimeout(nextT);
     if (!p) { cur = null; const hwDone = hwSet && access(); msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
@@ -101,10 +107,10 @@
     $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
     orient = game.turn() === 'w' ? 'b' : 'w';  // the solver plays the side that moves after the first move
-    buildGrid(); draw();
+    buildGrid(); draw(); keepInView();
     $('#pzTurn').innerHTML = `<span class="dotc ${orient}"></span>${orient === 'w' ? 'White' : 'Black'} to move`;
     msg('Watch the opponent’s move…', '');
-    $('#pzMeta').innerHTML = `<span>Rating ${p.r}</span>${p.t.slice(0, 3).map(t => `<span>${TNAME[t] || t}</span>`).join('')}`;
+    $('#pzMeta').innerHTML = hwSet && access() ? '' : `<span>Rating ${p.r}</span>${p.t.slice(0, 3).map(t => `<span>${TNAME[t] || t}</span>`).join('')}`;
     $('#pzMeta').classList.add('hidden-themes');
     setTimeout(() => { const m = play(moves[0]); lastMove = m; idx = 1; draw(m); busy = false; msg(`Find the best move for ${orient === 'w' ? 'White' : 'Black'}.`, '') }, 650);
     paintSide();
@@ -238,9 +244,11 @@
   $('#pzShow').onclick = showSolution;
   $('#pzHint').onclick = () => { if (!cur || busy || idx >= moves.length) return; hinted = true; const f = moves[idx].slice(0, 2); sel = f; draw(); msg('Hint: move the highlighted piece.', '') };
 
-  fetch('assets/data/puzzles.json').then(r => { if (!r.ok) throw 0; return r.json() }).then(d => {
+  const getJ = (u) => fetch(u).then(r => { if (!r.ok) throw 0; return r.json() });
+  Promise.all([getJ('assets/data/puzzles.json'), hwSet ? getJ('assets/data/hwpuzzles.json').catch(() => ({ puzzles: [] })) : Promise.resolve({ puzzles: [] })]).then(([d, hw]) => {
     ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c) c.textContent = ALL.length.toLocaleString('en');
     LEVELS.forEach(l => ALL.filter(p => p.l === l.id).slice(0, FREE_PER_LEVEL).forEach(p => free.add(p.id)));
+    ALL = ALL.concat(hw.puzzles);
     if (hwSet && access()) root.classList.add('pz-hw');
     const q = new URLSearchParams(location.search).get('id'); const want = ALL.find(p => p.id === q); if (want && allowed(want)) level = want.l; load(want && allowed(want) ? want : pick());
   }).catch(() => { msg('Puzzles could not be loaded. Refresh the page to try again.', 'err') });

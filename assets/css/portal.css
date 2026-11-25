@@ -210,3 +210,44 @@ html[data-theme="dark"] .page-top h1 em, html[data-theme="dark"] h1 em, html[dat
 .avring .av:hover .cam, .avring .av:focus-visible .cam { opacity: 1 }
 .phimg { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px }
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chips:empty{display:none}.chips .chip{text-decoration:none}
+
+/* theme button sits at the top right of the header */
+.themebtn { width:40px; height:40px; flex:none; border-radius:50%; border:1px solid var(--edge); background:var(--glass-2); color:var(--purple); cursor:pointer; display:grid; place-items:center; transition:transform .2s }
+.themebtn:hover { transform:rotate(12deg) scale(1.08) } .themebtn svg { width:19px; height:19px }
+.hdr-cta { display:flex; align-items:center; gap:10px }
+/* coach panel: same light brand look, slightly warmer accent */
+body.pq-coach { --accent:#6B3FB0 }
+body.pq-coach .page-top .eyebrow { color:#A57A1F }
+.pz-hw #pzMeta { display:none }
+
+/* ---------- simple coach panel ---------- */
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0) }
+.coach-tools { display:grid; gap:12px; margin-bottom:16px }
+.pqp .acc-card.slim { padding:0; overflow:hidden }
+.slim > summary { list-style:none; cursor:pointer; padding:16px 20px; font:700 15px var(--body); color:var(--purple); display:flex; gap:10px; align-items:baseline }
+.slim > summary::-webkit-details-marker { display:none }
+.slim[open] > summary { border-bottom:1px solid var(--line) }
+.slim > form, .slim > div { padding:16px 20px 20px }
+.hwx .step { display:grid; grid-template-columns:40px 1fr; gap:14px; padding:18px 0; border-top:1px solid var(--line) }
+.hwx .step:first-of-type { border-top:0; padding-top:4px }
+.hwx .sn { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; font:700 15px var(--body); display:grid; place-items:center }
+.hwx .sb { display:grid; gap:12px; min-width:0 } .hwx .sb > b { font:700 17px var(--body); color:var(--night) }
+.hwx .hint { margin:0; font-size:13px; color:var(--muted) }
+.hwx .seg { justify-self:start } .hwx .seg button { padding:10px 26px; font-size:15px }
+.hwx .lesspick { display:grid; gap:10px; border:0; padding:0; max-height:none }
+.hwx .lesspick details { border:0; padding:0 } .hwx .lesspick summary { font:700 12px var(--caps); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:4px 0 8px; cursor:default; list-style:none }
+.hwx .lesspick summary::-webkit-details-marker { display:none }
+.hwx .lesspick label.lp { display:flex; gap:12px; align-items:center; padding:14px 16px; border:1.5px solid var(--edge); border-radius:16px; background:var(--glass-2); cursor:pointer; font:600 15px var(--body); margin:0 0 8px }
+.hwx .lesspick label.lp:has(input:checked) { border-color:var(--accent); background:rgba(122,63,208,.1) }
+.hwx .lesspick input[type=checkbox] { width:20px; height:20px; accent-color:var(--accent) }
+.pzpick { display:grid; gap:10px }
+.pzrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border:1.5px solid var(--edge); border-radius:16px; background:var(--glass-2); font:600 15px var(--body) }
+.stepper { display:flex; align-items:center; gap:8px }
+.stepper button { width:38px; height:38px; border-radius:50%; border:1px solid var(--edge); background:#fff; color:var(--accent); font:700 20px/1 var(--body); cursor:pointer }
+.stepper input { width:64px; text-align:center; font:700 18px var(--body); padding:8px 4px }
+.pztot { margin:0; font:700 15px var(--body); color:var(--accent) }
+.hwx .more { border:1px dashed var(--edge); border-radius:14px; padding:10px 14px } .hwx .more > summary { cursor:pointer; font:600 14px var(--body); color:var(--purple) }
+.hwx > .step .btn-primary { justify-self:start; padding:14px 34px; font-size:16px }
+.acts { white-space:nowrap } .acts > * { vertical-align:middle }
+.rowmenu { display:inline-block; position:relative } .rowmenu > summary { list-style:none; cursor:pointer; display:inline-block } .rowmenu > summary::-webkit-details-marker { display:none }
+.rowmenu > div { position:absolute; right:0; z-index:5; margin-top:6px; background:#fff; border:1px solid var(--edge); border-radius:14px; padding:8px; display:grid; gap:6px; box-shadow:var(--glow); min-width:160px }

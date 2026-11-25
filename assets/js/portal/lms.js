@@ -22,7 +22,7 @@ export function assignStat(a, uid, prog, st, tm) {
   const complete = done === items.length, late = !complete && a.due && a.due < today();
   return { items, done, total: items.length, secs, complete, late, state: complete ? 'done' : late ? 'late' : 'open' };
 }
-export const itemLabel = (it) => it.t === 'lesson' ? lessonName(it.id) : it.t === 'task' ? 'Board task: ' + it.q : it.t === 'puzzles' ? 'Puzzles: ' + Object.entries(it.counts || {}).map(([l, c]) => c + ' × ' + (PZ_LEVELS[l] || 'Level ' + l)).join(', ') : it.text;
+export const itemLabel = (it, stu) => it.t === 'lesson' ? lessonName(it.id) : it.t === 'task' ? 'Board task: ' + it.q : it.t === 'puzzles' ? (stu ? 'Puzzles: ' + Object.values(it.counts || {}).reduce((a, b) => a + b, 0) + ' to solve' : 'Puzzles: ' + Object.entries(it.counts || {}).map(([l, c]) => c + ' × ' + (PZ_LEVELS[l] || 'Level ' + l)).join(', ')) : it.text;
 export const lessonSecs = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].s) || 0;
 export const lessonAtt = (tm, id) => (tm && tm.lessons && tm.lessons[id] && tm.lessons[id].a) || 0;
 export function secsInLastDays(tm, n) {

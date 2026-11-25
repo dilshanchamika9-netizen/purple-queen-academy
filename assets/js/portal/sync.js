@@ -28,6 +28,12 @@ addEventListener('pagehide', push);
   const okAccess = !!me && (me.role === 'student' || me.role === 'coach');
   if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0') } catch {} }
   window.dispatchEvent(new Event('pq-auth'));
+  if (me && me.role === 'coach') {
+    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' });
+    const chip = document.getElementById('pqUserChip'); if (chip) chip.hidden = true;
+  } else if (me && me.role === 'parent') {
+    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'parent.html'; a.lastChild.textContent = 'Parent portal' });
+  }
   if (!me || me.role !== 'student') return
   uid = me.user.uid;
   let cloud = {}; try { const s = await F.getDoc(F.doc(db, 'progress', uid)); if (s.exists()) cloud = s.data() } catch {}

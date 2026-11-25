@@ -15,7 +15,7 @@ const root = $('#portalTask');
   let done = !!(cur.checks && cur.checks[idx]);
   root.innerHTML = `<div class="acc-head"><div><p class="eyebrow">Homework · ${esc(a.title)}</p><h1>Board <em>task</em></h1></div><div class="acc-actions"><a class="btn btn-ghost btn-sm" href="account.html">Back to my homework</a></div></div>
     <section class="acc-card"><p class="q big">${esc(it.q)}</p><p class="hint small">${it.kind === 'move' ? 'Click a white piece, then the square to move it to.' : 'Click the right square.'}</p>
-      <div class="lp-boardwrap tk"><div class="lb" id="board"></div></div><div class="fb" id="fb" aria-live="polite"></div></section>`;
+      <div class="lp-boardwrap tk hwboard"><div class="lb" id="board"></div></div><div class="fb" id="fb" aria-live="polite"></div></section>`;
   const board = new window.PQ_Board($('#board')); board.setPos(window.PQ_FP(it.fen), false); board.decorate({ files: true, ranks: true });
   const fb = $('#fb'); let sel = null, over = false;
   if (done) { fb.className = 'fb ok'; fb.textContent = 'You already solved this one. You can try again for practice.' }

@@ -23,6 +23,8 @@ async function afterSignIn() {
 
 function showTab(t) {
   box.querySelectorAll('.ptab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === t));
+  try { localStorage.setItem('pq-tab', t) } catch {}
+  $('#lgWho').textContent = t === 'coach' ? 'Coach' : 'Student';
   $('#stuForm').hidden = t !== 'student'; $('#coachForm').hidden = t !== 'coach'; $('#changeForm').hidden = true;
 }
 box.querySelectorAll('.ptab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.t)));
@@ -89,5 +91,6 @@ $('#changeForm').addEventListener('submit', async (e) => {
 
 // already signed in? continue
 whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach' || me.role === 'parent')) { if (me.role !== 'coach' && me.profile && me.profile.mustChange) showChange(me); else go(me.role) } });
-const t = new URLSearchParams(location.search).get('as'); if (t === 'coach') showTab('coach');
+const t = new URLSearchParams(location.search).get('as'); let st = null; try { st = localStorage.getItem('pq-tab') } catch {}
+if (t === 'coach' || (!t && st === 'coach')) showTab('coach');
 window.PQ_PORTAL = { esc };

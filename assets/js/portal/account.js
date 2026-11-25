@@ -114,9 +114,9 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       const x = assignStat(a, me.user.uid, prog, st[a.id + '_' + me.user.uid], tm);
       return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}
         <ul class="hw-items">${x.items.map((r, i) => r.it.t === 'lesson'
-          ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${(() => { const l = byId[r.it.id]; return l ? `<a href="learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}">${esc(itemLabel(r.it))}</a>` : esc(r.it.id) })()}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>`
-          : r.it.t === 'puzzles' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${r.total ? `<a href="puzzle.html?hw=${a.id}&set=${r.ids.join(',')}">${esc(itemLabel(r.it))}</a>` : esc(itemLabel(r.it)) + ' (none left to assign)'}<b>${r.n}/${r.total}</b></li>`
-          : r.it.t === 'task' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it))}</a><b>${r.done ? 'Solved' : 'Open'}</b></li>`
+          ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${(() => { const l = byId[r.it.id]; return l ? `<a href="learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}">${esc(itemLabel(r.it, true))}</a>` : esc(r.it.id) })()}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>`
+          : r.it.t === 'puzzles' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${r.total ? `<a href="puzzle.html?hw=${a.id}&set=${r.ids.join(',')}">${esc(itemLabel(r.it, true))}</a>` : esc(itemLabel(r.it, true)) + ' (none left to assign)'}<b>${r.n}/${r.total}</b></li>`
+          : r.it.t === 'task' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it, true))}</a><b>${r.done ? 'Solved' : 'Open'}</b></li>`
           : `<li class="${r.done ? 'ok' : ''}"><label><input type="checkbox" data-a="${a.id}" data-i="${i}" ${r.done ? 'checked' : ''}> ${esc(r.it.text)}</label></li>`).join('')}</ul></li>` }).join('') + '</ul>' : '<p class="muted">No homework right now.</p>');
   }
   $('#hwBox').addEventListener('change', async (e) => {

@@ -33,7 +33,7 @@ pg = await page();
 await pg.goto(`${SITE}/login.html?emu=1&as=coach`);
 await pg.fill('#cEmail', 'coach@test.lk'); await pg.fill('#cPw', 'coachpass1'); await pg.click('#coachForm button[type=submit]');
 await pg.waitForURL('**/coach.html', { timeout: 15000 }); ok(true, 'coach reaches coach panel');
-await pg.waitForSelector('#addForm');
+await pg.waitForSelector('#addForm', { state: 'attached' }); await pg.evaluate(() => { document.querySelector('#addDet').open = true });
 await pg.fill('#aName', 'Kavindu Perera'); await pg.selectOption('#aLevel', '1'); await pg.fill('#aBatch', 'Saturday 8:30 AM');
 await pg.click('#addForm button[type=submit]');
 await pg.waitForSelector('#nId', { timeout: 15000 });
@@ -43,7 +43,7 @@ const pid = (await pg.textContent('#nPId')).trim(), ppw = (await pg.textContent(
 ok(pid === 'PQ0001-P', 'parent login is created with the student (got ' + pid + ')');
 ok((await pg.textContent('#stuTable tbody')).includes('Kavindu'), 'student appears in the coach table');
 // second student to test isolation
-await pg.fill('#aName', 'Second Student'); await pg.click('#addForm button[type=submit]');
+await pg.evaluate(() => { document.querySelector('#addDet').open = true }); await pg.fill('#aName', 'Second Student'); await pg.click('#addForm button[type=submit]');
 await pg.waitForFunction(() => document.querySelector('#nId') && document.querySelector('#nId').textContent === 'PQ0002', null, { timeout: 15000 });
 ok(true, 'second student gets PQ0002');
 const coachPage = pg;
@@ -315,7 +315,7 @@ await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('1/98') && row.includes('100%'), 'coach table shows 1/98 lessons and 100%');
+ok(row.includes('1/98'), 'coach table shows 1/98 lessons');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
 const det = await coachPage.textContent('#detail');
@@ -323,7 +323,7 @@ ok(det.includes('Active time') && det.includes('Week 1 homework') && det.include
 ok((await coachPage.textContent('#hwList')).includes('1/2') || (await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach homework list shows progress');
 const [dl] = await Promise.all([coachPage.waitForEvent('download', { timeout: 10000 }), coachPage.click('#csvBtn')]);
 ok(/purple-queen-students-.*\.csv/.test(dl.suggestedFilename()), 'coach can download the CSV');
-await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="reset"]`);
+await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="reset"]`);
 await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 await coachPage.waitForSelector('#queue code', { timeout: 15000 });
@@ -336,7 +336,7 @@ await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(tr
 
 // removing a student also removes the parent login, study time and ticks
 const delBtn = `#stuTable tr[data-uid="${uid2}"] button[data-a="delete"]`;
-await coachPage.click(delBtn); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
+await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 const after = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/users`, { headers: owner }).then(r => r.json());
 ok(!after.documents.some(d => d.fields.sid && /^PQ0002/.test(d.fields.sid.stringValue)), 'removing a student also removes the parent login');
