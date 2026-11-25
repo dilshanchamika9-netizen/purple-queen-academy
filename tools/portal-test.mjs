@@ -121,7 +121,7 @@ ok(pden.listChildHomework === 'allowed', 'parent can list own child’s homework
 
 // coach gives homework: lesson "board" + one written task, to all students
 await coachPage.fill('#hTitle', 'Week 1 homework'); await coachPage.fill('#hDue', '2099-01-01'); await coachPage.fill('#hNote', 'Finish before class');
-await coachPage.check('#hLessons input[data-les="board"]'); await coachPage.fill('#hText', 'Play two games with a friend');
+await coachPage.click('#hLessons details:first-child summary'); await coachPage.check('#hLessons input[data-les="board"]'); await coachPage.fill('#hText', 'Play two games with a friend');
 await coachPage.click('#hwForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#hMsg').textContent.includes('given to'), null, { timeout: 15000 });
 ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach sees the new homework in the list');
