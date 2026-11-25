@@ -160,11 +160,11 @@ await pg.waitForTimeout(500);
 // attendance: coach marks a class, student and parent see the percentage
 await coachPage.selectOption('#atBatch', 'Saturday 8:30 AM');
 ok(await coachPage.locator('#atList .atrow').count() === 1, 'attendance list shows only the chosen batch');
-await coachPage.check('#atList input[value="l"]', { force: true });
+await coachPage.click('#atList .seg3 label.l');
 await coachPage.click('#atForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
 await coachPage.fill('#atDate', '2026-01-05'); await coachPage.dispatchEvent('#atDate', 'change');
-await coachPage.check('#atList input[value="a"]', { force: true });
+await coachPage.click('#atList .seg3 label.a');
 await coachPage.click('#atForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
 ok((await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
