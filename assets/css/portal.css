@@ -314,3 +314,5 @@ html:has(body.pq-coach), body.pq-coach { overflow-x:clip }
 .onl-empty { padding:6px 20px; color:var(--muted); font-size:13px }
 .onl-back { position:fixed; inset:0; z-index:65; background:rgba(26,11,46,.25); opacity:0; pointer-events:none; transition:opacity .2s } .onl-back.open { opacity:1; pointer-events:auto }
 html[data-theme="dark"] .onl { background:var(--mist) }
+.already { border:1.5px solid var(--edge); border-radius:16px; padding:14px 16px; margin-bottom:16px; background:linear-gradient(135deg, rgba(122,63,208,.1), rgba(201,164,92,.06)) }
+.already p { margin:0 0 10px } .already .row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px } .already .tag { margin-left:4px }

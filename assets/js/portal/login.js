@@ -89,8 +89,17 @@ $('#changeForm').addEventListener('submit', async (e) => {
   } catch (err) { say(m, 'Could not save the password: ' + (err.code || err.message), 'err') }
 });
 
-// already signed in? continue
-whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach' || me.role === 'parent')) { if (me.role !== 'coach' && me.profile && me.profile.mustChange) showChange(me); else go(me.role) } });
+// already signed in on this browser: show who, never jump in silently
+function showAlready(me) {
+  const who = me.role === 'coach' ? (me.profile && me.profile.name) || me.user.email : (me.profile && (me.profile.name || me.profile.sid)) || me.user.email;
+  const role = me.role === 'coach' ? 'Coach' : me.role === 'parent' ? 'Parent' : 'Student';
+  let d = $('#already'); if (!d) { d = document.createElement('div'); d.id = 'already'; d.className = 'already'; box.prepend(d) }
+  d.innerHTML = `<p>You are already signed in on this device as <b>${esc(who)}</b> <span class="tag">${role}</span></p><div class="row"><button type="button" class="btn btn-primary btn-sm" id="alGo">Continue as ${esc(String(who).split(' ')[0])}</button><button type="button" class="btn btn-ghost btn-sm" id="alOut">Sign out</button></div><p class="muted small">To use another account, sign out first or sign in below.</p>`;
+  $('#alGo').onclick = () => go(me.role);
+  $('#alOut').onclick = async () => { markSignedIn(false); await F.signOut(auth); d.remove() };
+  if (me.role === 'coach') showTab('coach');
+}
+whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach' || me.role === 'parent')) { if (me.role !== 'coach' && me.profile && me.profile.mustChange) showChange(me); else showAlready(me) } });
 const t = new URLSearchParams(location.search).get('as'); let st = null; try { st = localStorage.getItem('pq-tab') } catch {}
 if (t === 'coach' || (!t && st === 'coach')) showTab('coach');
 window.PQ_PORTAL = { esc };
