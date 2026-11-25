@@ -244,7 +244,7 @@ async function addStudent(e) {
     const s = { uid, role: 'student', sid, name, level, batch, parentPhone: pPhone, parentEmail: pEmail, mustChange: true }; students.push(s);
     let parent = null, perr = '';
     if (wantParent) { try { parent = await createParent(s) } catch (err) { perr = ' The parent login failed (' + (err.code || err.message) + '); use “Add parent login” in the table.' } }
-    paintTable(); paintStats(); paintAtt(true); if (feesApi) feesApi.refreshStudents(); showCreds(name, sid, pw, parent);
+    paintTable(); paintStats(); paintAtt(true); paintWho(); if (feesApi) feesApi.refreshStudents(); showCreds(name, sid, pw, parent);
     m.className = 'pmsg2 ' + (perr ? 'err' : 'ok'); m.textContent = (parent ? 'Student and parent logins created.' : 'Student login created.') + perr; e.target.reset(); $('#aParent').checked = wantParent;
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not create the login: ' + (err.code || err.message) }
 }
