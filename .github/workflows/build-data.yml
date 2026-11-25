@@ -16,6 +16,9 @@ on:
       - 'assets/js/lessons9.js'
       - 'assets/js/lessons10.js'
       - 'assets/js/lessons11.js'
+      - 'assets/js/lessons12.js'
+      - 'assets/js/lessons13.js'
+      - 'assets/js/lessons14.js'
       - 'assets/js/board.js'
       - '.github/workflows/build-data.yml'
 permissions:

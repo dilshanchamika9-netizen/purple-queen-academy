@@ -287,9 +287,9 @@ function showDetail(uid) {
     <p class="muted small">Active time counts only while the page is open and in use. Idle for more than 2 minutes is not counted.</p>
     <h4>Last 14 days (minutes of active study)</h4>${dayBars(tm)}
     ${weak.length ? `<h4>Needs work</h4><p>${weak.map(w => `<span class="chip bad">${esc(lessonName(w.l.id))} · ${w.v}%</span>`).join(' ')}</p>` : ''}
-    ${+s.level === 1 ? (() => { const ex = L['l1-promotion']; const ready = (ex || 0) >= PASS && s.l1games; return `<h4>Level 1 promotion</h4><ul class="plist"><li class="${(ex || 0) >= PASS ? 'ok' : ''}">Promotion test (30 tasks): ${ex == null ? 'not taken' : ex + '%' + ((ex || 0) >= PASS ? ' · passed' : ' · needs ' + PASS + '%')}</li>
-      <li class="${s.l1games ? 'ok' : ''}"><label><input type="checkbox" id="l1g" ${s.l1games ? 'checked' : ''}> Supervised games with notation completed</label></li></ul>
-      <button type="button" class="btn btn-primary btn-sm" id="promoBtn" ${ready ? '' : 'disabled'}>Promote to Level 2</button>` })() : ''}
+    ${+s.level === 1 || +s.level === 2 ? (() => { const n = +s.level, ex = L['l' + n + '-promotion'], gm = s['l' + n + 'games']; const ready = (ex || 0) >= PASS && gm; return `<h4>Level ${n} promotion</h4><ul class="plist"><li class="${(ex || 0) >= PASS ? 'ok' : ''}">Promotion test (30 tasks): ${ex == null ? 'not taken' : ex + '%' + ((ex || 0) >= PASS ? ' · passed' : ' · needs ' + PASS + '%')}</li>
+      <li class="${gm ? 'ok' : ''}"><label><input type="checkbox" id="l1g" ${gm ? 'checked' : ''}> Supervised games with notation completed</label></li></ul>
+      <button type="button" class="btn btn-primary btn-sm" id="promoBtn" ${ready ? '' : 'disabled'}>Promote to Level ${n + 1}</button>` })() : ''}
     <h4>Attendance</h4>${(() => { const a = attStat(sessions, uid); return a.total ? `<p><b>${a.pct}%</b> attended · ${a.present} present, ${a.late} late, ${a.absent} absent (${a.total} classes)</p>` + attTable(a, uid) : '<p class="muted">No classes marked yet.</p>' })()}
     <h4>Homework</h4>${mine.length ? `<table class="stu mini-t"><thead><tr><th>Homework</th><th>Due</th><th>Done</th><th>Status</th></tr></thead><tbody>${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<tr><td>${esc(a.title)}</td><td>${dueText(a)}</td><td>${st.done}/${st.total}</td><td>${statePill(st.state)}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">None given yet.</p>'}
     <h4>Modules and lessons</h4>${lessonTable(p, tm)}
@@ -298,8 +298,8 @@ function showDetail(uid) {
     <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
   $('#dClose').onclick = () => { d.hidden = true; openUid = null };
   $('#dpSave').onclick = async () => { const ph = $('#dpPhone').value.trim(), em = $('#dpEmail').value.trim().toLowerCase(); try { await F.updateDoc(F.doc(db, 'users', uid), { parentPhone: ph, parentEmail: em }); s.parentPhone = ph; s.parentEmail = em; $('#dpMsg').className = 'pmsg2 ok'; $('#dpMsg').textContent = 'Saved.' } catch { $('#dpMsg').className = 'pmsg2 err'; $('#dpMsg').textContent = 'Could not save.' } };
-  const g = $('#l1g'); if (g) g.onchange = async () => { try { await F.updateDoc(F.doc(db, 'users', uid), { l1games: g.checked }); s.l1games = g.checked; showDetail(uid) } catch { g.checked = !g.checked } };
-  const pb = $('#promoBtn'); if (pb) pb.onclick = async () => { try { await F.updateDoc(F.doc(db, 'users', uid), { level: 2 }); s.level = 2; paintTable(); showDetail(uid) } catch { pb.textContent = 'Could not save' } };
+  const g = $('#l1g'); if (g) g.onchange = async () => { const key = 'l' + (+s.level) + 'games'; try { await F.updateDoc(F.doc(db, 'users', uid), { [key]: g.checked }); s[key] = g.checked; showDetail(uid) } catch { g.checked = !g.checked } };
+  const pb = $('#promoBtn'); if (pb) pb.onclick = async () => { try { const nl = (+s.level || 1) + 1; await F.updateDoc(F.doc(db, 'users', uid), { level: nl }); s.level = nl; paintTable(); showDetail(uid) } catch { pb.textContent = 'Could not save' } };
   d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function exportCsv() {
