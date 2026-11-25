@@ -274,6 +274,7 @@ await coachPage.selectOption('#fFilter', 'all');
 const ftxt = await coachPage.textContent('#fTable');
 ok(ftxt.includes('November fee') && ftxt.includes('5,000.00') && ftxt.includes('Old fee') && ftxt.includes('Overdue'), 'coach fee table lists both fees with the overdue one marked');
 ok(await coachPage.locator('#fTable a[href^="https://wa.me/94771234567"]').count() >= 1, 'WhatsApp reminder link uses the parent number in international form');
+ok(await coachPage.locator('#fTable a[href^="https://mail.google.com/mail/?view=cm&fs=1&to=p1%40test.lk"]').count() >= 1, 'Open email link fills the parent e-mail, subject and message');
 // record a part payment on the November fee for student 1
 const nov = coachPage.locator(`#fTable tr[data-id]:has-text("November fee"):has-text("PQ0001")`);
 await nov.locator('button[data-f="pay"]').click();

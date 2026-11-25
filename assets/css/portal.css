@@ -209,3 +209,4 @@ html[data-theme="dark"] .page-top h1 em, html[data-theme="dark"] h1 em, html[dat
 .avring .av .cam { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; background: rgba(26,11,46,.55); opacity: 0; transition: opacity .2s; border-radius: 50% }
 .avring .av:hover .cam, .avring .av:focus-visible .cam { opacity: 1 }
 .phimg { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px }
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chips:empty{display:none}.chips .chip{text-decoration:none}

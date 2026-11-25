@@ -1,6 +1,6 @@
 // Coach: fees. Create charges for students, record payments, print receipts, send reminders.
 import { db, F, esc, today, money } from './fb.js';
-import { invStat, invPill, toCsv, download, waLink, feeText } from './lms.js';
+import { invStat, invPill, toCsv, download, waLink, mailLink, feeText } from './lms.js';
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 export function initFees(ctx) {
@@ -47,9 +47,9 @@ export function initFees(ctx) {
     paintStats();
     const st = getStudents(), byUid = Object.fromEntries(st.map(s => [s.uid, s]));
     const rows = invs.filter(i => { const x = invStat(i); return (filter === 'all' || (filter === 'open' && x.bal > 0) || (filter === 'overdue' && x.state === 'overdue') || (filter === 'paid' && x.state === 'paid')) && (!q || (i.name + ' ' + i.sid + ' ' + i.title).toLowerCase().includes(q)) });
-    $('#fTable tbody').innerHTML = rows.length ? rows.map(i => { const x = invStat(i), s = byUid[i.uid] || {}, wa = waLink(s.parentPhone, feeText(i, x));
+    $('#fTable tbody').innerHTML = rows.length ? rows.map(i => { const x = invStat(i), s = byUid[i.uid] || {}, wa = waLink(s.parentPhone, feeText(i, x)), ml = mailLink(s.parentEmail, `Fee reminder: ${i.title}`, feeText(i, x));
       return `<tr data-id="${i.id}"><td><b>${esc(i.sid)}</b> ${esc(i.name)}</td><td>${esc(i.title)}</td><td>${money(i.amount, i.currency)}</td><td>${money(x.paid, i.currency)}</td><td>${money(x.bal, i.currency)}</td><td>${i.due}</td><td>${invPill(x.state)}</td>
-      <td class="acts">${x.bal > 0 ? '<button type="button" class="mini" data-f="pay">Record payment</button>' : ''}${(i.payments || []).map((p, k) => `<a class="mini" href="receipt.html?i=${i.id}&p=${k}" target="_blank" rel="noopener">Receipt ${k + 1}</a>`).join('')}${x.bal > 0 && wa ? `<a class="mini" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}${x.bal > 0 && s.parentEmail ? '<button type="button" class="mini" data-f="mail">Email</button>' : ''}<button type="button" class="mini danger" data-f="del">Delete</button></td></tr>` }).join('')
+      <td class="acts">${x.bal > 0 ? '<button type="button" class="mini" data-f="pay">Record payment</button>' : ''}${(i.payments || []).map((p, k) => `<a class="mini" href="receipt.html?i=${i.id}&p=${k}" target="_blank" rel="noopener">Receipt ${k + 1}</a>`).join('')}${x.bal > 0 && wa ? `<a class="mini" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}${x.bal > 0 && s.parentEmail ? '<button type="button" class="mini" data-f="mail">Email</button>' : ''}${x.bal > 0 && ml ? `<a class="mini" href="${ml}" target="_blank" rel="noopener">Open email</a>` : ''}<button type="button" class="mini danger" data-f="del">Delete</button></td></tr>` }).join('')
       : `<tr><td colspan="8" class="muted">${invs.length ? 'Nothing matches.' : 'No fees yet. Create the first one above.'}</td></tr>`;
   }
   $('#fFilter').onchange = (e) => { filter = e.target.value; paint() };

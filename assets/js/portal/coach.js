@@ -1,7 +1,7 @@
 import { initBuilder } from './taskbuilder.js';
 import { initFees } from './coach-fees.js';
 import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn, fmtTime, today } from './fb.js';
-import { PZ_LEVELS, MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, attStat, attTable, attLabel, waLink } from './lms.js';
+import { PZ_LEVELS, MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, attStat, attTable, attLabel, waLink, mailLink } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalCoach');
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
@@ -59,7 +59,7 @@ function render() {
     <div class="pzpre" id="hPzPre"><button type="button" class="mini" data-pre="10,0,0,0,0">10 Beginner</button><button type="button" class="mini" data-pre="5,5,0,0,0">5 Beginner + 5 Improver</button><button type="button" class="mini" data-pre="0,5,5,0,0">5 Improver + 5 Club</button><button type="button" class="mini" data-pre="5,5,5,5,0">20 mixed</button><button type="button" class="mini" data-pre="0,0,0,0,0">Clear</button></div>
     <label class="chk" for="hMail"><input type="checkbox" id="hMail"> Email the parents about this homework (only those with an email saved)</label>
     <label for="hText">Extra tasks, one per line (the student ticks them off)<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label>
-    <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p></form>
+    <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p><div class="chips" id="hSend"></div></form>
   <section class="acc-card" id="hwList" data-tab="homework"><h3>Homework given</h3><p class="muted">Loading…</p></section>
   <section class="acc-card" data-tab="students"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
     <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Average</th><th>Attendance</th><th>XP</th><th>Active time<br><small>7 days</small></th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="11" class="muted">Loading…</td></tr></tbody></table></div></section>
@@ -239,7 +239,7 @@ async function saveAtt(e) {
     const gone = students.filter(s => marks[s.uid] === 'a'); let mails = 0;
     if ($('#atMail').checked) for (const s of gone) if (s.parentEmail) { try { await queueEmail({ to: s.parentEmail, subject: `Absent from class on ${date}`, text: `Hello,\n\n${s.name} was marked absent from the ${batch || 'class'} on ${date}. If this is a mistake, please tell the coach.\n\nPurple Queen Chess Academy`, kind: 'attendance' }); mails++ } catch {} }
     if (mails) m.textContent += ` ${mails} email${mails > 1 ? 's' : ''} queued.`;
-    $('#atWa').innerHTML = gone.map(s => { const l = waLink(s.parentPhone, `Hello, this is Purple Queen Chess Academy. ${s.name} was absent from class on ${date}. If this is a mistake, please tell the coach. Thank you.`); return l ? `<a class="chip" target="_blank" rel="noopener" href="${l}">WhatsApp: parent of ${esc(s.name)}</a>` : '' }).join('') }
+    $('#atWa').innerHTML = gone.map(s => { const l = waLink(s.parentPhone, `Hello, this is Purple Queen Chess Academy. ${s.name} was absent from class on ${date}. If this is a mistake, please tell the coach. Thank you.`); const txt = `Hello, this is Purple Queen Chess Academy. ${s.name} was absent from class on ${date}. If this is a mistake, please tell the coach. Thank you.`, ml = mailLink(s.parentEmail, `Absent from class on ${date}`, txt); return (l ? `<a class="chip" target="_blank" rel="noopener" href="${l}">WhatsApp: parent of ${esc(s.name)}</a>` : '') + (ml ? `<a class="chip" target="_blank" rel="noopener" href="${ml}">Email: parent of ${esc(s.name)}</a>` : '') }).join('') }
   catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save: ' + (err.code || err.message) }
 }
 
@@ -270,6 +270,7 @@ async function addHomework(e) {
     assigns.unshift({ id: ref.id, ...data, createdAt: { toMillis: () => Date.now() } });
     let mails = 0;
     if ($('#hMail').checked) for (const s of list) if (s.parentEmail) { try { await queueEmail({ to: s.parentEmail, subject: `New homework: ${title}`, text: `Hello,\n\nNew homework for ${s.name}: ${title}. Due ${due}.${note ? '\n' + note : ''}\nThe student can open it after signing in on the academy website.\n\nPurple Queen Chess Academy`, kind: 'homework' }); mails++ } catch {} }
+    $('#hSend').innerHTML = list.map(s => { const txt = `Hello, this is Purple Queen Chess Academy. New homework for ${s.name}: ${title}. Due ${due}.${note ? ' ' + note : ''} The student can open it after signing in on the academy website. Thank you.`, w = waLink(s.parentPhone, txt), ml = mailLink(s.parentEmail, `New homework: ${title}`, txt); return (w ? `<a class="chip" target="_blank" rel="noopener" href="${w}">WhatsApp: parent of ${esc(s.name)}</a>` : '') + (ml ? `<a class="chip" target="_blank" rel="noopener" href="${ml}">Email: parent of ${esc(s.name)}</a>` : '') }).join('');
     e.target.reset(); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
     m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.` + (short.length ? ' Not enough new puzzles: ' + short.join('; ') + '.' : '') + (mails ? ` ${mails} email${mails > 1 ? 's' : ''} queued.` : '');
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
