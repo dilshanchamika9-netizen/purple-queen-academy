@@ -8,7 +8,7 @@ if (!KEY || !REGION) { console.log('No Azure key yet: skipping narration.'); pro
 const VOICE = { en: ['en-IN', 'en-IN-NeerjaNeural'], si: ['si-LK', 'si-LK-ThiliniNeural'] };
 const ctx = { window: {} }; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('assets/js/lessons.js', 'utf8'), ctx);
-for (const f of ['lessons2','lessons3','lessons4','lessons5','lessons6', 'lessons7', 'lessons8', 'lessons9', 'lessons10']) vm.runInContext(fs.readFileSync('assets/js/' + f + '.js', 'utf8'), ctx);
+for (const f of ['lessons2','lessons3','lessons4','lessons5','lessons6', 'lessons7', 'lessons8', 'lessons9', 'lessons10', 'lessons11']) vm.runInContext(fs.readFileSync('assets/js/' + f + '.js', 'utf8'), ctx);
 const MODS = ctx.window.PQ_MODULES, P = ctx.window.PQ_PRACTICE;
 const keys = new Set();
 const add = (o) => { if (o && o.en) { keys.add('en|' + o.en); if (o.si) keys.add('si|' + o.si); } };
