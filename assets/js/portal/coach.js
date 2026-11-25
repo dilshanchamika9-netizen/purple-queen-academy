@@ -147,7 +147,7 @@ async function load() {
   times = {}; ts.docs.forEach(d => times[d.id] = d.data());
   assigns = as.docs.map(d => ({ id: d.id, ...d.data() }));
   statuses = {}; ss.docs.forEach(d => statuses[d.id] = d.data());
-  paintStats(); paintTable(); paintHw(); paintAtt(true);
+  paintStats(); paintTable(); paintHw(); paintAtt(true); paintWho();
 }
 const stat = (uid) => {
   const p = progress[uid] || {}, L = p.lessons || {};
