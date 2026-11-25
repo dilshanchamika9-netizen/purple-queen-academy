@@ -131,12 +131,14 @@ ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach 
 // student sees it, the passed lesson is done, the written task can be ticked
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
 ok((await pg.textContent('#hwBox')).includes('Week 1 homework'), 'student sees the homework');
-ok(await pg.locator('#hwBox .hw-items li').count() >= 2, 'homework lists the lesson and the written task');
-await pg.check('#hwBox input[data-a]'); await pg.waitForTimeout(1500);
-const aid = (await pg.getAttribute('#hwBox input[data-a]', 'data-a'));
+const hwHref = await pg.getAttribute('#hwBox a.hwlink', 'href'); ok(/^homework\.html\?a=/.test(hwHref), 'homework card opens its own homework page');
+await pg.goto(`${SITE}/${hwHref}`); await pg.waitForSelector('#portalHw .hwsteps', { timeout: 15000 });
+ok(await pg.locator('#portalHw .hst').count() >= 2, 'homework page lists the lesson and the written task');
+await pg.check('#portalHw input[data-i]'); await pg.waitForTimeout(1500);
+const aid = hwHref.split('a=')[1];
 const stdoc = await fsDoc(`astatus/${aid}_${uid1}`);
 ok(!!(stdoc.fields && stdoc.fields.checks), 'tick is saved for the coach and parent');
-ok((await pg.textContent('#hwBox')).includes('Done'), 'homework turns Done when every item is done');
+ok((await pg.textContent('#portalHw')).includes('Done'), 'homework turns Done when every item is done');
 const sden = await pg.evaluate(async ([uid2, aid]) => {
   const m = await import('./assets/js/portal/fb.js'); const r = {};
   const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
@@ -166,9 +168,12 @@ const pzSets = await coachPage.evaluate(async (uid) => {
 ok(pzSets.length === 2 && pzSets.every(a => a.length === 5), 'coach gave two puzzle sets of 5 to the student');
 ok(pzSets.length === 2 && !pzSets[0].some(id => pzSets[1].includes(id)), 'the second puzzle set repeats nothing from the first');
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
-const hwtxt = await pg.textContent('#hwBox');
-ok(hwtxt.includes('Puzzles: 5 to solve') && !hwtxt.includes('Beginner') && hwtxt.includes('0/5'), 'student sees the puzzle homework with 0/5 solved');
-ok((await pg.getAttribute('#hwBox a[href*="puzzle.html?hw="]', 'href')).includes('&set='), 'puzzle homework links to the puzzle page with its set');
+ok((await pg.textContent('#hwBox')).includes('5 puzzles') && !(await pg.textContent('#hwBox')).includes('Beginner'), 'student portal shows the puzzle homework as a short summary');
+const pzHw = await pg.getAttribute('#hwBox .hwc:has-text("Puzzles B") a.hwlink', 'href');
+await pg.goto(`${SITE}/${pzHw}`); await pg.waitForSelector('#portalHw .hwsteps', { timeout: 15000 });
+const hwtxt = await pg.textContent('#portalHw');
+ok(hwtxt.includes('Puzzles: 5 to solve') && !hwtxt.includes('Beginner') && hwtxt.includes('0 of 5 solved'), 'homework page shows the puzzle step with 0 of 5 solved');
+ok((await pg.getAttribute('#portalHw a[href*="practice.html?hw="]', 'href')).includes('&set='), 'puzzle homework opens the puzzle player with its set');
 
 // profile photo: saved on the student's own profile, size-limited, not writable for others
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');

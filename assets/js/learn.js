@@ -108,7 +108,7 @@
   // the coach sets the student's level: earlier levels stay open for review, and the first module of the student's level opens
   const stuLv = () => { try { return +localStorage.getItem('pq-level') || 1 } catch { return 1 } }, lvOf = (k) => (window.PQ_MOD ? PQ_MOD(MODS, k).lv : 1);
   const modOpen = (k) => access() ? ((coachView && isCoach()) || k === 0 || modDone(k - 1) || lvOf(k) < stuLv() || (lvOf(k) === stuLv() && lvOf(k - 1) < stuLv())) : k === 0;
-  const unlocked = (i) => (coachView && isCoach()) || (modOpen(mi) && access() && lvOf(mi) < stuLv()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
+  const unlocked = (i) => (coachView && isCoach()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
   const done = () => M.lessons.filter(l => (progress[l.id] || 0) >= PASS).length;
 
   function paintStatic() {
@@ -132,6 +132,7 @@
         <span class="n">${ok ? '✓' : lock ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>' : i + 1}</span><span class="t">${tx(l.title)}</span>${best != null ? `<span class="s">${best}%</span>` : ''}</button></li>` }).join('');
     $('#lessonNum').textContent = `${tx(UI.lesson)} ${li + 1} ${tx(UI.of)} ${M.lessons.length}`;
     $('#lessonTitle').textContent = tx(M.lessons[li].title);
+    window.dispatchEvent(new CustomEvent('pq-lesson', { detail: { mi, li, pct, done: n, total: M.lessons.length, label: window.PQ_MOD ? PQ_MOD(MODS, mi).label : '', title: tx(M.title), lesson: tx(M.lessons[li].title) } }));
   }
 
   /* ---------------- watch mode ---------------- */

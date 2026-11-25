@@ -1,0 +1,86 @@
+/* Purple Queen lesson player: a calm, focused learning screen, separate from the public website look. */
+body.player-body { background:#F5F3FA; min-height:100vh }
+body.player-body.pqp::after { display:none }
+.player-body .fab { bottom:16px; right:16px }
+
+/* top bar */
+.pl-bar { position:sticky; top:0; z-index:40; display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:20px; align-items:center; height:64px; padding:0 20px; background:#fff; border-bottom:1px solid #E7E2F0 }
+.pl-back { display:inline-flex; align-items:center; gap:6px; padding:8px 14px 8px 10px; border-radius:10px; border:1px solid #E7E2F0; color:#2A1240; font:700 14px var(--body); text-decoration:none; white-space:nowrap }
+.pl-back:hover { background:#F5F3FA; border-color:#CDBDE3 }
+.pl-course { display:flex; align-items:center; gap:12px; min-width:0 }
+.pl-course img { border-radius:50%; flex:none }
+.pl-course small { display:block; font:700 11px var(--body); letter-spacing:.08em; text-transform:uppercase; color:#8A7FA0 }
+.pl-course b { display:block; font:700 16px var(--body); color:#1E1030; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.pl-prog { display:flex; align-items:center; gap:10px; white-space:nowrap; font:600 13px var(--body); color:#6B6080 }
+.pl-bar-i { width:140px; height:8px; border-radius:8px; background:#ECE7F4; overflow:hidden } .pl-bar-i i { display:block; height:100%; width:0; border-radius:8px; background:linear-gradient(90deg, #7A3FD0, #C9A45C); transition:width .6s }
+
+/* layout */
+.pl-main { max-width:1440px; margin:0 auto; padding:20px }
+#learnApp.player { grid-template-columns:290px minmax(0, 1fr); gap:20px }
+
+/* lesson outline */
+.player .lp-side { top:84px; background:#fff; color:#1E1030; border:1px solid #E7E2F0; border-radius:16px; padding:18px; max-height:calc(100vh - 104px); overflow:auto; box-shadow:none }
+.player .lp-side::before { display:none }
+.player .lp-mods { display:none !important }
+.player .lp-mod { border-bottom:1px solid #EFEBF5 }
+.player .lp-lv { color:#8A6A1E; letter-spacing:.14em }
+.player .lp-mod > b { font:700 18px/1.25 var(--body); color:#1E1030 }
+.player .lp-ring .bg { stroke:#ECE7F4 } .player .lp-ring .fg { stroke:#7A3FD0 } .player .lp-ring span { color:#1E1030 }
+.player .lp-xp span { background:#F3E7C6; color:#5B4310 } .player .lp-xp b { color:#1E1030 }
+.player .lp-list { max-height:none; overflow:visible; gap:2px }
+.player .lp-list button { color:#3D3150; font:600 14px/1.3 var(--body); padding:10px; border-radius:10px }
+.player .lp-list button:hover { background:#F5F3FA }
+.player .lp-list button.cur { background:#EFE7FB; color:#2A1240; box-shadow:inset 3px 0 0 #7A3FD0 }
+.player .lp-list .n { border:1.5px solid #D9D2E6; color:#6B6080; background:#fff }
+.player .lp-list .ok .n { background:#2F8A5B; border-color:#2F8A5B; color:#fff }
+.player .lp-list .lock { opacity:.55 } .player .lp-list .lock .n { background:#F5F3FA }
+.player .lp-list .s { color:#7A5A12 }
+.player .lp-gate { background:#F5F3FA; color:#3D3150; border-radius:12px; padding:12px }
+.player .lp-coach { color:#6B6080 }
+
+/* lesson area */
+.player .lp-main { border:1px solid #E7E2F0; border-radius:16px; padding:22px 24px; box-shadow:none }
+.player .lp-top { padding-bottom:16px; margin-bottom:18px; border-bottom:1px solid #EFEBF5; align-items:center }
+.player .lp-num { color:#7A3FD0; letter-spacing:.12em }
+.player .lp-top h2 { font:700 clamp(22px, 2.4vw, 30px)/1.15 var(--body); letter-spacing:-.01em; color:#1E1030 }
+.player .lp-stage { grid-template-columns:minmax(0, 1.1fr) minmax(300px, .9fr); gap:28px; align-items:start }
+.player .lp-boardwrap { background:#2A1240; border-radius:14px; padding:16px 10px 24px 24px }
+.player .lp-boardwrap::after { display:none }
+.player .lb { max-width:min(600px, calc(100vh - 260px)); min-width:260px }
+.player .lp-panel { min-height:0; background:#FBFAFD; border:1px solid #EFEBF5; border-radius:14px; padding:20px }
+.player .lp-panel .cap, .player .lp-panel .q { font:600 clamp(18px, 1.7vw, 22px)/1.45 var(--body); color:#1E1030; min-height:0 }
+html:lang(si) .player .lp-panel .cap, html:lang(si) .player .lp-panel .q { font:600 clamp(16px, 1.6vw, 19px)/1.6 'Noto Sans Sinhala', var(--body) }
+
+@media (max-width:1020px) {
+  #learnApp.player { grid-template-columns:1fr }
+  .player .lp-side { position:relative; top:0; max-height:none }
+  .player .lp-list { grid-auto-flow:column; grid-auto-columns:minmax(210px, 1fr); overflow-x:auto }
+  .player .lp-stage { grid-template-columns:1fr }
+  .player .lb { max-width:min(560px, 100%) }
+}
+@media (max-width:640px) {
+  .pl-bar { grid-template-columns:auto minmax(0, 1fr); gap:12px; padding:0 12px; height:58px }
+  .pl-prog { display:none } .pl-course img { display:none } .pl-back span { display:none } .pl-back { padding:8px }
+  .pl-main { padding:12px }
+  .player .lp-main { padding:14px }
+}
+html[data-theme="dark"] body.player-body { background:#0D0719 }
+html[data-theme="dark"] .pl-bar, html[data-theme="dark"] .player .lp-side, html[data-theme="dark"] .player .lp-main { background:#150C28; border-color:rgba(181,140,255,.15) }
+html[data-theme="dark"] .pl-course b, html[data-theme="dark"] .player .lp-top h2, html[data-theme="dark"] .player .lp-mod > b, html[data-theme="dark"] .player .lp-list button, html[data-theme="dark"] .player .lp-panel .cap, html[data-theme="dark"] .player .lp-panel .q { color:#F4ECFF }
+html[data-theme="dark"] .player .lp-panel { background:#1C1233; border-color:rgba(181,140,255,.15) }
+html[data-theme="dark"] .player .lp-list button.cur { background:rgba(181,140,255,.15) }
+html[data-theme="dark"] .pl-back { color:#F4ECFF; border-color:rgba(181,140,255,.2) }
+/* puzzle training inside the player shell: compact level tabs, board fits the screen */
+.pzplayer .pz-levels { grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin-bottom:12px }
+.pzplayer .pz-levels button { padding:10px 14px; min-height:0 }
+.pzplayer .pz-levels button svg, .pzplayer .pz-levels em, .pzplayer .pz-levels small, .pzplayer .pz-levels i { display:none }
+.pzplayer .pz-levels button b, .pzplayer .pz-levels button strong { font-size:15px }
+.pzplayer .pz-themes { margin-bottom:14px; gap:6px } .pzplayer .pz-themes button { padding:6px 11px; font-size:12.5px }
+.pzplayer .pz-boardwrap { border-radius:14px; padding:14px 10px 24px 24px }
+.pzplayer .pz-board { max-width:min(600px, calc(100vh - 300px)) }
+.pzplayer .pz-main { grid-template-columns:minmax(0, 1fr) 380px; scroll-margin-top:76px }
+@media (max-width:1020px) { .pzplayer .pz-levels { grid-template-columns:repeat(3, 1fr) } .pzplayer .pz-main { grid-template-columns:1fr } .pzplayer .pz-board { max-width:100% } }
+@media (max-width:560px) { .pzplayer .pz-levels { grid-template-columns:repeat(2, 1fr) } }
+.pzplayer .pz-levels .pc { display:none } .pzplayer .pz-levels button { display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left }
+.pzplayer .pz-levels .ct { position:static; font:700 12px var(--body) }
+@media (min-width:1021px) { .pzplayer .pz-main { grid-template-columns:auto minmax(340px, 1fr) } .pzplayer .pz-board { width:min(600px, calc(100vh - 300px)); max-width:none } }

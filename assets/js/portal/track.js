@@ -10,7 +10,7 @@ const IDLE = 120000;
   const touch = () => { last = Date.now() };
   ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'scroll', 'wheel'].forEach(e => addEventListener(e, touch, { passive: true, capture: true }));
   const here = () => {
-    if (/puzzle\.html/.test(location.pathname)) return '_puzzles';
+    if (/(puzzle|practice)\.html/.test(location.pathname)) return '_puzzles';
     try { const s = window.PQ_LEARN && window.PQ_LEARN.state; if (s) return window.PQ_MODULES[s.mi].lessons[s.li].id } catch {}
     return null;
   };

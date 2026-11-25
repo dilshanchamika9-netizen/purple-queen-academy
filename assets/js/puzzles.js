@@ -96,7 +96,7 @@
   }
   function keepInView() {
     const w = document.querySelector('.pz-boardwrap'); if (!w || !cur) return;
-    const hd = document.querySelector('.hdr'), top = hd ? hd.getBoundingClientRect().bottom : 90, r = w.getBoundingClientRect();
+    const hd = document.querySelector('.hdr, .pl-bar'), top = hd ? hd.getBoundingClientRect().bottom : 90, r = w.getBoundingClientRect();
     if (window.__pzFirst !== false) { window.__pzFirst = false; return }
     if (r.top < top || r.bottom > innerHeight) { scrollBy({ top: r.top - top - 8, behavior: 'smooth' }) }
   }
@@ -223,7 +223,7 @@
   function paintSide() {
     const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => solved[p.id]).length;
     const gate = $('#pzGate'); gate.hidden = access() && !hwSet;
-    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="account.html">Back to my homework</a>` : !access() ? `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. <a href="login.html?next=puzzle.html">Student sign in</a> to unlock all ${ALL.length.toLocaleString('en')}.` : '';
+    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. <a href="login.html?next=puzzle.html">Student sign in</a> to unlock all ${ALL.length.toLocaleString('en')}.` : '';
     $('#pzAutoChk').checked = autoNext;
     $('#pzStreak').textContent = streak; $('#pzBest').textContent = best; $('#pzSolved').textContent = Object.keys(solved).length;
     $('#pzLvName').textContent = hwSet && access() ? 'Homework puzzles' : `Level ${lv.id} · ${lv.name}`; $('#pzLvCount').textContent = `${done} / ${list.length} solved`;
