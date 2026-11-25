@@ -23,7 +23,11 @@
 
   let ALL = [], level = store.get('level', 1), theme = 'all', solved = store.get('solved', {}), failed = store.get('failed', {});
   let streak = store.get('streak', 0), best = store.get('best', 0);
-  const access = () => { try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
+  // the public puzzle page always shows the free 10 per level; the full trainer is practice.html inside the portal
+  const signedIn = () => { try { return localStorage.getItem('pq-auth') === '1' } catch { return false } };
+  const portalHref = () => { try { const r = localStorage.getItem('pq-role'); return r === 'coach' ? 'coach.html' : r === 'parent' ? 'parent.html' : 'practice.html' } catch { return 'login.html' } };
+  const PUBLIC = !root.classList.contains('pzplayer');
+  const access = () => { if (PUBLIC) return false; try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
   const FREE_PER_LEVEL = 10; const free = new Set(); let nextT = null, autoNext = store.get('auto', true);
   const qp = new URLSearchParams(location.search), hwId = qp.get('hw'), hwSet = hwId && qp.get('set') ? new Set(qp.get('set').split(',').filter(Boolean)) : null;
   let cur = null, game = null, moves = [], idx = 0, orient = 'w', sel = null, busy = false, mistakes = 0, lastMove = null, hinted = false;
@@ -223,7 +227,7 @@
   function paintSide() {
     const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => solved[p.id]).length;
     const gate = $('#pzGate'); gate.hidden = access() && !hwSet;
-    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. <a href="login.html?next=puzzle.html">Student sign in</a> to unlock all ${ALL.length.toLocaleString('en')}.` : '';
+    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? (PUBLIC && signedIn() ? `<b>You are signed in.</b> Your full puzzle trainer is in your portal. <a href="${portalHref()}">Open it</a>` : `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. Academy students train with 5,000+ puzzles. <a href="#pzJoin">See how</a>`) : '';
     $('#pzAutoChk').checked = autoNext;
     $('#pzStreak').textContent = streak; $('#pzBest').textContent = best; $('#pzSolved').textContent = Object.keys(solved).length;
     $('#pzLvName').textContent = hwSet && access() ? 'Homework puzzles' : `Level ${lv.id} · ${lv.name}`; $('#pzLvCount').textContent = `${done} / ${list.length} solved`;
@@ -246,7 +250,7 @@
 
   const getJ = (u) => fetch(u).then(r => { if (!r.ok) throw 0; return r.json() });
   Promise.all([getJ('assets/data/puzzles.json'), hwSet ? getJ('assets/data/hwpuzzles.json').catch(() => ({ puzzles: [] })) : Promise.resolve({ puzzles: [] })]).then(([d, hw]) => {
-    ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c) c.textContent = ALL.length.toLocaleString('en');
+    ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c && !PUBLIC) c.textContent = ALL.length.toLocaleString('en');
     LEVELS.forEach(l => ALL.filter(p => p.l === l.id).slice(0, FREE_PER_LEVEL).forEach(p => free.add(p.id)));
     ALL = ALL.concat(hw.puzzles);
     if (hwSet && access()) root.classList.add('pz-hw');

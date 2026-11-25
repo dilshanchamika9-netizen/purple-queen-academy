@@ -102,4 +102,5 @@ function showAlready(me) {
 whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach' || me.role === 'parent')) { if (me.role !== 'coach' && me.profile && me.profile.mustChange) showChange(me); else showAlready(me) } });
 const t = new URLSearchParams(location.search).get('as'); let st = null; try { st = localStorage.getItem('pq-tab') } catch {}
 if (t === 'coach' || (!t && st === 'coach')) showTab('coach');
+if (t === 'parent') { showTab('student'); const w = document.getElementById('lgWho'); if (w) w.textContent = 'Parent'; const i = document.getElementById('sId'); if (i) { i.placeholder = 'Parent ID, e.g. PQ0001-P'; i.previousSibling && (i.labels[0].firstChild.textContent = 'Parent ID') } }
 window.PQ_PORTAL = { esc };

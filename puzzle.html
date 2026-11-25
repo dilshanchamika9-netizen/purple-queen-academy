@@ -14,9 +14,9 @@
 <meta property="og:image" content="assets/logo/pq-logo-primary-wood-1024.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=202611260047">
-<link rel="stylesheet" href="assets/css/portal.css?v=202611260047">
-<script src="assets/js/portal/ui.js?v=202611260047"></script>
+<link rel="stylesheet" href="assets/css/site.css?v=202611260102">
+<link rel="stylesheet" href="assets/css/portal.css?v=202611260102">
+<script src="assets/js/portal/ui.js?v=202611260102"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -40,19 +40,25 @@
 <header class="hdr" id="hdr">
   <div class="wrap">
     <a href="index.html" class="brand" aria-label="Purple Queen Chess Academy, home"><img class="brand-seal" src="assets/logo/pq-logo-primary-wood.svg" width="84" height="84" alt=""><span class="brand-txt"><b>Purple Queen</b><small>CHESS ACADEMY</small></span></a>
-    <nav class="nav" id="nav" aria-label="Main"><a href="classes.html">Classes</a><a href="schedule.html">Schedule</a><a href="tournaments.html">Tournaments</a><a href="coaches.html">Coaches</a><a href="schools.html">Schools</a><a href="puzzle.html" aria-current="page">Puzzles</a><a href="learn.html">Learn</a><a href="contact.html">Contact</a><a class="nav-portal" href="login.html">Student portal</a></nav>
+    <nav class="nav" id="nav" aria-label="Main"><a href="classes.html">Classes</a><a href="schedule.html">Schedule</a><a href="tournaments.html">Tournaments</a><a href="coaches.html">Coaches</a><a href="schools.html">Schools</a><a href="puzzle.html" aria-current="page">Puzzles</a><a href="learn.html">Learn</a><a href="contact.html">Contact</a><a class="nav-portal" href="login.html">Login</a></nav>
     <div class="hdr-cta">
-      <a class="uchip" id="pqUserChip" href="account.html" hidden><svg><use href="#i-user"/></svg><b></b></a><a class="btn btn-ghost btn-sm" href="login.html"><svg><use href="#i-user"/></svg>Student portal</a>
-      <a class="btn btn-primary btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a trial class." target="_blank" rel="noopener">Book a trial</a>
+      <details class="logdd" id="pqLogin"><summary class="btn btn-ghost btn-sm"><svg><use href="#i-user"/></svg>Login<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></summary><div class="logmenu"><a href="login.html"><b>Student</b><small>Lessons, puzzles and homework</small></a><a href="login.html?as=parent"><b>Parent</b><small>Your child’s progress and fees</small></a><a href="login.html?as=coach"><b>Coach</b><small>Coach portal</small></a></div></details><a class="btn btn-ghost btn-sm" id="pqPortal" href="account.html" hidden><svg><use href="#i-user"/></svg><span>My portal</span></a>
+      <a class="btn btn-primary btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a class." target="_blank" rel="noopener">Book a class</a>
     </div>
     <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav"><span></span></button>
   </div>
 </header>
 <main id="top">
 <section class="page-top" style="padding-bottom:30px"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Puzzles</span></nav>
-  <div class="sec-head" style="margin-bottom:0"><div><p class="eyebrow">Puzzle trainer</p><h1><span id="pzCount">2,500</span> puzzles, <em>five levels</em></h1></div>
-  <p class="lead">Start at Beginner and climb to Expert. Try any move you like: if it also wins, it counts. If not, you see the opponent's answer and can take it back.</p></div></div></section>
-<section style="padding-top:10px"><div class="wrap"><div id="puzzleApp"></div></div></section><div class="wrap"><div class="next-pages"><a href="learn.html"><span><small>NEXT</small>Learn online</span><svg><use href="#i-arrow"/></svg></a><a href="tournaments.html"><span><small>NEXT</small>Tournaments</span><svg><use href="#i-arrow"/></svg></a><a href="classes.html"><span><small>NEXT</small>Class levels</span><svg><use href="#i-arrow"/></svg></a></div></div>
+  <div class="sec-head" style="margin-bottom:0"><div><p class="eyebrow">Free puzzle trainer</p><h1>50 free puzzles, <em>five levels</em></h1></div>
+  <p class="lead">Try 10 puzzles at every level, from Beginner to Expert. Academy students unlock <b>5,000+ puzzles</b>, homework puzzles from their coach and saved progress.</p></div></div></section>
+<section style="padding-top:10px"><div class="wrap"><div id="puzzleApp"></div></div></section><section class="pzjoin" id="pzJoin"><div class="wrap"><div class="pzj">
+  <div class="pzj-l"><p class="eyebrow">For academy students</p><h2>Join a class. Unlock <em>5,000+ puzzles.</em></h2>
+    <p class="lead">Every student gets the full trainer inside the student portal: five levels that grow with them, 13 themes, and fresh puzzles from the coach as homework, never the same one twice.</p>
+    <ul class="pzj-f"><li><b>5,000+</b><span>puzzles, Beginner to Expert</span></li><li><b>13</b><span>themes: forks, pins, mates in 1, 2 and 3…</span></li><li><b>Saved</b><span>streaks and progress on any device</span></li><li><b>Coach</b><span>sends puzzle homework and sees every result</span></li></ul>
+    <div class="pzj-cta"><a class="btn btn-primary" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a class." target="_blank" rel="noopener">Book a class</a><a class="btn btn-ghost" href="login.html">Student login</a></div></div>
+  <ol class="pzj-lv"><li><img src="assets/pieces/wP.svg" alt=""><div><b>Level 1 · Beginner</b><small>Rating Under 1000</small><span>Mates in 1 and 2, hanging pieces</span></div><em>500+</em></li><li><img src="assets/pieces/wN.svg" alt=""><div><b>Level 2 · Improver</b><small>Rating 1000 – 1299</small><span>Forks, pins and short combinations</span></div><em>500+</em></li><li><img src="assets/pieces/wB.svg" alt=""><div><b>Level 3 · Club player</b><small>Rating 1300 – 1599</small><span>Two- and three-move tactics, discovered attacks</span></div><em>500+</em></li><li><img src="assets/pieces/wR.svg" alt=""><div><b>Level 4 · Advanced</b><small>Rating 1600 – 1999</small><span>Deeper calculation and endgames</span></div><em>500+</em></li><li><img src="assets/pieces/wQ.svg" alt=""><div><b>Level 5 · Expert</b><small>Rating 2000 +</small><span>Tournament-strength puzzles and mates in 3</span></div><em>500+</em></li></ol></div></div></section>
+<div class="wrap"><div class="next-pages"><a href="learn.html"><span><small>NEXT</small>Learn online</span><svg><use href="#i-arrow"/></svg></a><a href="tournaments.html"><span><small>NEXT</small>Tournaments</span><svg><use href="#i-arrow"/></svg></a><a href="classes.html"><span><small>NEXT</small>Class levels</span><svg><use href="#i-arrow"/></svg></a></div></div>
 </main>
 <footer>
   <div class="wrap">
@@ -72,11 +78,11 @@
     <a class="btn btn-primary" href="#" data-wa="Hello! I am a Purple Queen student and need my lesson material." target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>Message the academy</a>
   </div>
 </dialog>
-<script src="assets/js/site.js?v=202611260047"></script><script src="assets/js/fx.js?v=202611260047" defer></script>
-<script src="assets/js/celebrate.js?v=202611260047"></script>
+<script src="assets/js/site.js?v=202611260102"></script><script src="assets/js/fx.js?v=202611260102" defer></script>
+<script src="assets/js/celebrate.js?v=202611260102"></script>
 <script src="assets/js/vendor/chess.js"></script>
-<script src="assets/js/puzzles.js?v=202611260047"></script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=202611260047")}catch(e){}</script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=202611260047")}catch(e){}</script>
+<script src="assets/js/puzzles.js?v=202611260102"></script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=202611260102")}catch(e){}</script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=202611260102")}catch(e){}</script>
 </body>
 </html>

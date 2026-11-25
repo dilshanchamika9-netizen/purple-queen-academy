@@ -52,7 +52,7 @@ function paintOnline() {
 
 function render() {
   root.innerHTML = `
-  <div class="cp-head" data-tab="students"><div><h1>Students</h1><p id="stuSub">Loading…</p></div><div class="cp-hb"><button type="button" class="sp-btn" id="csvBtn">Download CSV</button><button type="button" class="sp-btn p" id="addToggle">＋ Add student</button></div></div>
+  <div class="cp-head" data-tab="students"><div><h1>Students</h1><p id="stuSub">Loading…</p></div><div class="cp-hb"><div class="cp-view" role="group" aria-label="Show students as"><button type="button" data-view="grid" aria-pressed="true" title="Blocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Blocks</button><button type="button" data-view="list" aria-pressed="false" title="List"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor"/></svg>List</button></div><button type="button" class="sp-btn" id="csvBtn">Download CSV</button><button type="button" class="sp-btn p" id="addToggle">＋ Add student</button></div></div>
   <div class="cp-head" data-tab="homework"><div><h1>Homework</h1><p>Give lessons or puzzles, and see who has finished.</p></div></div>
   <div class="cp-head" data-tab="attendance"><div><h1>Attendance</h1><p>Mark each class: present, late or absent.</p></div></div>
   <div class="cp-head" data-tab="fees"><div><h1>Fees</h1><p>Monthly fees are created on the 1st. Tick “Received” on each student card; special charges and part payments are here.</p></div></div>
@@ -112,6 +112,10 @@ function render() {
   try { tab = sessionStorage.getItem('pq-ctab') || 'students' } catch {}
   $('#cTabs').onclick = (e) => { const b = e.target.closest('button[data-t]'); if (b) showTab(b.dataset.t) };
   paintProfile();
+  // blocks or list (remembered on this device)
+  const setView = (v) => { $('#stuTable').classList.toggle('list', v === 'list'); $$('.cp-view button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v))); try { localStorage.setItem('pq-cview', v) } catch {} };
+  $('.cp-view').onclick = (e) => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view) };
+  try { setView(localStorage.getItem('pq-cview') === 'list' ? 'list' : 'grid') } catch { setView('grid') }
   showTab(tab);
   $('#addForm').onsubmit = addStudent;
   $('#hwForm').onsubmit = addHomework;

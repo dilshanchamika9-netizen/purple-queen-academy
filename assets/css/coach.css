@@ -94,3 +94,20 @@ html[data-theme="dark"] .cp-kv div { background:#1C1233 } html[data-theme="dark"
 .cp-fee { flex-wrap:wrap } .cp-fee > span:first-child { min-width:0 } .cp-recv { margin-left:auto } .cp-recv select { min-width:74px }
 .cp-more, details.rowmenu.cp-more { border:0; padding:0; background:none; margin:0 }
 .cp-card .who .nm, .cp-card .who .nm:hover { text-decoration:none }
+/* blocks / list switch */
+.cp-view { display:inline-flex; padding:4px; gap:2px; border-radius:999px; background:#fff; border:1px solid #E7E2F0 }
+.cp-view button { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:0; border-radius:999px; background:none; cursor:pointer; font:700 13.5px var(--body); color:#6B6080 }
+.cp-view button svg { width:16px; height:16px }
+.cp-view button[aria-pressed="true"] { background:#2A1240; color:#fff }
+/* list view: one slim row per student */
+.cp-grid.list { grid-template-columns:1fr; gap:8px }
+.cp-grid.list .cp-card { grid-template-columns:minmax(170px, 1.3fr) 96px minmax(200px, 1.2fr) minmax(220px, 1.3fr) auto; align-items:center; gap:16px; padding:10px 16px; border-radius:16px }
+.cp-grid.list .cp-card .top .sp-av { width:40px; height:40px; font-size:14px }
+.cp-grid.list .cp-rank i { height:14px; border-radius:4px }
+.cp-grid.list .cp-kv { gap:6px } .cp-grid.list .cp-kv div { padding:6px 9px; border-radius:10px } .cp-grid.list .cp-kv b { font-size:14px }
+.cp-grid.list .cp-fee { padding:7px 10px }
+.cp-grid.list .cp-ft .sp-btn { flex:none; padding:8px 12px; font-size:13px }
+.cp-grid.list .cp-more > summary { width:36px; height:36px }
+@media (max-width:1366px) { .cp-grid.list .cp-card { grid-template-columns:minmax(160px, 1.2fr) minmax(190px, 1.2fr) minmax(210px, 1.2fr) auto } .cp-grid.list .cp-rank { display:none } }
+.cp-grid.list .cp-card > * { min-width:0 } .cp-grid.list .cp-ft { gap:6px } .cp-grid.list .cp-ft .sp-btn { padding:7px 10px; font-size:12.5px } .cp-grid.list .cp-fee { font-size:12.5px; gap:6px } .cp-grid.list .cp-fee small { font-size:11px } .cp-grid.list .cp-recv select { min-width:64px; height:30px } .cp-grid.list .cp-tick { height:30px; padding:0 10px; font-size:12px } .cp-grid.list .cp-kv small { font-size:10.5px }
+@media (max-width:900px) { .cp-grid.list .cp-card { grid-template-columns:1fr; gap:10px } .cp-grid.list .cp-rank { display:grid } .cp-view button { padding:7px 10px } }

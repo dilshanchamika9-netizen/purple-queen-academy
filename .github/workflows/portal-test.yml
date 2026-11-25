@@ -8,6 +8,8 @@ on:
       - 'firestore.rules'
       - 'tools/portal-*.mjs'
       - 'login.html'
+      - 'puzzle.html'
+      - 'assets/js/*.js'
       - 'coach.html'
       - 'assets/css/**'
       - 'parent.html'

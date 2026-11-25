@@ -254,3 +254,9 @@
   reset();
   }
 })();
+// header Login menu: close when clicking elsewhere or pressing Escape
+(function () {
+  var d = document.getElementById('pqLogin'); if (!d) return;
+  document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') d.open = false });
+})();

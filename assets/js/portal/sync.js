@@ -28,15 +28,12 @@ addEventListener('pagehide', push);
   const okAccess = !!me && (me.role === 'student' || me.role === 'coach');
   if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0'); localStorage.setItem('pq-role', me.role) } catch {} }
   window.dispatchEvent(new Event('pq-auth'));
-  if (me && me.role === 'student') {
-    try { if (me.profile && me.profile.level) localStorage.setItem('pq-level', String(me.profile.level)) } catch {}
-    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.hidden = true; a.style.display = 'none' }); // the name chip already links to the student's page
-  }
-  if (me && me.role === 'coach') {
-    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' });
-    const chip = document.getElementById('pqUserChip'); if (chip) chip.hidden = true;
-  } else if (me && me.role === 'parent') {
-    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'parent.html'; a.lastChild.textContent = 'Parent portal' });
+  if (me && me.role === 'student') { try { if (me.profile && me.profile.level) localStorage.setItem('pq-level', String(me.profile.level)) } catch {} }
+  // signed in: the Login menu becomes one button to the right portal
+  if (me && ['student', 'coach', 'parent'].includes(me.role)) {
+    const lg = document.getElementById('pqLogin'), pt = document.getElementById('pqPortal');
+    if (lg && pt) { lg.hidden = true; pt.hidden = false; pt.href = me.role === 'coach' ? 'coach.html' : me.role === 'parent' ? 'parent.html' : 'account.html'; pt.querySelector('span').textContent = me.role === 'coach' ? 'Coach portal' : me.role === 'parent' ? 'Parent portal' : 'My portal' }
+    document.querySelectorAll('.nav-portal').forEach(a => { a.href = me.role === 'coach' ? 'coach.html' : me.role === 'parent' ? 'parent.html' : 'account.html'; a.textContent = me.role === 'coach' ? 'Coach portal' : me.role === 'parent' ? 'Parent portal' : 'My portal' });
   }
   if (!me || me.role !== 'student') return
   uid = me.user.uid;
@@ -52,6 +49,4 @@ addEventListener('pagehide', push);
   const onPage = /learn|lesson|course/.test(path) ? 'Lessons' : /profile/.test(path) ? 'My profile' : /homework/.test(path) ? 'Homework' : /puzzle|practice/.test(path) ? (qs.get('hw') ? 'Homework puzzles' : 'Puzzles') : /task/.test(path) ? 'Board task' : 'My account';
   const beat = () => { if (document.visibilityState === 'visible') F.updateDoc(F.doc(db, 'users', uid), { lastSeen: F.serverTimestamp(), onPage }).catch(() => {}) };
   beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
-  const chip = document.getElementById('pqUserChip');
-  if (chip && me.profile) { chip.hidden = false; chip.querySelector('b').textContent = me.profile.name ? me.profile.name.split(' ')[0] : me.profile.sid }
 })();
