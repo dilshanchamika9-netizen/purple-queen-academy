@@ -118,6 +118,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
           <div class="stat">${ICO.target}<b data-count="${avg}" data-suf="%">0</b><span>Average mark</span></div>
           <a class="stat statlink" href="puzzle.html">${ICO.puzzle}<b data-count="${solved}">0</b><span>Puzzles solved →</span></a>
           <div class="stat">${ICO.clock}<b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study, 7 days</span></div>
+          ${att.total ? `<div class="stat" style="grid-column:1/-1">${ICO.cal}<b>${att.pct}%</b><span>Attendance · ${att.total} classes</span></div>` : ''}
         </div>
         <section class="acc-card rv-p"><h3>Study activity</h3><div class="heat">${heat}</div><div class="heatcap"><span>6 weeks ago</span><span>Today</span></div></section>
         <section class="acc-card rv-p"><h3>Achievements</h3><div class="badges">${BADGES.map(b => `<div class="bdg${b[1] ? ' on' : ''}"><i>${b[2]}</i>${b[0]}</div>`).join('')}</div></section>
