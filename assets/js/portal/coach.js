@@ -50,13 +50,15 @@ function render() {
     <div class="row2"><label for="hWho">Give it to<select id="hWho"><option value="all">All students</option><option value="level">One level</option><option value="batch">One batch</option><option value="pick">Chosen students</option></select></label>
       <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab">Level</span><select id="hWhoVal"></select></label></div>
     <div class="pickbox" id="hPick" hidden></div>
-    <p class="lab">Lessons to complete (a lesson counts as done at ${PASS}% or more)</p>
-    <div class="lesspick" id="hLessons">${MODS.map((m, k) => `<details ${k === 2 ? 'open' : ''}><summary><label><input type="checkbox" data-mod="${k}"> <b>${PQ_MOD(MODS, k).label}</b> ${esc(m.title.en)}</label></summary>${m.lessons.map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"> ${esc(l.title.en)}</label>`).join('')}</details>`).join('')}</div>
+    <p class="lab">What do you want to give?</p>
+    <div class="seg" id="hMode" role="group" aria-label="Homework type"><button type="button" data-mode="lessons" aria-pressed="true">Lessons</button><button type="button" data-mode="puzzles" aria-pressed="false">Puzzles</button></div>
+    <div id="hModeL"><p class="lab">Next lessons to give (a lesson counts as done at ${PASS}% or more). Only the next 3 pending lessons of each chosen student are shown. The rest stay locked.</p>
+    <div class="lesspick" id="hLessons"></div></div>
     <p class="lab">Board tasks you made</p><div id="tbList" class="tblist"><span class="muted small">None yet.</span></div>
     <details class="tbd" id="tbDet"><summary>＋ Make a board task (set up a position and the right answer)</summary><div id="tbBox"></div></details>
-    <p class="lab">Puzzles by number (each student gets different puzzles, never ones already solved or given before)</p>
+    <div id="hModeP" hidden><p class="lab">Puzzles by number: choose how many from each level. The system picks them at random, and a student never gets a puzzle she already solved or was given before.</p>
     <div class="pzpick" id="hPz">${[1, 2, 3, 4, 5].map(l => `<label>${PZ_LEVELS[l]}<input type="number" min="0" max="50" value="0" inputmode="numeric" data-pz="${l}"></label>`).join('')}</div>
-    <div class="pzpre" id="hPzPre"><button type="button" class="mini" data-pre="10,0,0,0,0">10 Beginner</button><button type="button" class="mini" data-pre="5,5,0,0,0">5 Beginner + 5 Improver</button><button type="button" class="mini" data-pre="0,5,5,0,0">5 Improver + 5 Club</button><button type="button" class="mini" data-pre="5,5,5,5,0">20 mixed</button><button type="button" class="mini" data-pre="0,0,0,0,0">Clear</button></div>
+    <div class="pzpre" id="hPzPre"><button type="button" class="mini" data-pre="10,0,0,0,0">10 Beginner</button><button type="button" class="mini" data-pre="5,5,0,0,0">5 Beginner + 5 Improver</button><button type="button" class="mini" data-pre="0,5,5,0,0">5 Improver + 5 Club</button><button type="button" class="mini" data-pre="5,5,5,5,0">20 mixed</button><button type="button" class="mini" data-pre="0,0,0,0,0">Clear</button></div></div>
     <label class="chk" for="hMail"><input type="checkbox" id="hMail"> Email the parents about this homework (only those with an email saved)</label>
     <label for="hText">Extra tasks, one per line (the student ticks them off)<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label>
     <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p><div class="chips" id="hSend"></div></form>
@@ -80,7 +82,8 @@ function render() {
   $('#atForm').onsubmit = saveAtt; $('#atDate').value = today(); $('#atDate').max = today();
   $('#atDate').onchange = paintAtt; $('#atBatch').onchange = paintAtt;
   $('#atAll').onclick = () => $$('#atList input[value="p"]').forEach(r => r.checked = true);
-  $('#hLessons').addEventListener('change', (e) => { const m = e.target.dataset.mod; if (m != null) $$(`#hLessons input[data-m="${m}"]`).forEach(c => c.checked = e.target.checked) });
+  $('#hMode').onclick = (e) => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode) };
+  $('#hWhoVal').onchange = paintLessons; $('#hPick').addEventListener('change', paintLessons);
 }
 const $$ = (s) => [...document.querySelectorAll(s)];
 const plusDays = (n) => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') };
@@ -99,12 +102,39 @@ function paintCustom() {
   $('#tbList').innerHTML = custom.length ? custom.map((t, i) => `<span class="chip">${esc(t.q)} · ${t.kind === 'move' ? 'move' : 'square'} <button type="button" class="x" data-rm="${i}" aria-label="Remove this task">×</button></span>`).join(' ') : '<span class="muted small">None yet.</span>';
 }
 root.addEventListener('click', (e) => { const b = e.target.closest('button[data-rm]'); if (b) { custom.splice(+b.dataset.rm, 1); paintCustom() } });
+const hMode = () => ($('#hMode button[aria-pressed="true"]') || {}).dataset?.mode || 'lessons';
+function setMode(m) { $$('#hMode button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false')); $('#hModeL').hidden = m !== 'lessons'; $('#hModeP').hidden = m !== 'puzzles' }
+function whoList() {
+  const w = $('#hWho').value; let list = students, label = 'All students';
+  if (w === 'level') { const v = +$('#hWhoVal').value; list = students.filter(s => +s.level === v); label = LEVELS[v] }
+  if (w === 'batch') { const v = $('#hWhoVal').value; list = students.filter(s => s.batch === v); label = 'Batch: ' + v }
+  if (w === 'pick') { const ids = $$('#hPick input:checked').map(c => c.value); list = students.filter(s => ids.includes(s.uid)); label = list.length === 1 ? list[0].name : list.length + ' students' }
+  return { list, label };
+}
+// the next 3 lessons each chosen student has not passed and has not already been given in homework
+function nextLessons(uid) {
+  const L = (progress[uid] || {}).lessons || {}, given = new Set();
+  assigns.forEach(a => { if ((a.uids || []).includes(uid)) (a.items || []).forEach(it => { if (it.t === 'lesson') given.add(it.id) }) });
+  return LESSONS.filter(l => (L[l.id] || 0) < PASS && !given.has(l.id)).slice(0, 3).map(l => l.id);
+}
+function paintLessons() {
+  const box = $('#hLessons'); if (!box) return;
+  const keep = new Set($$('#hLessons input[data-les]:checked').map(c => c.dataset.les));
+  const { list } = whoList(), count = {};
+  list.forEach(s => nextLessons(s.uid).forEach(id => count[id] = (count[id] || 0) + 1));
+  const ids = LESSONS.filter(l => count[l.id]);
+  if (!list.length) { box.innerHTML = '<p class="muted small">No student matches this choice.</p>'; return }
+  if (!ids.length) { box.innerHTML = '<p class="muted small">Every lesson is already passed or already given.</p>'; return }
+  const byMod = {}; ids.forEach(l => (byMod[l.mod] = byMod[l.mod] || []).push(l));
+  box.innerHTML = Object.keys(byMod).map(k => `<details open><summary><b>${PQ_MOD(MODS, +k).label}</b> ${esc(MODS[+k].title.en)}</summary>${byMod[k].map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"${keep.has(l.id) ? ' checked' : ''}> ${esc(l.title.en)}${list.length > 1 ? ` <small class="muted">for ${count[l.id]} of ${list.length} students</small>` : ''}</label>`).join('')}</details>`).join('');
+}
 function paintWho() {
   const w = $('#hWho').value, val = $('#hWhoVal');
   $('#hWhoWrap').hidden = !(w === 'level' || w === 'batch'); $('#hPick').hidden = w !== 'pick';
   if (w === 'level') { $('#hWhoLab').textContent = 'Level'; val.innerHTML = [1, 2, 3].map(l => `<option value="${l}">${LEVELS[l]}</option>`).join('') }
   if (w === 'batch') { $('#hWhoLab').textContent = 'Batch'; const b = [...new Set(students.map(s => s.batch).filter(Boolean))]; val.innerHTML = b.length ? b.map(x => `<option>${esc(x)}</option>`).join('') : '<option value="">No batches yet</option>' }
   if (w === 'pick') $('#hPick').innerHTML = students.map(s => `<label><input type="checkbox" value="${s.uid}"> ${esc(s.sid)} ${esc(s.name)}</label>`).join('') || '<p class="muted">No students yet.</p>';
+  paintLessons();
 }
 
 async function load() {
@@ -247,14 +277,12 @@ async function saveAtt(e) {
 async function addHomework(e) {
   e.preventDefault(); const m = $('#hMsg'); m.className = 'pmsg2';
   const title = $('#hTitle').value.trim(), due = $('#hDue').value, note = $('#hNote').value.trim();
-  const items = $$('#hLessons input[data-les]:checked').map(c => ({ t: 'lesson', id: c.dataset.les }))
+  const mode = hMode();
+  const items = (mode === 'lessons' ? $$('#hLessons input[data-les]:checked') : []).map(c => ({ t: 'lesson', id: c.dataset.les }))
     .concat(custom).concat($('#hText').value.split('\n').map(x => x.trim()).filter(Boolean).map(text => ({ t: 'text', text })));
-  const w = $('#hWho').value; let list = students, label = 'All students';
-  if (w === 'level') { const v = +$('#hWhoVal').value; list = students.filter(s => +s.level === v); label = LEVELS[v] }
-  if (w === 'batch') { const v = $('#hWhoVal').value; list = students.filter(s => s.batch === v); label = 'Batch: ' + v }
-  if (w === 'pick') { const ids = $$('#hPick input:checked').map(c => c.value); list = students.filter(s => ids.includes(s.uid)); label = list.length === 1 ? list[0].name : list.length + ' students' }
+  const { list, label } = whoList();
   if (!title || !due) { m.className = 'pmsg2 err'; m.textContent = 'Enter a title and a due date.'; return }
-  const counts = {}; $$('#hPz input[data-pz]').forEach(i => { const n = Math.max(0, Math.min(50, +i.value || 0)); if (n) counts[i.dataset.pz] = n });
+  const counts = {}; if (mode === 'puzzles') $$('#hPz input[data-pz]').forEach(i => { const n = Math.max(0, Math.min(50, +i.value || 0)); if (n) counts[i.dataset.pz] = n });
   if (!items.length && !Object.keys(counts).length) { m.className = 'pmsg2 err'; m.textContent = 'Choose at least one lesson, board task, puzzle number or written task.'; return }
   if (!list.length) { m.className = 'pmsg2 err'; m.textContent = 'No student matches this choice.'; return }
   m.textContent = 'Saving…';
@@ -271,7 +299,7 @@ async function addHomework(e) {
     let mails = 0;
     if ($('#hMail').checked) for (const s of list) if (s.parentEmail) { try { await queueEmail({ to: s.parentEmail, subject: `New homework: ${title}`, text: `Hello,\n\nNew homework for ${s.name}: ${title}. Due ${due}.${note ? '\n' + note : ''}\nThe student can open it after signing in on the academy website.\n\nPurple Queen Chess Academy`, kind: 'homework' }); mails++ } catch {} }
     $('#hSend').innerHTML = list.map(s => { const txt = `Hello, this is Purple Queen Chess Academy. New homework for ${s.name}: ${title}. Due ${due}.${note ? ' ' + note : ''} The student can open it after signing in on the academy website. Thank you.`, w = waLink(s.parentPhone, txt), ml = mailLink(s.parentEmail, `New homework: ${title}`, txt); return (w ? `<a class="chip" target="_blank" rel="noopener" href="${w}">WhatsApp: parent of ${esc(s.name)}</a>` : '') + (ml ? `<a class="chip" target="_blank" rel="noopener" href="${ml}">Email: parent of ${esc(s.name)}</a>` : '') }).join('');
-    e.target.reset(); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
+    e.target.reset(); setMode('lessons'); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
     m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.` + (short.length ? ' Not enough new puzzles: ' + short.join('; ') + '.' : '') + (mails ? ` ${mails} email${mails > 1 ? 's' : ''} queued.` : '');
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
 }

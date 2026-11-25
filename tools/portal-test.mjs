@@ -123,7 +123,7 @@ ok(pden.listChildHomework === 'allowed', 'parent can list own child’s homework
 // coach gives homework: lesson "board" + one written task, to all students
 await tab('homework');
 await coachPage.fill('#hTitle', 'Week 1 homework'); await coachPage.fill('#hDue', '2099-01-01'); await coachPage.fill('#hNote', 'Finish before class');
-await coachPage.click('#hLessons details:first-child summary'); await coachPage.check('#hLessons input[data-les="board"]'); await coachPage.fill('#hText', 'Play two games with a friend');
+ok(await coachPage.locator('#hLessons input[data-les]').count() >= 1, 'coach sees the next pending lessons'); ok(await coachPage.locator('#hLessons input[data-les="board"]').count() === 0, 'passed lesson is not offered again'); await coachPage.locator('#hLessons input[data-les]').first().check(); await coachPage.fill('#hText', 'Play two games with a friend');
 await coachPage.click('#hwForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#hMsg').textContent.includes('given to'), null, { timeout: 15000 });
 ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach sees the new homework in the list');
@@ -131,7 +131,7 @@ ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach 
 // student sees it, the passed lesson is done, the written task can be ticked
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .hw-list', { timeout: 15000 });
 ok((await pg.textContent('#hwBox')).includes('Week 1 homework'), 'student sees the homework');
-ok(await pg.locator('#hwBox .hw-items li.ok').count() === 1, 'passed lesson shows as done in the homework');
+ok(await pg.locator('#hwBox .hw-items li').count() >= 2, 'homework lists the lesson and the written task');
 await pg.check('#hwBox input[data-a]'); await pg.waitForTimeout(1500);
 const aid = (await pg.getAttribute('#hwBox input[data-a]', 'data-a'));
 const stdoc = await fsDoc(`astatus/${aid}_${uid1}`);
@@ -154,7 +154,7 @@ await tab('homework');
 for (const name of ['Puzzles A', 'Puzzles B']) {
   await coachPage.fill('#hTitle', name); await coachPage.fill('#hDue', '2099-01-02');
   await coachPage.selectOption('#hWho', 'pick'); await coachPage.check(`#hPick input[value="${uid1}"]`);
-  await coachPage.fill('#hPz input[data-pz="1"]', '5');
+  await coachPage.click('#hMode button[data-mode="puzzles"]'); await coachPage.fill('#hPz input[data-pz="1"]', '5');
   await coachPage.click('#hwForm button[type=submit]');
   await coachPage.waitForFunction((n) => [...document.querySelectorAll('#hwList summary b')].some(b => b.textContent === n), name, { timeout: 20000 });
   await coachPage.waitForTimeout(500);
