@@ -26,7 +26,7 @@ addEventListener('pagehide', push);
 (async () => {
   const me = await whoAmI();
   const okAccess = !!me && (me.role === 'student' || me.role === 'coach');
-  if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0') } catch {} }
+  if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0'); localStorage.setItem('pq-role', me.role) } catch {} }
   window.dispatchEvent(new Event('pq-auth'));
   if (me && me.role === 'coach') {
     document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' });

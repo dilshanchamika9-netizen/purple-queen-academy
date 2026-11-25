@@ -104,8 +104,9 @@
   const lkey = () => mi ? 'li' + (mi + 1) : 'li';
   const modDone = (k) => MODS[k].lessons.every(l => (progress[l.id] || 0) >= PASS);
   const access = () => { try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
-  const modOpen = (k) => access() ? (coachView || k === 0 || modDone(k - 1)) : k === 0;
-  const unlocked = (i) => (coachView && access()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
+  const isCoach = () => { try { return access() && localStorage.getItem('pq-role') === 'coach' } catch { return false } };
+  const modOpen = (k) => access() ? ((coachView && isCoach()) || k === 0 || modDone(k - 1)) : k === 0;
+  const unlocked = (i) => (coachView && isCoach()) || (i === 0 ? modOpen(mi) : (progress[M.lessons[i - 1].id] || 0) >= PASS);
   const done = () => M.lessons.filter(l => (progress[l.id] || 0) >= PASS).length;
 
   function paintStatic() {
@@ -113,7 +114,7 @@
     $$('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
     $$('.mode button').forEach(b => { b.textContent = tx(UI[b.dataset.mode]); b.setAttribute('aria-selected', b.dataset.mode === mode) });
     $('#coachView').checked = coachView;
-    $('#coachWrap').hidden = !access();
+    $('#coachWrap').hidden = !isCoach();
     const gt = $('#lpGate'); gt.hidden = access(); if (!access()) gt.innerHTML = `<p>${tx(UI.gate)}</p><a class="btn btn-primary btn-sm" href="login.html?next=learn.html">${tx(UI.signIn)}</a>`;
     const vb = $('#voiceBtn'); vb.setAttribute('aria-pressed', voiceOn); vb.innerHTML = (voiceOn ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>') + '<span>' + tx(voiceOn ? UI.voiceOn : UI.voiceOff) + '</span>';
     document.documentElement.lang = lang === 'si' ? 'si' : 'en';

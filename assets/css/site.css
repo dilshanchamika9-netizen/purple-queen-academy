@@ -924,3 +924,4 @@ tr.payrow td { background:var(--paper) } .payf { display:flex; gap:12px; flex-wr
 .pz-hw .lb-files, .pz-hw .lb-ranks, .hwboard .lb-files, .hwboard .lb-ranks { color:#E5F6EA; font:700 13px var(--body) }
 .pz-hw .pz-board, .hwboard .lb { outline:0 !important; box-shadow:0 0 0 3px rgba(190,235,205,.45), 0 30px 60px -20px rgba(0,0,0,.55) !important }
 .pz-hw .pz-board .lsq.l, .hwboard .lsq.l { background:#F4FBF6 } .pz-hw .pz-board .lsq.d, .hwboard .lsq.d { background:#7FC096 }
+.lp-coach[hidden] { display:none !important }
