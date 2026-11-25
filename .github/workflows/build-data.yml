@@ -12,6 +12,7 @@ on:
       - 'assets/js/lessons5.js'
       - 'assets/js/lessons6.js'
       - 'assets/js/lessons7.js'
+      - 'assets/js/lessons8.js'
       - 'assets/js/board.js'
       - '.github/workflows/build-data.yml'
 permissions:

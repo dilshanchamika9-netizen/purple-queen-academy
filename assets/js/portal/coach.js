@@ -51,7 +51,7 @@ function render() {
       <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab">Level</span><select id="hWhoVal"></select></label></div>
     <div class="pickbox" id="hPick" hidden></div>
     <p class="lab">Lessons to complete (a lesson counts as done at ${PASS}% or more)</p>
-    <div class="lesspick" id="hLessons">${MODS.map((m, k) => `<details ${k === 2 ? 'open' : ''}><summary><label><input type="checkbox" data-mod="${k}"> <b>Module ${k + 1}</b> ${esc(m.title.en)}</label></summary>${m.lessons.map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"> ${esc(l.title.en)}</label>`).join('')}</details>`).join('')}</div>
+    <div class="lesspick" id="hLessons">${MODS.map((m, k) => `<details ${k === 2 ? 'open' : ''}><summary><label><input type="checkbox" data-mod="${k}"> <b>${PQ_MOD(MODS, k).label}</b> ${esc(m.title.en)}</label></summary>${m.lessons.map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"> ${esc(l.title.en)}</label>`).join('')}</details>`).join('')}</div>
     <p class="lab">Board tasks you made</p><div id="tbList" class="tblist"><span class="muted small">None yet.</span></div>
     <details class="tbd" id="tbDet"><summary>＋ Make a board task (set up a position and the right answer)</summary><div id="tbBox"></div></details>
     <label class="chk" for="hMail"><input type="checkbox" id="hMail"> Email the parents about this homework (only those with an email saved)</label>

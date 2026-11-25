@@ -114,7 +114,7 @@
     $('#ringFg').style.strokeDasharray = `${pct * 0.974} 100`; $('#ringTxt').textContent = pct + '%';
     $('#xpTxt').textContent = xp;
     $('#modTabs').hidden = MODS.length < 2;
-    $('#modTabs').innerHTML = MODS.map((m, k) => `<button type="button" data-m="${k}" class="${k === mi ? 'cur' : ''} ${modOpen(k) ? '' : 'lock'}" title="${tx(m.title)}">${modOpen(k) ? '' : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>'}${tx(UI.mod)} ${k + 1}</button>`).join('');
+    $('#modTabs').innerHTML = MODS.map((m, k) => `<button type="button" data-m="${k}" class="${k === mi ? 'cur' : ''} ${modOpen(k) ? '' : 'lock'}" title="${tx(m.title)}">${modOpen(k) ? '' : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>'}${PQ_MOD(MODS, k).lv > 1 ? 'L' + PQ_MOD(MODS, k).lv + ' ' : ''}${tx(UI.mod)} ${PQ_MOD(MODS, k).num}</button>`).join('');
     const cb = $('#certBtn'); cb.hidden = n < M.lessons.length; cb.textContent = tx(UI.cert);
     $('#lessonList').innerHTML = M.lessons.map((l, i) => {
       const best = progress[l.id], ok = (best || 0) >= PASS, lock = !unlocked(i);
@@ -259,7 +259,7 @@
   function certificate() {
     const name = store.get('name', '');
     const dlg = document.getElementById('certDlg'); if (!dlg) return;
-    const md = dlg.querySelector('.md'); if (md) md.textContent = `${M.level.en.split(' ·')[0]} · Module ${mi + 1}: ${M.title.en}`;
+    const md = dlg.querySelector('.md'); if (md) md.textContent = `${M.level.en.split(' ·')[0]} · Module ${PQ_MOD(MODS, mi).num}: ${M.title.en}`;
     const cp = dlg.querySelector('.cp'); if (cp) cp.textContent = `with a pass in all ${M.lessons.length} lessons and practice sessions.`;
     dlg.querySelector('#certName').value = name;
     const paint = () => { const n = dlg.querySelector('#certName').value.trim(); dlg.querySelector('.cn').textContent = n || '—'; store.set('name', n) };

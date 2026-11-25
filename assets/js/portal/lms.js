@@ -41,7 +41,7 @@ export function download(name, text) { const a = document.createElement('a'); a.
 // the module/lesson table used for the coach report and the parent page
 export function lessonTable(prog, tm) {
   const L = (prog && prog.lessons) || {};
-  return MODS.map((m, k) => `<details class="mrep" ${k < 2 ? 'open' : ''}><summary><b>Module ${k + 1}</b> ${esc(m.title.en)} <span>${m.lessons.filter(l => (L[l.id] || 0) >= PASS).length}/${m.lessons.length}</span></summary>
+  return MODS.map((m, k) => `<details class="mrep" ${k < 2 ? 'open' : ''}><summary><b>${PQ_MOD(MODS, k).label}</b> ${esc(m.title.en)} <span>${m.lessons.filter(l => (L[l.id] || 0) >= PASS).length}/${m.lessons.length}</span></summary>
     <table class="stu mini-t"><thead><tr><th>Lesson</th><th>Best mark</th><th>Tries</th><th>Time</th></tr></thead><tbody>${m.lessons.map(l => { const v = L[l.id]; return `<tr><td>${esc(l.title.en)}</td><td class="${v == null ? '' : v >= PASS ? 'good' : 'bad'}">${v == null ? '—' : v + '%'}</td><td>${lessonAtt(tm, l.id) || '—'}</td><td>${lessonSecs(tm, l.id) ? fmtTime(lessonSecs(tm, l.id)) : '—'}</td></tr>` }).join('')}</tbody></table></details>`).join('');
 }
 

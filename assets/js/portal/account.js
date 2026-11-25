@@ -50,7 +50,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
         const modOpen = k === 0 || MODS[k - 1].lessons.every(l => (L[l.id] || 0) >= 70);
         const done = m.lessons.filter(l => (L[l.id] || 0) >= 70).length;
         const nxt = m.lessons.findIndex(l => (L[l.id] || 0) < 70);
-        return `<section class="acc-card${modOpen ? '' : ' locked'}"><h3>Level 1 · Module ${k + 1} <small class="acc-tag ${modOpen ? 'open' : ''}">${modOpen ? done + '/' + m.lessons.length + ' done' : 'Locked'}</small></h3><p class="muted">${esc(m.title.en)}</p>
+        return `<section class="acc-card${modOpen ? '' : ' locked'}"><h3>${PQ_MOD(MODS, k).label} <small class="acc-tag ${modOpen ? 'open' : ''}">${modOpen ? done + '/' + m.lessons.length + ' done' : 'Locked'}</small></h3><p class="muted">${esc(m.title.en)}</p>
         <ol class="acc-lessons">${m.lessons.map((l, i) => { const v = L[l.id], ok = v >= 70, open = modOpen && (i === 0 || (L[m.lessons[i - 1].id] || 0) >= 70), cur = open && i === nxt;
           const inner = `<span class="n">${ok ? '✓' : open ? i + 1 : '🔒'}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : cur ? 'Start →' : open ? '—' : ''}</b>`;
           return open ? `<li class="${ok ? 'ok' : ''} ${cur ? 'cur' : ''}"><a href="learn.html?m=${k}&l=${i}">${inner}</a></li>` : `<li class="lk">${inner}</li>` }).join('')}</ol>
