@@ -57,19 +57,36 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
     ['First lesson', passed >= 1, ICO.book], ['5 lessons', passed >= 5, ICO.star], ['10 lessons', passed >= 10, ICO.trophy], ['Module done', MODS.some(m => m.lessons.every(l => (L[l.id] || 0) >= 70)), ICO.trophy],
     ['Puzzle starter', solved >= 1, ICO.puzzle], ['25 puzzles', solved >= 25, ICO.target], ['Top mark', scores.some(v => v >= 100), ICO.bolt], ['3-day streak', streak >= 3, ICO.fire]];
   const ring = (v, id) => `<div class="ring"><svg viewBox="0 0 36 36"><circle class="rg-bg" cx="18" cy="18" r="15.9"/><circle class="rg" cx="18" cy="18" r="15.9" stroke-dasharray="${v} 100"/></svg><b>${v}%</b></div>`;
+  // ---------- how the coach panel drives this page ----------
+  // coach sets the level  -> we open that level and keep earlier levels open for review
+  // coach gives homework  -> it comes first, and the "next" button follows the homework
+  const lvNow = +p.level || 1, lvOf = (k) => PQ_MOD(MODS, k).lv, passedL = (l) => (L[l.id] || 0) >= 70;
+  try { localStorage.setItem('pq-level', String(lvNow)) } catch {}
+  const modDone = (k) => MODS[k].lessons.every(passedL);
+  const modOpenK = (k) => k === 0 || lvOf(k) < lvNow || modDone(k - 1) || (lvOf(k) === lvNow && lvOf(k - 1) < lvNow);
+  const lessonHref = (id) => { const l = byId[id]; return l ? `learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}` : 'learn.html' };
+  const lessonSub = (id) => { const l = byId[id]; return l ? PQ_MOD(MODS, l.mod).label : '' };
+  const uid = me.user.uid, stats = assigns.map(a => ({ a, x: assignStat(a, uid, prog, st[a.id + '_' + uid], tm) }));
+  const openHw = stats.filter(s => s.x.state !== 'done'), doneHw = stats.filter(s => s.x.state === 'done');
+  // next step: first unfinished lesson in open homework, else the first lesson not passed in the student's level
+  let nextStep = null;
+  for (const s of openHw) { const r = s.x.items.find(r => r.it.t === 'lesson' && !r.done); if (r && byId[r.it.id]) { nextStep = { id: r.it.id, from: s.a.title }; break } }
+  if (!nextStep) { const k = MODS.findIndex((m, k) => lvOf(k) === lvNow && modOpenK(k) && m.lessons.some(l => !passedL(l))); if (k > -1) nextStep = { id: MODS[k].lessons.find(l => !passedL(l)).id, from: '' } }
   const levels = [1, 2, 3].map(lv => {
-    const idx = MODS.map((m, k) => k).filter(k => PQ_MOD(MODS, k).lv === lv); if (!idx.length) return '';
-    const tot = idx.reduce((a, k) => a + MODS[k].lessons.length, 0), dn = idx.reduce((a, k) => a + MODS[k].lessons.filter(l => (L[l.id] || 0) >= 70).length, 0);
-    const curLv = nlMod > -1 && idx.includes(nlMod), openIt = curLv || (nlMod === -1 && lv === 1);
-    const cards = idx.map(k => {
-      const m = MODS[k], modOpen = k === 0 || MODS[k - 1].lessons.every(l => (L[l.id] || 0) >= 70), done = m.lessons.filter(l => (L[l.id] || 0) >= 70).length, nxt = m.lessons.findIndex(l => (L[l.id] || 0) < 70), isCur = k === nlMod;
+    const idx = MODS.map((m, k) => k).filter(k => lvOf(k) === lv); if (!idx.length) return '';
+    const tot = idx.reduce((a, k) => a + MODS[k].lessons.length, 0), dn = idx.reduce((a, k) => a + MODS[k].lessons.filter(passedL).length, 0);
+    const tag = lv === lvNow ? '<span class="lvtag now">Your level</span>' : lv < lvNow ? '<span class="lvtag">Review</span>' : '<span class="lvtag lk">Opens when your coach promotes you</span>';
+    const cards = lv > lvNow ? '' : idx.map(k => {
+      const m = MODS[k], mo = modOpenK(k), done = m.lessons.filter(passedL).length, nxt = m.lessons.findIndex(l => !passedL(l)), isCur = nextStep && m.lessons.some(l => l.id === nextStep.id);
       const pc = Math.round(done / m.lessons.length * 100);
-      return `<article class="modcard${modOpen ? '' : ' locked'}${isCur ? ' cur open' : ''}"><div class="mh"><div><small>${PQ_MOD(MODS, k).label}</small><h4>${esc(m.title.en)}</h4></div>${ring(pc)}</div>
-        <ol class="mlist">${m.lessons.map((l, i) => { const v = L[l.id], ok = v >= 70, open = modOpen && (i === 0 || (L[m.lessons[i - 1].id] || 0) >= 70), cur = open && i === nxt;
+      return `<article class="modcard${mo ? '' : ' locked'}${isCur ? ' cur open' : ''}"><div class="mh"><div><small>${PQ_MOD(MODS, k).label}</small><h4>${esc(m.title.en)}</h4></div>${ring(pc)}</div>
+        <ol class="mlist">${m.lessons.map((l, i) => { const v = L[l.id], ok = v >= 70, open = mo && (i === 0 || passedL(m.lessons[i - 1]) || lvOf(k) < lvNow), cur = open && i === nxt;
           const inner = `<span class="n">${ok ? '✓' : open ? i + 1 : '·'}</span><span>${esc(l.title.en)}</span><b>${v != null ? v + '%' : cur ? 'Start' : ''}</b>`;
           return open ? `<li class="${ok ? 'ok' : ''} ${cur ? 'cur' : ''}"><a href="learn.html?m=${k}&l=${i}">${inner}</a></li>` : `<li class="lk">${inner}</li>` }).join('')}</ol>
-        <div class="acts">${modOpen ? `<a class="btn btn-primary" href="learn.html?m=${k}${nxt > -1 ? '&l=' + nxt : ''}">${nxt === -1 ? 'Review' : done ? 'Continue' : 'Start'} ${ICO.arrow}</a><button type="button" class="tg">${m.lessons.length} lessons ▾</button>` : `<span class="lockmsg">${ICO.lock} Finish the previous module</span>`}</div></article>` }).join('');
-    return `<details class="lvl l${lv} rv-p" ${openIt ? 'open' : ''}><summary><div class="lv-ic">${lv}</div><div><h3>${LEVEL[lv]}</h3><p class="lv-sub">${dn}/${tot} lessons passed</p></div>${ICO.chev}</summary><div class="mods">${cards}</div></details>` }).join('');
+        <div class="acts">${mo ? `<a class="btn btn-primary" href="learn.html?m=${k}${nxt > -1 ? '&l=' + nxt : ''}">${nxt === -1 ? 'Review' : done ? 'Continue' : 'Start'} ${ICO.arrow}</a><button type="button" class="tg">${m.lessons.length} lessons ▾</button>` : `<span class="lockmsg">${ICO.lock} Finish the previous module</span>`}</div></article>` }).join('');
+    return `<details class="lvl l${lv}${lv > lvNow ? ' lvlock' : ''}" ${lv === lvNow ? 'open' : ''}><summary><div class="lv-ic">${lv}</div><div><h3>${LEVEL[lv]} ${tag}</h3><p class="lv-sub">${dn}/${tot} lessons passed</p></div>${lv > lvNow ? ICO.lock : ICO.chev}</summary>${cards ? `<div class="mods">${cards}</div>` : ''}</details>` }).join('');
+  const lvIdx = MODS.map((m, k) => k).filter(k => lvOf(k) === lvNow), lvTot = lvIdx.reduce((a, k) => a + MODS[k].lessons.length, 0), lvDn = lvIdx.reduce((a, k) => a + MODS[k].lessons.filter(passedL).length, 0);
+  const nlL = nextStep && byId[nextStep.id];
   root.innerHTML = `
     <div class="hud">
       <div class="avring"><svg viewBox="0 0 36 36"><defs><linearGradient id="gXp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6E3AE"/><stop offset="1" stop-color="#C9A45C"/></linearGradient><linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B5FC2"/><stop offset="1" stop-color="#C9A45C"/></linearGradient></defs><circle class="rg-bg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2"/><circle class="rg" cx="18" cy="18" r="16.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="${Math.round(xpIn / 200 * 103.7)} 104"/></svg><button type="button" class="av" id="avBtn" title="Change profile photo" aria-label="Change profile photo">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : ini}<span class="cam" aria-hidden="true">📷</span></button><input type="file" id="avFile" accept="image/*" hidden><span class="lv">LV ${lvN}</span></div>
@@ -81,12 +98,14 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
     </div>
     <div class="dash">
       <div class="dmain">
-        ${nl ? `<a class="mission rv-p" href="learn.html?m=${nlMod}&l=${nlIdx}"><div class="mi">${ICO.play}</div><div><small>Your next mission</small><h2>${esc(nl.title.en)}</h2><p>${PQ_MOD(MODS, nlMod).label} · ${esc(MODS[nlMod].title.en)}</p></div><span class="go">Launch ${ICO.arrow}</span></a>`
-          : `<div class="mission rv-p"><div class="mi">${ICO.trophy}</div><div><small>All clear</small><h2>Every lesson passed</h2><p>Ask your coach about promotion.</p></div></div>`}
+        ${nlL ? `<a class="mission rv-p" href="${lessonHref(nextStep.id)}"><div class="mi">${ICO.play}</div><div><small>${nextStep.from ? 'Next step · homework' : 'Your next lesson'}</small><h2>${esc(nlL.title.en)}</h2><p>${lessonSub(nextStep.id)} · ${esc(MODS[nlL.mod].title.en)}${nextStep.from ? ' · ' + esc(nextStep.from) : ''}</p></div><span class="go">Start ${ICO.arrow}</span></a>`
+          : `<div class="mission rv-p"><div class="mi">${ICO.trophy}</div><div><small>All clear</small><h2>Every lesson in your level is passed</h2><p>Solve puzzles, and ask your coach about the promotion test.</p></div></div>`}
         <section class="acc-card rv-p" id="hwBox"></section>
-        ${levels}
-        <section class="acc-card rv-p" id="feeBox"><h3>Fees</h3>${feesBlock(invs, { payBtn: true })}</section>
-        <section class="acc-card rv-p"><h3>My attendance</h3>${attTable(att, me.user.uid)}</section>
+        <section class="course rv-p"><div class="sec-t"><h3>My lessons</h3><span>${LEVEL[lvNow] || ''} · ${lvDn}/${lvTot} passed</span></div>${levels}</section>
+        <div class="duo">
+          <section class="acc-card rv-p" id="feeBox"><h3>Fees</h3>${feesBlock(invs, { payBtn: true })}</section>
+          <section class="acc-card rv-p"><h3>My attendance</h3>${att.total ? `<div class="attsum"><b>${att.pct}%</b><span>${att.present} present · ${att.late} late · ${att.absent} absent<br><small>${att.total} classes</small></span></div><details class="more"><summary>Show classes</summary>${attTable(att, me.user.uid)}</details>` : '<p class="muted">No classes marked yet.</p>'}</section>
+        </div>
         <form class="acc-card acc-pw" id="pwForm" hidden><h3>Change password</h3>
           <label for="pw0">Current password<input id="pw0" type="password" autocomplete="current-password"></label>
           <label for="pw1">New password<input id="pw1" type="password" autocomplete="new-password"></label>
@@ -95,29 +114,48 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       </div>
       <aside class="dside">
         <div class="stats6 rv-p">
-          <div class="stat">${ICO.book}<b data-count="${passed}" data-suf="/${LESSONS.length}">0</b><span>Lessons passed</span></div>
+          <div class="stat">${ICO.book}<b>${lvDn}/${lvTot}</b><span>Level ${lvNow} lessons</span></div>
           <div class="stat">${ICO.target}<b data-count="${avg}" data-suf="%">0</b><span>Average mark</span></div>
-          <div class="stat">${ICO.puzzle}<b data-count="${solved}">0</b><span>Puzzles solved</span></div>
+          <a class="stat statlink" href="puzzle.html">${ICO.puzzle}<b data-count="${solved}">0</b><span>Puzzles solved →</span></a>
           <div class="stat">${ICO.clock}<b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study, 7 days</span></div>
-          <div class="stat" style="grid-column:1/-1">${ICO.cal}<b>${att.pct == null ? '—' : att.pct + '%'}</b><span>Attendance</span></div>
         </div>
         <section class="acc-card rv-p"><h3>Study activity</h3><div class="heat">${heat}</div><div class="heatcap"><span>6 weeks ago</span><span>Today</span></div></section>
         <section class="acc-card rv-p"><h3>Achievements</h3><div class="badges">${BADGES.map(b => `<div class="bdg${b[1] ? ' on' : ''}"><i>${b[2]}</i>${b[0]}</div>`).join('')}</div></section>
-        <section class="acc-card rv-p"><h3>Puzzles</h3><div class="bigpz">${solved}<small>SOLVED · BEST STREAK ${(prog.puzzles && prog.puzzles.best) || 0}</small></div><p style="margin:14px 0 0"><a class="btn btn-ghost" href="puzzle.html">Solve puzzles ${ICO.arrow}</a></p></section>
       </aside>
     </div>`;
   root.querySelectorAll('.modcard .tg').forEach(t => t.onclick = () => t.closest('.modcard').classList.toggle('open'));
   paintHw(); if (window.PQ_UI) PQ_UI.enhance(root);
+  function dueLabel(a) {
+    if (!a.due) return { t: 'No due date', c: '' };
+    const d = Math.round((new Date(a.due + 'T00:00') - new Date(today() + 'T00:00')) / 864e5);
+    return d < 0 ? { t: `Overdue by ${-d} day${d === -1 ? '' : 's'}`, c: 'late' } : d === 0 ? { t: 'Due today', c: 'soon' } : d === 1 ? { t: 'Due tomorrow', c: 'soon' } : { t: `Due in ${d} days · ${dueText(a)}`, c: '' };
+  }
+  function itemRow(a, r, i) {
+    const ck = r.done ? '✓' : '';
+    if (r.it.t === 'lesson') { const l = byId[r.it.id]; return `<li class="${r.done ? 'ok' : ''}"><span class="n">${ck}</span>${l ? `<a href="${lessonHref(l.id)}">${esc(l.title.en)}</a><small>${lessonSub(l.id)}</small>` : esc(r.it.id)}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>` }
+    if (r.it.t === 'puzzles') return `<li class="${r.done ? 'ok' : ''}"><span class="n">${ck}</span>${r.total ? `<a href="puzzle.html?hw=${a.id}&set=${r.ids.join(',')}">${esc(itemLabel(r.it, true))}</a>` : esc(itemLabel(r.it, true)) + ' (none left to assign)'}<b>${r.n}/${r.total}</b></li>`;
+    if (r.it.t === 'task') return `<li class="${r.done ? 'ok' : ''}"><span class="n">${ck}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it, true))}</a><b>${r.done ? 'Solved' : ''}</b></li>`;
+    return `<li class="${r.done ? 'ok' : ''}"><label><input type="checkbox" data-a="${a.id}" data-i="${i}" ${r.done ? 'checked' : ''}> ${esc(r.it.text)}</label></li>`;
+  }
+  function firstLink(a, x) {
+    const i = x.items.findIndex(r => !r.done && r.it.t !== 'text'); if (i < 0) return '';
+    const r = x.items[i]; return r.it.t === 'lesson' ? lessonHref(r.it.id) : r.it.t === 'puzzles' ? (r.total ? `puzzle.html?hw=${a.id}&set=${r.ids.join(',')}` : '') : r.it.t === 'task' ? `task.html?a=${a.id}&i=${i}` : '';
+  }
+  function hwCard({ a, x }) {
+    const du = dueLabel(a), pc = x.total ? Math.round(x.done / x.total * 100) : 0, go = x.state !== 'done' && firstLink(a, x);
+    const rows = x.items.map((r, i) => itemRow(a, r, i)), many = rows.length > 6;
+    return `<li class="hwc ${x.state}"><div class="hw-top"><div class="hwt"><b>${esc(a.title)}</b><span class="due ${x.state === 'done' ? '' : du.c}">${x.state === 'done' ? 'Completed' : du.t}</span></div>${statePill(x.state)}</div>
+      ${a.note ? `<p class="hwnote">${esc(a.note)}</p>` : ''}
+      <div class="hwprog"><i><b style="width:${pc}%"></b></i><em>${x.done}/${x.total} done</em>${go ? `<a class="btn btn-primary btn-sm" href="${go}">${x.done ? 'Continue' : 'Start'} ${ICO.arrow}</a>` : ''}</div>
+      <ul class="hw-items">${rows.slice(0, many ? 5 : rows.length).join('')}</ul>${many ? `<details class="more"><summary>Show all ${rows.length} items</summary><ul class="hw-items">${rows.slice(5).join('')}</ul></details>` : ''}</li>`;
+  }
   function paintHw() {
-    const box = $('#hwBox');
-    box.innerHTML = '<h3>My homework</h3>' + (assigns.length ? '<ul class="hw-list">' + assigns.map(a => {
-      const x = assignStat(a, me.user.uid, prog, st[a.id + '_' + me.user.uid], tm);
-      return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}
-        <ul class="hw-items">${x.items.map((r, i) => r.it.t === 'lesson'
-          ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${(() => { const l = byId[r.it.id]; return l ? `<a href="learn.html?m=${l.mod}&l=${LMODS[l.mod].lessons.findIndex(z => z.id === l.id)}">${esc(itemLabel(r.it, true))}</a>` : esc(r.it.id) })()}<b>${r.mark == null ? '' : r.mark + '%'}</b></li>`
-          : r.it.t === 'puzzles' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span>${r.total ? `<a href="puzzle.html?hw=${a.id}&set=${r.ids.join(',')}">${esc(itemLabel(r.it, true))}</a>` : esc(itemLabel(r.it, true)) + ' (none left to assign)'}<b>${r.n}/${r.total}</b></li>`
-          : r.it.t === 'task' ? `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><a href="task.html?a=${a.id}&i=${i}">${esc(itemLabel(r.it, true))}</a><b>${r.done ? 'Solved' : 'Open'}</b></li>`
-          : `<li class="${r.done ? 'ok' : ''}"><label><input type="checkbox" data-a="${a.id}" data-i="${i}" ${r.done ? 'checked' : ''}> ${esc(r.it.text)}</label></li>`).join('')}</ul></li>` }).join('') + '</ul>' : '<p class="muted">No homework right now.</p>');
+    const box = $('#hwBox'), s2 = assigns.map(a => ({ a, x: assignStat(a, uid, prog, st[a.id + '_' + uid], tm) }));
+    const op = s2.filter(s => s.x.state !== 'done'), dn = s2.filter(s => s.x.state === 'done');
+    box.innerHTML = `<div class="sec-t"><h3>Homework from your coach</h3><span>${op.length ? op.length + ' to do' : 'All done'}</span></div>`
+      + (s2.length ? `<ul class="hw-list">${op.map(hwCard).join('')}</ul>${op.length ? '' : '<p class="muted">No homework to do right now. Well done!</p>'}`
+        + (dn.length ? `<details class="hwdone"${op.length ? '' : ' open'}><summary>Completed homework (${dn.length})</summary><ul class="hw-list">${dn.map(hwCard).join('')}</ul></details>` : '')
+        : '<p class="muted">No homework yet. Your coach will add it here.</p>');
   }
   $('#hwBox').addEventListener('change', async (e) => {
     const c = e.target.closest('input[data-a]'); if (!c) return;

@@ -377,3 +377,27 @@ html[data-theme="dark"] .dhw li { background:var(--surf) }
   #stuTable td select.lv, #stuTable td input.bt { width:100%; border-color:var(--edge) !important; background:#fff !important }
   #stuTable tr td[colspan] { grid-column:1 / -1 }
 }
+/* ---------- student page ---------- */
+.sec-t { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:12px }
+.sec-t h3 { margin:0 !important } .sec-t > span { font:600 13px var(--body); color:var(--muted) }
+.pqp .hw-list > li.hwc { padding:16px 18px }
+.hwt { display:grid; gap:2px } .hwt b { font:700 17px var(--body) !important; color:var(--night) }
+.due { font:600 13px var(--body); color:var(--muted) } .due.soon { color:#A46A00 } .due.late { color:#B4233C }
+.pqp .hw-top { justify-content:space-between }
+.hwnote { margin:8px 0 0; padding:8px 12px; border-radius:10px; background:rgba(201,164,92,.12); font-size:14px; color:var(--ink) }
+.hwprog { display:flex; align-items:center; gap:12px; margin:12px 0 4px; flex-wrap:wrap }
+.hwprog i { flex:1; min-width:120px; height:8px; border-radius:8px; background:var(--mist); overflow:hidden } .hwprog i b { display:block; height:100%; border-radius:8px; background:linear-gradient(90deg, var(--accent), #C9A45C) }
+.hwprog em { font:700 13px var(--body); font-style:normal; color:var(--purple) }
+.pqp .hw-items li small { color:var(--muted); font-size:12px } .pqp .hw-items li a { font-weight:600 }
+.hwdone { margin-top:12px } .hwdone > summary, .acc-card .more > summary { cursor:pointer; font:600 14px var(--body); color:var(--purple); padding:6px 0 }
+.hwdone .hw-list { margin-top:8px } .hwdone .hw-list > li { opacity:.85 }
+.course .sec-t { padding:0 4px } .course { display:grid; gap:12px }
+.lvtag { display:inline-block; vertical-align:middle; margin-left:8px; padding:3px 10px; border-radius:999px; font:700 11px var(--body); letter-spacing:.02em; background:var(--mist); color:var(--muted) }
+.lvtag.now { background:var(--accent); color:#fff } .lvtag.lk { font-weight:600 }
+.lvlock summary { cursor:default; opacity:.75 } .lvlock summary svg { width:20px; height:20px; color:var(--muted) }
+.duo { display:grid; grid-template-columns:1fr 1fr; gap:20px } .duo > .acc-card + .acc-card { margin-top:0 }
+.statlink { text-decoration:none; color:inherit } .statlink:hover { border-color:var(--accent) }
+@media (max-width:760px) { .duo { grid-template-columns:1fr } }
+.pqp .hw-top .due { background:none; padding:0; border:0; font:600 13px var(--body); color:var(--muted) } .pqp .hw-top .due.soon { color:#A46A00 } .pqp .hw-top .due.late { color:#B4233C }
+.dmain > * { margin-top:0 !important; margin-bottom:0 !important } .duo { align-items:start } .course > .lvl { margin:0 }
+@media (max-width:560px) { .pqp .hw-items li small { display:none } .hud-side { flex-wrap:wrap } .hud-side > div { flex-wrap:wrap } .hwprog .btn { width:100%; justify-content:center } }

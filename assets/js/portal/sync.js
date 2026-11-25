@@ -28,6 +28,10 @@ addEventListener('pagehide', push);
   const okAccess = !!me && (me.role === 'student' || me.role === 'coach');
   if (!me) markSignedIn(false); else { try { localStorage.setItem('pq-access', okAccess ? '1' : '0'); localStorage.setItem('pq-role', me.role) } catch {} }
   window.dispatchEvent(new Event('pq-auth'));
+  if (me && me.role === 'student') {
+    try { if (me.profile && me.profile.level) localStorage.setItem('pq-level', String(me.profile.level)) } catch {}
+    document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.hidden = true; a.style.display = 'none' }); // the name chip already links to the student's page
+  }
   if (me && me.role === 'coach') {
     document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' });
     const chip = document.getElementById('pqUserChip'); if (chip) chip.hidden = true;
