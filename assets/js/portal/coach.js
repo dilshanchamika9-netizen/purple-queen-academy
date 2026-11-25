@@ -1,7 +1,7 @@
 import { initBuilder } from './taskbuilder.js';
 import { initFees } from './coach-fees.js';
 import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn, fmtTime, today } from './fb.js';
-import { PZ_LEVELS, MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, attStat, attTable, attLabel, waLink, mailLink } from './lms.js';
+import { PZ_LEVELS, MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, lessonSecs, lessonAtt, attStat, attTable, attLabel, waLink, mailLink } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalCoach');
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
@@ -130,7 +130,8 @@ function render() {
 const $$ = (s) => [...document.querySelectorAll(s)];
 const defTitle = () => 'Homework · ' + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const plusDays = (n) => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') };
-let PUZZLES = null;
+let PUZZLES = null, PUBPZ = null;
+async function loadAllPuzzles() { if (!PUBPZ) { try { PUBPZ = (await (await fetch('assets/data/puzzles.json')).json()).puzzles } catch { PUBPZ = [] } } let hw = []; try { hw = await loadPuzzles() } catch {} return PUBPZ.concat(hw) }
 async function loadPuzzles() { if (!PUZZLES) { const r = await fetch('assets/data/hwpuzzles.json'); if (!r.ok) throw new Error('The homework puzzle pool is not built yet'); PUZZLES = (await r.json()).puzzles } return PUZZLES }
 // puzzle ids already given to a student in any homework, plus ones already solved
 const usedPuzzles = (uid) => { const u = new Set(Object.keys((((progress[uid] || {}).puzzles) || {}).solved || {})); assigns.forEach(a => (a.items || []).forEach(it => { if (it.t === 'puzzles' && it.sets && it.sets[uid]) it.sets[uid].forEach(id => u.add(id)) })); return u };
@@ -380,23 +381,34 @@ function showDetail(uid) {
   const weak = LESSONS.filter(l => L[l.id] != null && L[l.id] < PASS).map(l => ({ l, v: L[l.id] })).sort((a, b) => a.v - b.v).slice(0, 5);
   const mine = assigns.filter(a => (a.uids || []).includes(uid));
   const d = $('#detail'); d.hidden = false;
-  d.innerHTML = `<div class="tbl-head"><h3>${s.photo ? `<img class="phimg" src="${esc(s.photo)}" alt=""> ` : ''}${esc(s.name)} <small class="muted">${esc(s.sid)} · ${LEVELS[s.level] || ''}${s.batch ? ' · ' + esc(s.batch) : ''}</small></h3><button type="button" class="btn btn-ghost btn-sm" id="dClose">Close</button></div>
-    <div class="acc-stats"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
-    <p class="muted small">Active time counts only while the page is open and in use. Idle for more than 2 minutes is not counted.</p>
-    <h4>Last 14 days (minutes of active study)</h4>${dayBars(tm)}
-    ${weak.length ? `<h4>Needs work</h4><p>${weak.map(w => `<span class="chip bad">${esc(lessonName(w.l.id))} · ${w.v}%</span>`).join(' ')}</p>` : ''}
-    ${+s.level === 1 || +s.level === 2 ? (() => { const n = +s.level, ex = L['l' + n + '-promotion'], gm = s['l' + n + 'games']; const ready = (ex || 0) >= PASS && gm; return `<h4>Level ${n} promotion</h4><ul class="plist"><li class="${(ex || 0) >= PASS ? 'ok' : ''}">Promotion test (30 tasks): ${ex == null ? 'not taken' : ex + '%' + ((ex || 0) >= PASS ? ' · passed' : ' · needs ' + PASS + '%')}</li>
-      <li class="${gm ? 'ok' : ''}"><label><input type="checkbox" id="l1g" ${gm ? 'checked' : ''}> Supervised games with notation completed</label></li></ul>
-      <button type="button" class="btn btn-primary btn-sm" id="promoBtn" ${ready ? '' : 'disabled'}>Promote to Level ${n + 1}</button>` })() : ''}
-    <h4>Attendance</h4>${(() => { const a = attStat(sessions, uid); return a.total ? `<p><b>${a.pct}%</b> attended · ${a.present} present, ${a.late} late, ${a.absent} absent (${a.total} classes)</p>` + attTable(a, uid) : '<p class="muted">No classes marked yet.</p>' })()}
-    <h4>Puzzles</h4><p id="dPz" class="muted small">Loading…</p><button type="button" class="btn btn-primary btn-sm" id="dAssign">Assign homework to ${esc(s.name.split(' ')[0])}</button>
-    <h4>Homework</h4>${mine.length ? `<table class="stu mini-t"><thead><tr><th>Homework</th><th>Due</th><th>Done</th><th>Status</th></tr></thead><tbody>${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<tr><td>${esc(a.title)}</td><td>${dueText(a)}</td><td>${st.done}/${st.total}</td><td>${statePill(st.state)}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">None given yet.</p>'}
-    <h4>Modules and lessons</h4>${lessonTable(p, tm)}
-    <h4>Parent contact</h4><div class="row2"><label for="dpPhone">WhatsApp number<input id="dpPhone" type="tel" value="${esc(s.parentPhone || '')}"></label><label for="dpEmail">Email<input id="dpEmail" type="email" value="${esc(s.parentEmail || '')}"></label></div>
-    <button type="button" class="btn btn-ghost btn-sm" id="dpSave">Save contact</button> <span class="pmsg2" id="dpMsg"></span>
-    <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
+  const ini = esc((s.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
+  const lv = +s.level || 1, att = attStat(sessions, uid);
+  const modRow = (m, k, open) => { const ls = m.lessons, done = ls.filter(l => (L[l.id] || 0) >= PASS).length, pct = Math.round(done / ls.length * 100);
+    return `<details class="mrow"${open ? ' open' : ''}><summary><span class="mt"><small>${PQ_MOD(MODS, k).label}</small><b>${esc(m.title.en)}</b></span><span class="mbar"><span style="width:${pct}%"></span></span><em>${done}/${ls.length}</em></summary>
+      <ul class="mls">${ls.map(l => { const v = L[l.id]; return `<li class="${v == null ? '' : v >= PASS ? 'ok' : 'bad'}"><span>${esc(l.title.en)}</span><b>${v == null ? '—' : v + '%'}</b><small>${lessonAtt(tm, l.id) || '—'} ${lessonAtt(tm, l.id) === 1 ? 'try' : 'tries'} · ${lessonSecs(tm, l.id) ? fmtTime(lessonSecs(tm, l.id)) : '—'}</small></li>` }).join('')}</ul></details>` };
+  const myMods = MODS.map((m, k) => ({ m, k })).filter(x => PQ_MOD(MODS, x.k).lv === lv), other = MODS.map((m, k) => ({ m, k })).filter(x => PQ_MOD(MODS, x.k).lv !== lv);
+  const firstOpen = (myMods.find(x => x.m.lessons.some(l => (L[l.id] || 0) < PASS)) || {}).k;
+  d.innerHTML = `<div class="dhead"><div class="dwho">${s.photo ? `<img class="dav" src="${esc(s.photo)}" alt="">` : `<span class="ini dav">${ini}</span>`}<div><p class="eyebrow">Student report</p><h3 class="dname">${esc(s.name)}</h3><p class="dsub">${esc(s.sid)} · ${LEVELS[s.level] || ''}${s.batch ? ' · ' + esc(s.batch) : ''}</p></div></div>
+      <div class="dact"><button type="button" class="btn btn-primary btn-sm" id="dAssign">Assign homework</button><button type="button" class="btn btn-ghost btn-sm" id="dClose">Close</button></div></div>
+    <div class="acc-stats dkpi"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
+    <div class="dgrid"><div class="dcol">
+      <section class="dbox"><h4>Study activity <small>last 14 days, minutes</small></h4>${dayBars(tm)}<p class="muted small">Counts only while a page is open and in use (idle over 2 minutes is not counted).</p></section>
+      <section class="dbox"><h4>Progress by module <small>${LEVELS[lv] || ''}</small></h4>${myMods.map(x => modRow(x.m, x.k, x.k === firstOpen)).join('')}
+        <details class="more"><summary>Other levels</summary>${other.map(x => modRow(x.m, x.k, false)).join('')}</details></section>
+    </div><div class="dcol">
+      ${lv === 1 || lv === 2 ? (() => { const ex = L['l' + lv + '-promotion'], gm = s['l' + lv + 'games']; const ready = (ex || 0) >= PASS && gm; return `<section class="dbox"><h4>Level ${lv} promotion</h4><ul class="plist"><li class="${(ex || 0) >= PASS ? 'ok' : ''}">Promotion test (30 tasks): ${ex == null ? 'not taken' : ex + '%'}</li>
+        <li class="${gm ? 'ok' : ''}"><label><input type="checkbox" id="l1g" ${gm ? 'checked' : ''}> Supervised games with notation completed</label></li></ul>
+        <button type="button" class="btn btn-primary btn-sm" id="promoBtn" ${ready ? '' : 'disabled'}>Promote to Level ${lv + 1}</button></section>` })() : ''}
+      ${weak.length ? `<section class="dbox"><h4>Needs work</h4><div class="chips">${weak.map(w => `<span class="chip bad">${esc(w.l.title.en)} · ${w.v}%</span>`).join('')}</div></section>` : ''}
+      <section class="dbox"><h4>Attendance</h4>${att.total ? `<div class="attsum"><b>${att.pct}%</b><span>${att.present} present · ${att.late} late · ${att.absent} absent<br><small>${att.total} classes</small></span></div><details class="more"><summary>Show classes</summary>${attTable(att, uid)}</details>` : '<p class="muted small">No classes marked yet.</p>'}</section>
+      <section class="dbox"><h4>Puzzles</h4><p id="dPz" class="muted small">Loading…</p></section>
+      <section class="dbox"><h4>Homework</h4>${mine.length ? `<ul class="dhw">${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<li><span><b>${esc(a.title)}</b><small>Due ${dueText(a)}</small></span><em>${st.done}/${st.total}</em>${statePill(st.state)}</li>` }).join('')}</ul>` : '<p class="muted small">No homework yet.</p>'}</section>
+      <section class="dbox"><h4>Parent</h4><label for="dpPhone">WhatsApp number<input id="dpPhone" type="tel" value="${esc(s.parentPhone || '')}"></label><label for="dpEmail">Email<input id="dpEmail" type="email" value="${esc(s.parentEmail || '')}"></label>
+        <div class="row"><button type="button" class="btn btn-ghost btn-sm" id="dpSave">Save contact</button> <span class="pmsg2" id="dpMsg"></span></div>
+        <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use ••• → Add parent login in the table)'}</p></section>
+    </div></div>`;
   $('#dAssign').onclick = () => { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === uid }); paintLessons(); paintSum(); $('#hwForm').scrollIntoView({ behavior: 'smooth', block: 'start' }) };
-  loadPuzzles().then(all => { const sv = (p.puzzles || {}).solved || {}, ids = Object.keys(sv), by = {}; ids.forEach(id => { const q = all.find(x => x.id === id); if (q) by[q.l] = (by[q.l] || 0) + 1 }); const el = $('#dPz'); if (el) el.textContent = ids.length ? `${ids.length} solved · ` + Object.entries(by).map(([l, n]) => `${PZ_LEVELS[l]} ${n}`).join(' · ') + ` · best streak ${(p.puzzles || {}).best || 0}` : 'No puzzles solved yet.' }).catch(() => { const el = $('#dPz'); if (el) el.textContent = '' });
+  loadAllPuzzles().then(all => { const sv = (p.puzzles || {}).solved || {}, ids = Object.keys(sv), by = {}; ids.forEach(id => { const q = all.find(x => x.id === id); if (q) by[q.l] = (by[q.l] || 0) + 1 }); const el = $('#dPz'); if (el) el.textContent = ids.length ? `${ids.length} solved · ` + Object.entries(by).map(([l, n]) => `${PZ_LEVELS[l]} ${n}`).join(' · ') + ` · best streak ${(p.puzzles || {}).best || 0}` : 'No puzzles solved yet.' }).catch(() => { const el = $('#dPz'); if (el) el.textContent = '' });
   $('#dClose').onclick = () => { d.hidden = true; openUid = null };
   $('#dpSave').onclick = async () => { const ph = $('#dpPhone').value.trim(), em = $('#dpEmail').value.trim().toLowerCase(); try { await F.updateDoc(F.doc(db, 'users', uid), { parentPhone: ph, parentEmail: em }); s.parentPhone = ph; s.parentEmail = em; $('#dpMsg').className = 'pmsg2 ok'; $('#dpMsg').textContent = 'Saved.' } catch { $('#dpMsg').className = 'pmsg2 err'; $('#dpMsg').textContent = 'Could not save.' } };
   const g = $('#l1g'); if (g) g.onchange = async () => { const key = 'l' + (+s.level) + 'games'; try { await F.updateDoc(F.doc(db, 'users', uid), { [key]: g.checked }); s[key] = g.checked; showDetail(uid) } catch { g.checked = !g.checked } };
