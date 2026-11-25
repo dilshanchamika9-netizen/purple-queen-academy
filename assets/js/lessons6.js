@@ -18,7 +18,7 @@
 
   window.PQ_MODULE_6 = {
     level: T("Level 1 · Pawn", "මට්ටම 1 · පෝන්"),
-    title: T("First tactics and openings", "මුල්ම උපක්‍රම සහ ආරම්භක ඇදීම්"),
+    title: T("First tactics and openings", "මුල්ම උපක්‍රම සහ ඔපනින් ඇදීම්"),
     lessons: [
       { id: "hanging", title: T("Hanging pieces", "ආරක්ෂාවක් නැති ඉත්තන්"), steps: [
         { pos: H1, hl: ["d5"], text: T("A piece is hanging when it is attacked and nobody defends it. The black bishop on d5 is attacked by the knight and has no defender.", "ඉත්තෙකුට ප්‍රහාර වෙලා ඒකට ආරක්ෂාවක් නැත්නම් ඒක ආරක්ෂාවක් නැති (hanging) ඉත්තෙක්. d5 හි කළු බිෂොප් එකට නයිට් එකෙන් ප්‍රහාර වෙලා, ආරක්ෂාවක් නෑ.") },
@@ -52,7 +52,7 @@
         { text: T("Rooks, bishops and queens skewer along lines. Look for a king and a queen on the same file, rank or diagonal.", "රුක්, බිෂොප් සහ රැජින රේඛා දිගේ ස්කීවර් කරනවා. එකම සිරස් පේළියක, තිරස් පේළියක හෝ ඇද පේළියක රජුයි රැජිනයි ඉන්නවද කියලා බලන්න.") },
       ] },
 
-      { id: "opening-principles", title: T("Opening principles", "ආරම්භක මූලධර්ම"), steps: [
+      { id: "opening-principles", title: T("Opening principles", "ඔපනින් මූලධර්ම"), steps: [
         { pos: START, hl: ["e4", "d4", "e5", "d5"], text: T("The opening is the first 8 to 12 moves. Five ideas: control the centre, develop your pieces, castle early, move each piece once, and keep your queen at home.", "ආරම්භය කියන්නේ මුල් ඇදීම් 8 ඉඳන් 12 දක්වා. අදහස් පහයි: මැද පාලනය කරන්න, ඉත්තන් එළියට ගන්න, කලින් කාසලින් කරන්න, එක ඉත්තෙක් එක වතාවයි ඇදන්න, රැජින ගෙදර තියන්න.") },
         { moves: [["e2", "e4"], ["e7", "e5"]], hl: ["e4", "e5"], text: T("1. e4 e5. Both sides put a pawn in the centre. Central pawns give your pieces room.", "1. e4 e5. දෙපැත්තම පෝන් එකක් මැදට දානවා. මැද පෝන් වලින් ඉත්තන්ට ඉඩ ලැබෙනවා.") },
         { moves: [["g1", "f3"], ["b8", "c6"]], hl: ["f3", "c6"], text: T("2. Nf3 Nc6. Knights come out toward the centre, where they are strongest.", "2. Nf3 Nc6. නයිට් මැද පැත්තට එනවා, එතන ඒවා වඩාත්ම ශක්තිමත්.") },
@@ -61,7 +61,7 @@
         { pos: fp("rnbqkbnr/pppp1ppp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KBNR"), hl: ["h5"], text: T("Avoid bringing the queen out early. Here Qh5 can be chased by Black’s pieces, and White loses time.", "රැජින කලින් එළියට ගන්න එපා. මෙතන Qh5 එක කළුගේ ඉත්තන්ට පන්නගන්න පුළුවන්, සුදුට වෙලාව නැති වෙනවා.") },
       ] },
 
-      { id: "opening-traps", title: T("Common opening traps", "සාමාන්‍ය ආරම්භක උගුල්"), steps: [
+      { id: "opening-traps", title: T("Common opening traps", "සාමාන්‍ය ඔපනින් උගුල්"), steps: [
         { pos: SCH0, hl: ["h5", "c4", "f7"], text: T("The scholar’s mate: the queen and the bishop both aim at f7. At the start, only the king defends f7.", "ස්කොලර්ස් මේට් (scholar’s mate): රැජිනයි බිෂොප් එකයි දෙන්නාම f7 ඉලක්ක කරනවා. මුලදී f7 ආරක්ෂා කරන්නේ රජු විතරයි.") },
         { pos: SCH0, move: ["h5", "f7"], caps: ["f7"], text: T("Qxf7# is checkmate in four moves. The bishop on c4 guards the queen.", "Qxf7# ඇදීම් හතරකින් චෙක්මේට්. c4 හි බිෂොප් එක රැජින ආරක්ෂා කරනවා.") },
         { pos: SCH0, hl: ["g7", "e7", "g8"], text: T("To defend, play ...g6 to attack the queen, or ...Qe7 to guard f7. Do not ignore the threat.", "ආරක්ෂා වෙන්න ...g6 ඇදලා රැජිනට ප්‍රහාර කරන්න, නැත්නම් f7 ආරක්ෂා කරන්න ...Qe7 ඇදන්න. තර්ජනය නොසලකා හරින්න එපා.") },
@@ -108,7 +108,7 @@
       { type: "move", pos: START, v: "legal", q: T("Take the centre. Move a central pawn two squares.", "මැද අල්ලගන්න. මැද පෝන් එකක් කොටු දෙකක් ඇදන්න."), ans: [["e2", "e4"], ["d2", "d4"]] },
       { type: "move", pos: OP1, v: "legal", q: T("Develop a knight toward the centre.", "නයිට් එකක් මැද පැත්තට එළියට ගන්න."), ans: [["g1", "f3"], ["b1", "c3"]] },
       { type: "move", pos: CAS, v: "legal", also: [["h1", "f1"]], q: T("Your king is ready. Castle kingside.", "ඔයාගේ රජු සූදානම්. රජුගේ පැත්තට කාසලින් කරන්න."), ans: [["e1", "g1"]] },
-      { type: "choice", q: T("Which one is NOT an opening principle?", "මේවායින් ආරම්භක මූලධර්මයක් නොවන්නේ කුමක්ද?"), opts: [T("Control the centre", "මැද පාලනය කරන්න"), T("Bring the queen out early", "රැජින කලින් එළියට ගන්න"), T("Develop your pieces", "ඉත්තන් එළියට ගන්න")], a: 1 },
+      { type: "choice", q: T("Which one is NOT an opening principle?", "මේවායින් ඔපනින් මූලධර්මයක් නොවන්නේ කුමක්ද?"), opts: [T("Control the centre", "මැද පාලනය කරන්න"), T("Bring the queen out early", "රැජින කලින් එළියට ගන්න"), T("Develop your pieces", "ඉත්තන් එළියට ගන්න")], a: 1 },
       { type: "choice", q: T("Why do we castle early?", "අපි කලින් කාසලින් කරන්නේ ඇයි?"), opts: [T("The king gets safe and the rook joins the game", "රජු ආරක්ෂිත වෙනවා, රුක් එක ක්‍රීඩාවට එකතු වෙනවා"), T("To lose time", "වෙලාව නාස්ති කරන්න"), T("To capture pawns", "පෝන් කපන්න")], a: 0 },
       { type: "choice", q: T("How often should you move the same piece in the opening?", "ආරම්භයේදී එකම ඉත්තා කී වතාවක් ඇදිය යුතුද?"), opts: [T("As little as possible: bring a new piece out each move", "හැකි තරම් අඩුවෙන්: හැම ඇදීමකදීම අලුත් ඉත්තෙක් එළියට ගන්න"), T("As often as I can", "මට හැකි තරම් වැඩියෙන්"), T("Ten times", "දස වතාවක්")], a: 0 },
     ],
@@ -118,7 +118,7 @@
       { type: "choice", pos: FOOL, q: T("Black to move. Which move is checkmate?", "කළුගේ වාරය. චෙක්මේට් වෙන්නේ කුමන ඇදීමද?"), opts: ["…Qh4", "…Qg5", "…Bb4"], a: 0 },
       { type: "choice", q: T("Which square does the scholar’s mate attack?", "ස්කොලර්ස් මේට් එක ප්‍රහාර කරන්නේ කුමන කොටුවටද?"), opts: ["f7", "e5", "d5"], a: 0 },
       { type: "choice", q: T("The fool’s mate happens after White moves which pawns?", "ෆූල්ස් මේට් එක වෙන්නේ සුදු කුමන පෝන් ඇදුවාම ද?"), opts: [T("The f- and g-pawns", "f සහ g පෝන්"), T("The a- and b-pawns", "a සහ b පෝන්"), T("The queen’s pawns only", "රැජිනගේ පැත්තේ පෝන් විතරයි")], a: 0 },
-      { type: "choice", q: T("What is the best habit against opening traps?", "ආරම්භක උගුල් වලට එරෙහිව හොඳම පුරුද්ද මොකක්ද?"), opts: [T("Before each move, ask what my opponent threatens", "හැම ඇදීමකටම කලින් ප්‍රතිවාදියා තර්ජනය කරන්නේ මොකක්ද කියලා අහනවා"), T("Move the queen out at once", "රැජින එකපාරටම එළියට ගන්නවා"), T("Never develop knights", "නයිට් කවදාවත් එළියට ගන්නේ නෑ")], a: 0 },
+      { type: "choice", q: T("What is the best habit against opening traps?", "ඔපනින් උගුල් වලට එරෙහිව හොඳම පුරුද්ද මොකක්ද?"), opts: [T("Before each move, ask what my opponent threatens", "හැම ඇදීමකටම කලින් ප්‍රතිවාදියා තර්ජනය කරන්නේ මොකක්ද කියලා අහනවා"), T("Move the queen out at once", "රැජින එකපාරටම එළියට ගන්නවා"), T("Never develop knights", "නයිට් කවදාවත් එළියට ගන්නේ නෑ")], a: 0 },
     ],
   };
 

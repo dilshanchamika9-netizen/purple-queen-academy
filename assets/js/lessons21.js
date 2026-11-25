@@ -18,8 +18,8 @@
     title: T("Level 3 final test", "තුන්වන මට්ටමේ අවසාන පරීක්ෂණය"),
     lessons: [{
       id: "l3-final", title: T("Final test: 30 tasks", "අවසාන පරීක්ෂණය: කාර්ය 30"), steps: [
-        { text: T("This is the Level 3 final test. It has 30 tasks from all six Level 3 modules: positional play, opening preparation, endgames, game analysis, arbiter rules and tournament preparation. You need 70% to pass.", "මෙය තුන්වන මට්ටමේ අවසාන පරීක්ෂණයයි. ස්ථානීය ක්‍රීඩාව, ආරම්භක සූදානම, අවසාන ක්‍රීඩා, ක්‍රීඩා විශ්ලේෂණය, ආබිටර් නීති සහ තරඟ සූදානම යන තුන්වන මට්ටමේ මොඩියුල හයෙන්ම කාර්ය 30ක් තියෙනවා. සමත් වෙන්න ඔයාට 70% ක් ඕනේ.") },
-        { text: T("Work on your own. Think about structure, plans and rules, and calculate carefully.", "තනියම කරන්න. ව්‍යුහය, සැලසුම් සහ නීති ගැන හිතලා, ප්‍රවේශමෙන් ගණනය කරන්න.") },
+        { text: T("This is the Level 3 final test. It has 30 tasks from all six Level 3 modules: positional play, opening preparation, endgames, game analysis, arbiter rules and tournament preparation. You need 70% to pass.", "මෙය තුන්වන මට්ටමේ අවසාන පරීක්ෂණයයි. පොසිෂනල් ක්‍රීඩාව, ඔපනින් සූදානම, එන්ඩ් ගේම්, ක්‍රීඩා විශ්ලේෂණය, ආබිටර් නීති සහ තරඟ සූදානම යන තුන්වන මට්ටමේ මොඩියුල හයෙන්ම කාර්ය 30ක් තියෙනවා. සමත් වෙන්න ඔයාට 70% ක් ඕනේ.") },
+        { text: T("Work on your own. Think about structure, plans and rules, and calculate carefully.", "තනියම කරන්න. ස්ට්‍රක්චර් එක, සැලසුම් සහ නීති ගැන හිතලා, ප්‍රවේශමෙන් ගණනය කරන්න.") },
         { text: T("After you pass, you can download the academy certificate for completing all three levels. Congratulations, Queen level!", "ඔයා සමත් වුණාම, මට්ටම් තුනම සම්පූර්ණ කිරීම වෙනුවෙන් ඇකඩමි සහතිකය බාගත කරන්න පුළුවන්. සුබ පැතුම්, රැජින මට්ටම!") }
       ],
     }],

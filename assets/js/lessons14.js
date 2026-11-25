@@ -18,7 +18,7 @@
     title: T("Level 2 promotion test", "දෙවන මට්ටමේ උසස්වීම් පරීක්ෂණය"),
     lessons: [{
       id: "l2-promotion", title: T("Promotion test: 30 tasks", "උසස්වීම් පරීක්ෂණය: කාර්ය 30"), steps: [
-        { text: T("This is the Level 2 promotion test. It has 30 tasks from all six Level 2 modules: tactics, combinations, openings, endgames, the clock and tournament rules. You need 70% to pass.", "මෙය දෙවන මට්ටමේ උසස්වීම් පරීක්ෂණයයි. උපක්‍රම, සංයෝජන, ආරම්භක ක්‍රීඩා, අවසන් ක්‍රීඩා, ඔරලෝසුව සහ තරඟ නීති යන දෙවන මට්ටමේ මොඩියුල හයෙන්ම කාර්ය 30ක් තියෙනවා. සමත් වෙන්න ඔයාට 70% ඕන.") },
+        { text: T("This is the Level 2 promotion test. It has 30 tasks from all six Level 2 modules: tactics, combinations, openings, endgames, the clock and tournament rules. You need 70% to pass.", "මෙය දෙවන මට්ටමේ උසස්වීම් පරීක්ෂණයයි. උපක්‍රම, සංයෝජන, ඔපනින්, එන්ඩ් ගේම්, ඔරලෝසුව සහ තරඟ නීති යන දෙවන මට්ටමේ මොඩියුල හයෙන්ම කාර්ය 30ක් තියෙනවා. සමත් වෙන්න ඔයාට 70% ඕන.") },
         { text: T("Work on your own. Look for checks, captures and threats first, then calculate.", "තනියම කරන්න. මුලින් චෙක්, කැපීම් සහ තර්ජන හොයන්න, ඊට පස්සේ ගණනය කරන්න.") },
         { text: T("After you pass, your coach plays supervised rated-style games with you, with a clock and a scoresheet. Then you move up to Level 3.", "ඔයා සමත් වුණාම, ඔයාගේ කෝච් ඔරලෝසුවකුත් ස්කෝර්ෂීට් එකකුත් සමඟ ශ්‍රේණිගත ක්‍රීඩා ආකාරයේ අධීක්ෂණය කරන ලද ක්‍රීඩා ඔයත් එක්ක ක්‍රීඩා කරනවා. ඊට පස්සේ ඔයා තුන්වන මට්ටමට උසස් වෙනවා.") },
       ],

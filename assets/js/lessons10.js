@@ -5,10 +5,10 @@
   const fp = window.PQ_FP;
   window.PQ_MODULE_10 = {
     level: T("Level 2 · Knight", "මට්ටම 2 · නයිට්"),
-    title: T("Opening repertoire basics", "ආරම්භක ක්‍රීඩා මූලික"),
+    title: T("Opening repertoire basics", "ඔපනින් මූලික"),
     lessons: [
       { id: "l2-italian", title: {en:"The Italian Game",si:"ඉතාලි ක්‍රීඩාව (Italian Game)"}, steps: [
-        { pos: fp("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"), text: {en:"The Italian Game starts 1. e4 e5 2. Nf3 Nc6 3. Bc4. It is one of the oldest and most popular openings, and it follows every opening principle.",si:"ඉතාලි ක්‍රීඩාව (Italian Game) පටන් ගන්නේ 1. e4 e5 2. Nf3 Nc6 3. Bc4 වලින්. ඒක පැරණිම, ජනප්‍රියම ආරම්භයක්, හැම ආරම්භක මූලධර්මයක්ම අනුගමනය කරනවා."} },
+        { pos: fp("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"), text: {en:"The Italian Game starts 1. e4 e5 2. Nf3 Nc6 3. Bc4. It is one of the oldest and most popular openings, and it follows every opening principle.",si:"ඉතාලි ක්‍රීඩාව (Italian Game) පටන් ගන්නේ 1. e4 e5 2. Nf3 Nc6 3. Bc4 වලින්. ඒක පැරණිම, ජනප්‍රියම ඔපනින් එකක්, හැම ඔපනින් මූලධර්මයක්ම අනුගමනය කරනවා."} },
         { moves: [["e2","e4"],["e7","e5"]], text: {en:"1. e4 e5. White takes the centre with a pawn and Black does the same.",si:"1. e4 e5. සුදු පෝන් එකකින් මැද ගන්නවා, කළුත් ඒකම කරනවා."} },
         { moves: [["g1","f3"],["b8","c6"]], text: {en:"2. Nf3 Nc6. White attacks the e5 pawn, and Black defends it with the knight.",si:"2. Nf3 Nc6. සුදු e5 පෝන් එකට ප්‍රහාර කරනවා, කළු නයිට් එකෙන් ආරක්ෂා කරනවා."} },
         { moves: [["f1","c4"],["f8","c5"]], text: {en:"3. Bc4 Bc5. The bishop aims at f7, the weakest square in Black’s camp. Black copies the idea.",si:"3. Bc4 Bc5. බිෂොප් එක කළු කඳවුරේ දුර්වලම කොටුව වන f7 ට ඉලක්ක කරනවා. කළුත් ඒක අනුකරණය කරනවා."} },

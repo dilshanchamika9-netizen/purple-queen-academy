@@ -30,7 +30,7 @@
       { id: "l3-review", title: {en:"Your review routine",si:"ඔයාගේ සමාලෝචන රටාව"}, steps: [
         { text: {en:"Review every serious game within a day or two, while you still remember what you were thinking.",si:"හැම බරපතල ක්‍රීඩාවක්ම දවසක් දෙකක් ඇතුළත සමාලෝචනය කරන්න, ඔයා හිතපු දේ තාම මතකයේ තියෙද්දී."} },
         { text: {en:"Step 1: replay the game with your scoresheet. Mark the moments where you were unsure, and the moments where the game changed.",si:"පියවර 1: ඔයාගේ ලකුණු පත්‍රය (scoresheet) එක්ක ක්‍රීඩාව නැවත ක්‍රීඩා කරන්න. ඔයාට විශ්වාස නැති තැන් සහ ක්‍රීඩාව වෙනස් වුණු තැන් සලකුණු කරන්න."} },
-        { text: {en:"Step 2: find the turning point and name the cause: opening mistake, tactic missed, bad plan, endgame error, or time trouble.",si:"පියවර 2: හැරවුම් ලක්ෂ්‍යය හොයලා හේතුවට නමක් දෙන්න: ආරම්භයේ වැරැද්ද, මග හැරුණු උපක්‍රමය, නරක සැලැස්ම, අවසාන ක්‍රීඩා වැරැද්ද, නැත්නම් වෙලාව මදි වීම."} },
+        { text: {en:"Step 2: find the turning point and name the cause: opening mistake, tactic missed, bad plan, endgame error, or time trouble.",si:"පියවර 2: හැරවුම් ලක්ෂ්‍යය හොයලා හේතුවට නමක් දෙන්න: ඔපනින් වැරැද්ද, මග හැරුණු උපක්‍රමය, නරක සැලැස්ම, එන්ඩ් ගේම් වැරැද්ද, නැත්නම් වෙලාව මදි වීම."} },
         { text: {en:"Step 3: write one lesson and one training goal. For example: \"Check for enemy forks before every move.\"",si:"පියවර 3: පාඩමක් සහ පුහුණු ඉලක්කයක් ලියන්න. උදාහරණයක්: \"හැම ඇදීමකටම කලින් සතුරු ෆෝක් බලන්න.\""} },
         { text: {en:"Keep a game notebook. After a few weeks you will see your most common mistake. Fix that first, and share your games with your coach.",si:"ක්‍රීඩා සටහන් පොතක් තියාගන්න. සති කිහිපයකට පස්සේ ඔයාගේ වඩාත්ම පොදු වැරැද්ද ඔයාට පේනවා. මුලින් ඒක නිවැරදි කරලා, ඔයාගේ ක්‍රීඩා පුහුණුකරුට පෙන්වන්න."} }
       ] },
@@ -39,16 +39,16 @@
   const P = {
     "l3-annotation": [
       { type: "choice", q: {en:"What does ?? mean next to a move?",si:"ඇදීමක් ළඟ ?? කියන්නේ මොකක්ද?"}, opts: [{en:"A blunder: a very bad mistake",si:"බ්ලන්ඩර් එකක්: ඉතා නරක වැරැද්දක්"},{en:"An excellent move",si:"විශිෂ්ට ඇදීමක්"},{en:"An interesting move",si:"රසවත් ඇදීමක්"}], a: 0 },
-      { type: "choice", q: {en:"What does !! mean?",si:"!! කියන්නේ මොකක්ද?"}, opts: [{en:"A blunder",si:"බ්ලන්ඩර් එකක්"},{en:"An excellent or brilliant move",si:"විශිෂ්ට නැත්නම් දීප්තිමත් ඇදීමක්"},{en:"A draw offer",si:"සමාන කරගැනීමේ යෝජනාවක්"}], a: 1 },
-      { type: "choice", q: {en:"What does +- mean?",si:"+- කියන්නේ මොකක්ද?"}, opts: [{en:"Black is winning",si:"කළු දිනනවා"},{en:"The position is equal",si:"ස්ථානය සමානයි"},{en:"White is winning",si:"සුදු දිනනවා"}], a: 2 },
+      { type: "choice", q: {en:"What does !! mean?",si:"!! කියන්නේ මොකක්ද?"}, opts: [{en:"A blunder",si:"බ්ලන්ඩර් එකක්"},{en:"An excellent or brilliant move",si:"විශිෂ්ට නැත්නම් දීප්තිමත් ඇදීමක්"},{en:"A draw offer",si:"ඩ්‍රෝ යෝජනාවක්"}], a: 1 },
+      { type: "choice", q: {en:"What does +- mean?",si:"+- කියන්නේ මොකක්ද?"}, opts: [{en:"Black is winning",si:"කළු දිනනවා"},{en:"The position is equal",si:"පොසිෂන් එක සමානයි"},{en:"White is winning",si:"සුදු දිනනවා"}], a: 2 },
       { type: "choice", q: {en:"What does ?! mean?",si:"?! කියන්නේ මොකක්ද?"}, opts: [{en:"A dubious move",si:"සැක සහිත ඇදීමක්"},{en:"A brilliant move",si:"දීප්තිමත් ඇදීමක්"},{en:"A forced move",si:"බලකරන ඇදීමක්"}], a: 0 },
-      { type: "choice", q: {en:"What does = mean as an evaluation?",si:"ඇගයුමක් ලෙස = කියන්නේ මොකක්ද?"}, opts: [{en:"White is winning",si:"සුදු දිනනවා"},{en:"The position is equal",si:"ස්ථානය සමානයි"},{en:"Black is better",si:"කළු වඩා හොඳයි"}], a: 1 }
+      { type: "choice", q: {en:"What does = mean as an evaluation?",si:"ඇගයුමක් ලෙස = කියන්නේ මොකක්ද?"}, opts: [{en:"White is winning",si:"සුදු දිනනවා"},{en:"The position is equal",si:"පොසිෂන් එක සමානයි"},{en:"Black is better",si:"කළු වඩා හොඳයි"}], a: 1 }
     ],
     "l3-turning-points": [
       { type: "choice", pos: fp("rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR"), q: {en:"1.f3 e5 2.g4?? Qh4#. Which move was the turning point?",si:"1.f3 e5 2.g4?? Qh4#. හැරවුම් ලක්ෂ්‍ය ඇදීම කුමක්ද?"}, opts: [{en:"1.f3",si:"1.f3"},{en:"1...e5",si:"1...e5"},{en:"2.g4",si:"2.g4"}], a: 2 },
       { type: "move", pos: fp("r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR"), q: {en:"Black has just played 3...Nf6?? It is White's turn. Find the winning move.",si:"කළු දැන් 3...Nf6?? ක්‍රීඩා කළා. සුදුගේ වාරයයි. දිනන ඇදීම සොයන්න."}, hint: {en:"The queen can capture on f7 with check.",si:"රැජිනට f7 කපලා චෙක් දෙන්න පුළුවන්."}, ans: [["h5","f7"]] },
       { type: "choice", q: {en:"What is a turning point?",si:"හැරවුම් ලක්ෂ්‍යයක් කියන්නේ මොකක්ද?"}, opts: [{en:"The move where the game changed",si:"ක්‍රීඩාව වෙනස් වුණු ඇදීම"},{en:"The last move of the game",si:"ක්‍රීඩාවේ අවසාන ඇදීම"},{en:"The first move of the game",si:"ක්‍රීඩාවේ පළමු ඇදීම"}], a: 0 },
-      { type: "choice", q: {en:"How do you find the turning point?",si:"හැරවුම් ලක්ෂ්‍යය හොයාගන්නේ කොහොමද?"}, opts: [{en:"Count how many moves were played",si:"ඇදපු ඇදීම් ගණන් කරන්න"},{en:"Look back from the result for where the advantage was lost",si:"ප්‍රතිඵලයේ ඉඳන් පස්සට බලලා වාසිය නැති වුණු තැන හොයන්න"},{en:"Look only at the opening",si:"ආරම්භය විතරක් බලන්න"}], a: 1 },
+      { type: "choice", q: {en:"How do you find the turning point?",si:"හැරවුම් ලක්ෂ්‍යය හොයාගන්නේ කොහොමද?"}, opts: [{en:"Count how many moves were played",si:"ඇදපු ඇදීම් ගණන් කරන්න"},{en:"Look back from the result for where the advantage was lost",si:"ප්‍රතිඵලයේ ඉඳන් පස්සට බලලා වාසිය නැති වුණු තැන හොයන්න"},{en:"Look only at the opening",si:"ඔපනින් එක විතරක් බලන්න"}], a: 1 },
       { type: "choice", q: {en:"After finding a mistake, what should you ask?",si:"වැරැද්දක් හොයාගත්තට පස්සේ අහන්න ඕනේ මොකක්ද?"}, opts: [{en:"Whose fault was the weather?",si:"කාලගුණය කාගේ වරදද?"},{en:"How can I blame the opponent?",si:"ප්‍රතිවාදියාට දොස් කියන්නේ කොහොමද?"},{en:"What caused it: tactic, plan, or time?",si:"හේතුව මොකක්ද: උපක්‍රමයක්ද, සැලැස්මක්ද, වෙලාවද?"}], a: 2 }
     ],
     "l3-engines": [
@@ -56,7 +56,7 @@
       { type: "choice", q: {en:"What does +1.5 mean?",si:"+1.5 කියන්නේ මොකක්ද?"}, opts: [{en:"Black is better",si:"කළු වඩා හොඳයි"},{en:"White is better by about one and a half pawns",si:"සුදු පෝන් එකහමාරකින් විතර ඉදිරියෙන්"},{en:"White has 1.5 queens",si:"සුදුට රැජින් 1.5ක් තියෙනවා"}], a: 1 },
       { type: "choice", q: {en:"What does #3 mean?",si:"#3 කියන්නේ මොකක්ද?"}, opts: [{en:"Move number 3",si:"ඇදීම් අංක 3"},{en:"Three pieces are attacked",si:"ඉත්තන් තුනකට ප්‍රහාර"},{en:"Mate in 3 moves",si:"ඇදීම් 3කින් මේට්"}], a: 2 },
       { type: "choice", q: {en:"What is the best way to learn from an engine?",si:"එන්ජිමකින් ඉගෙනගන්න හොඳම ක්‍රමය මොකක්ද?"}, opts: [{en:"Analyse yourself first, then compare and ask why",si:"මුලින් ඔයාම විශ්ලේෂණය කරලා, ඊට පස්සේ සසඳලා ඇයි කියලා අහන්න"},{en:"Copy every engine move without thinking",si:"එන්ජිම ඇදීම් හැමදෙයක්ම නොහිතා පිටපත් කරන්න"},{en:"Let it play your games for you",si:"ඔයාගේ ක්‍රීඩා ඔයා වෙනුවට ක්‍රීඩා කරන්න දෙන්න"}], a: 0 },
-      { type: "choice", q: {en:"What does 0.00 mean?",si:"0.00 කියන්නේ මොකක්ද?"}, opts: [{en:"Black is winning",si:"කළු දිනනවා"},{en:"The position is equal",si:"ස්ථානය සමානයි"},{en:"The engine has no answer",si:"එන්ජිමට පිළිතුරක් නෑ"}], a: 1 }
+      { type: "choice", q: {en:"What does 0.00 mean?",si:"0.00 කියන්නේ මොකක්ද?"}, opts: [{en:"Black is winning",si:"කළු දිනනවා"},{en:"The position is equal",si:"පොසිෂන් එක සමානයි"},{en:"The engine has no answer",si:"එන්ජිමට පිළිතුරක් නෑ"}], a: 1 }
     ],
     "l3-review": [
       { type: "choice", q: {en:"When is the best time to review a game?",si:"ක්‍රීඩාවක් සමාලෝචනය කරන හොඳම වෙලාව කවදාද?"}, opts: [{en:"After a year",si:"අවුරුද්දකට පස්සේ"},{en:"Never",si:"කවදාවත් නෑ"},{en:"Within a day or two",si:"දවසක් දෙකක් ඇතුළත"}], a: 2 },
