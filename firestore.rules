@@ -51,6 +51,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'updatedAt']);
       allow delete: if false;
     }
+    // attendance: one document per class (date + batch); marks maps student uid to p (present), l (late) or a (absent)
+    match /attendance/{id} {
+      allow read: if isCoach() || (isStudent() && request.auth.uid in resource.data.uids) || (isParent() && myChild() in resource.data.uids);
+      allow create, update: if isCoach() && request.resource.data.keys().hasAll(['date', 'batch', 'marks', 'uids']);
+      allow delete: if false;
+    }
     match /meta/{doc} {
       allow read, write: if isCoach();
     }

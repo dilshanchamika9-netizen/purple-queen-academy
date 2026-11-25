@@ -1,5 +1,5 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn, fmtTime, today } from './fb.js';
-import { assignStat, itemLabel, secsInLastDays, dueText, statePill, byId, MODS as LMODS } from './lms.js';
+import { attStat, attTable, assignStat, itemLabel, secsInLastDays, dueText, statePill, byId, MODS as LMODS } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalAccount');
 const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []);
@@ -23,6 +23,8 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
   let assigns = [], st = {};
   try { const q = await F.getDocs(F.query(F.collection(db, 'assignments'), F.where('uids', 'array-contains', me.user.uid))); assigns = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.due || '').localeCompare(b.due || '')) } catch {}
   try { const q = await F.getDocs(F.query(F.collection(db, 'astatus'), F.where('uid', '==', me.user.uid))); q.docs.forEach(d => st[d.id] = d.data()) } catch {}
+  let sess = []; try { const q = await F.getDocs(F.query(F.collection(db, 'attendance'), F.where('uids', 'array-contains', me.user.uid))); sess = q.docs.map(d => d.data()) } catch {}
+  const att = attStat(sess, me.user.uid);
   const solved = prog.puzzles && prog.puzzles.solved ? Object.keys(prog.puzzles.solved).length : 0;
   const nextIdx = LESSONS.findIndex(l => (L[l.id] || 0) < 70);
   root.innerHTML = `
@@ -36,8 +38,10 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       <div><b>${prog.xp || 0}</b><span>XP</span></div>
       <div><b>${solved}</b><span>Puzzles solved</span></div>
       <div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study time, 7 days</span></div>
+      <div><b>${att.pct == null ? '—' : att.pct + '%'}</b><span>Attendance</span></div>
     </div>
     <section class="acc-card" id="hwBox"></section>
+    <section class="acc-card"><h3>My attendance</h3>${attTable(att, me.user.uid)}</section>
     <div class="acc-grid">
       <div class="acc-mods">${MODS.map((m, k) => {
         const modOpen = k === 0 || MODS[k - 1].lessons.every(l => (L[l.id] || 0) >= 70);

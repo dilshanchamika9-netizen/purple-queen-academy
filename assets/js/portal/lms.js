@@ -43,3 +43,13 @@ export function lessonTable(prog, tm) {
   return MODS.map((m, k) => `<details class="mrep" ${k < 2 ? 'open' : ''}><summary><b>Module ${k + 1}</b> ${esc(m.title.en)} <span>${m.lessons.filter(l => (L[l.id] || 0) >= PASS).length}/${m.lessons.length}</span></summary>
     <table class="stu mini-t"><thead><tr><th>Lesson</th><th>Best mark</th><th>Tries</th><th>Time</th></tr></thead><tbody>${m.lessons.map(l => { const v = L[l.id]; return `<tr><td>${esc(l.title.en)}</td><td class="${v == null ? '' : v >= PASS ? 'good' : 'bad'}">${v == null ? '—' : v + '%'}</td><td>${lessonAtt(tm, l.id) || '—'}</td><td>${lessonSecs(tm, l.id) ? fmtTime(lessonSecs(tm, l.id)) : '—'}</td></tr>` }).join('')}</tbody></table></details>`).join('');
 }
+
+// attendance: sessions = [{date,batch,marks:{uid:'p'|'l'|'a'},uids}]
+export function attStat(sessions, uid) {
+  const mine = sessions.filter(x => (x.uids || []).includes(uid) && x.marks && x.marks[uid]).sort((a, b) => b.date.localeCompare(a.date));
+  const c = { p: 0, l: 0, a: 0 }; mine.forEach(x => c[x.marks[uid]]++);
+  const total = mine.length;
+  return { total, present: c.p, late: c.l, absent: c.a, pct: total ? Math.round((c.p + c.l) / total * 100) : null, recent: mine.slice(0, 10) };
+}
+export const attLabel = { p: 'Present', l: 'Late', a: 'Absent' };
+export const attTable = (a, u) => a.total ? `<table class="stu mini-t"><thead><tr><th>Date</th><th>Class</th><th>Status</th></tr></thead><tbody>${a.recent.map(x => `<tr><td>${x.date}</td><td>${esc(x.batch)}</td><td><span class="pill ${x.marks[u] === 'a' ? 'late' : x.marks[u] === 'l' ? 'open' : 'done'}">${attLabel[x.marks[u]]}</span></td></tr>`).join('')}</tbody></table>` : '<p class="muted">No classes marked yet.</p>';

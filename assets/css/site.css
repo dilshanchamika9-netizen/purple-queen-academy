@@ -876,3 +876,8 @@ details.mrep { border:1px solid var(--line); border-radius:14px; padding:10px 14
 .hw-items li { display:flex; gap:10px; align-items:center; font-size:14.5px; padding:8px 10px; border-radius:10px; background:var(--paper) } .hw-items li.ok { background:#EAF6EF }
 .hw-items li .n { width:22px; text-align:center; font-weight:700 } .hw-items li b { margin-left:auto } .hw-items label { display:flex; gap:10px; align-items:center; cursor:pointer } .hw-items input { width:auto }
 @media (max-width:720px) { .dbars { gap:3px } .dbars em { font-size:9px } details.hw summary { gap:6px } }
+.atlist { display:grid; gap:8px; margin:12px 0 16px } .atrow { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; padding:10px 14px; border-radius:12px; background:var(--paper); font-size:14px }
+.seg3 { display:inline-flex; gap:6px } .seg3 label { cursor:pointer } .seg3 input { position:absolute; opacity:0; pointer-events:none }
+.seg3 label { padding:7px 14px; border-radius:999px; background:#fff; border:1px solid var(--line); font:600 13px var(--body); color:var(--muted) }
+.seg3 label:has(input:checked).p { background:#E4F4EA; color:#1E6B3A; border-color:#9FD3B2 } .seg3 label:has(input:checked).l { background:#FFF3DA; color:#7A5410; border-color:#E8CB8B } .seg3 label:has(input:checked).a { background:#FBE6EA; color:#A3213C; border-color:#E8A9B6 }
+.seg3 label:has(input:focus-visible) { outline:2px solid var(--purple); outline-offset:2px }

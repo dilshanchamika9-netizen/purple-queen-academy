@@ -1,11 +1,11 @@
 import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn, fmtTime, today } from './fb.js';
-import { MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable } from './lms.js';
+import { MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable, attStat, attTable, attLabel } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalCoach');
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const tempPw = () => words[Math.floor(Math.random() * words.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
-let students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
+let sessions = [], students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
 
 (async () => {
   const me = await whoAmI();
@@ -31,6 +31,11 @@ function render() {
       <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form>
     <section class="acc-card"><h3>Requests</h3><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></section>
   </div>
+  <form class="acc-card" id="atForm"><h3>Attendance</h3>
+    <div class="row2"><label for="atDate">Class date<input id="atDate" type="date" required></label>
+      <label for="atBatch">Class (batch)<select id="atBatch"></select></label></div>
+    <div id="atList" class="atlist"></div>
+    <div class="tools"><button type="button" class="btn btn-ghost btn-sm" id="atAll">Mark everyone present</button><button class="btn btn-primary btn-sm" type="submit">Save attendance</button></div><p class="pmsg2" id="atMsg"></p></form>
   <form class="acc-card" id="hwForm"><h3>Assign homework</h3>
     <div class="row2"><label for="hTitle">Title<input id="hTitle" required placeholder="e.g. Week 3: forks and pins"></label>
       <label for="hDue">Due date<input id="hDue" type="date" required></label></div>
@@ -44,7 +49,7 @@ function render() {
     <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p></form>
   <section class="acc-card" id="hwList"><h3>Homework given</h3><p class="muted">Loading…</p></section>
   <section class="acc-card"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
-    <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Average</th><th>XP</th><th>Active time<br><small>7 days</small></th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="10" class="muted">Loading…</td></tr></tbody></table></div></section>
+    <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Average</th><th>Attendance</th><th>XP</th><th>Active time<br><small>7 days</small></th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="11" class="muted">Loading…</td></tr></tbody></table></div></section>
   <section class="acc-card" id="detail" hidden></section>`;
   $('#cOut').onclick = logout;
   $('#addForm').onsubmit = addStudent;
@@ -53,6 +58,9 @@ function render() {
   $('#csvBtn').onclick = exportCsv;
   $('#hDue').min = today();
   $('#hWho').onchange = paintWho;
+  $('#atForm').onsubmit = saveAtt; $('#atDate').value = today(); $('#atDate').max = today();
+  $('#atDate').onchange = paintAtt; $('#atBatch').onchange = paintAtt;
+  $('#atAll').onclick = () => $$('#atList input[value="p"]').forEach(r => r.checked = true);
   $('#hLessons').addEventListener('change', (e) => { const m = e.target.dataset.mod; if (m != null) $$(`#hLessons input[data-m="${m}"]`).forEach(c => c.checked = e.target.checked) });
 }
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -67,12 +75,14 @@ function paintWho() {
 async function load() {
   const us = await F.getDocs(F.query(F.collection(db, 'users'), F.where('role', '==', 'student')));
   students = us.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a, b) => (a.sid || '').localeCompare(b.sid || ''));
+  const att = await F.getDocs(F.query(F.collection(db, 'attendance'), F.orderBy('date', 'desc'), F.limit(500)));
+  sessions = att.docs.map(d => ({ id: d.id, ...d.data() }));
   const [ps, ts, as, ss] = await Promise.all([F.getDocs(F.collection(db, 'progress')), F.getDocs(F.collection(db, 'time')), F.getDocs(F.query(F.collection(db, 'assignments'), F.orderBy('createdAt', 'desc'), F.limit(60))), F.getDocs(F.collection(db, 'astatus'))]);
   progress = {}; ps.docs.forEach(d => progress[d.id] = d.data());
   times = {}; ts.docs.forEach(d => times[d.id] = d.data());
   assigns = as.docs.map(d => ({ id: d.id, ...d.data() }));
   statuses = {}; ss.docs.forEach(d => statuses[d.id] = d.data());
-  paintStats(); paintTable(); paintHw();
+  paintStats(); paintTable(); paintHw(); paintAtt(true);
 }
 const stat = (uid) => {
   const p = progress[uid] || {}, L = p.lessons || {};
@@ -93,15 +103,15 @@ function paintTable() {
     <td><b>${esc(s.sid)}</b></td><td><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button>${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
     <td><select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></td>
     <td><input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></td>
-    <td>${t.passed}/${LESSONS.length}</td><td>${t.avg == null ? '—' : t.avg + '%'}</td><td>${t.xp}</td><td>${fmtTime(secsInLastDays(times[s.uid], 7))}</td><td>${ago(s.lastSeen)}</td>
+    <td>${t.passed}/${LESSONS.length}</td><td>${t.avg == null ? '—' : t.avg + '%'}</td><td>${(() => { const a = attStat(sessions, s.uid); return a.pct == null ? '—' : a.pct + '%' })()}</td><td>${t.xp}</td><td>${fmtTime(secsInLastDays(times[s.uid], 7))}</td><td>${ago(s.lastSeen)}</td>
     <td class="acts"><button type="button" class="mini" data-a="report">Report</button><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></td></tr>` }).join('')
-    : `<tr><td colspan="10" class="muted">${students.length ? 'No match.' : 'No students yet. Add the first one above.'}</td></tr>`;
+    : `<tr><td colspan="11" class="muted">${students.length ? 'No match.' : 'No students yet. Add the first one above.'}</td></tr>`;
 }
 root.addEventListener('change', async (e) => {
   const tr = e.target.closest('tr[data-uid]'); if (!tr) return;
   const uid = tr.dataset.uid, field = e.target.classList.contains('lv') ? 'level' : e.target.classList.contains('bt') ? 'batch' : null; if (!field) return;
   const v = field === 'level' ? +e.target.value : e.target.value.trim();
-  try { await F.updateDoc(F.doc(db, 'users', uid), { [field]: v }); const s = students.find(x => x.uid === uid); s[field] = v; e.target.classList.add('saved'); setTimeout(() => e.target.classList.remove('saved'), 900) } catch { alertRow(tr, 'Could not save. Try again.') }
+  try { await F.updateDoc(F.doc(db, 'users', uid), { [field]: v }); const s = students.find(x => x.uid === uid); s[field] = v; if (field === 'batch') paintAtt(true); e.target.classList.add('saved'); setTimeout(() => e.target.classList.remove('saved'), 900) } catch { alertRow(tr, 'Could not save. Try again.') }
 });
 root.addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('tr'); if (!tr || !tr.dataset.uid) return; const s = students.find(x => x.uid === tr.dataset.uid);
@@ -169,9 +179,29 @@ async function addStudent(e) {
     const s = { uid, role: 'student', sid, name, level, batch, mustChange: true }; students.push(s);
     let parent = null, perr = '';
     if (wantParent) { try { parent = await createParent(s) } catch (err) { perr = ' The parent login failed (' + (err.code || err.message) + '); use “Add parent login” in the table.' } }
-    paintTable(); paintStats(); showCreds(name, sid, pw, parent);
+    paintTable(); paintStats(); paintAtt(true); showCreds(name, sid, pw, parent);
     m.className = 'pmsg2 ' + (perr ? 'err' : 'ok'); m.textContent = (parent ? 'Student and parent logins created.' : 'Student login created.') + perr; e.target.reset(); $('#aParent').checked = wantParent;
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not create the login: ' + (err.code || err.message) }
+}
+
+/* ---------- attendance ---------- */
+const slug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'all';
+function paintAtt(rebuild) {
+  const sel = $('#atBatch'), keep = sel.value;
+  if (rebuild === true) { const b = [...new Set(students.map(s => s.batch).filter(Boolean))]; sel.innerHTML = '<option value="">All students</option>' + b.map(x => `<option>${esc(x)}</option>`).join(''); sel.value = keep }
+  const batch = sel.value, date = $('#atDate').value, id = date + '_' + slug(batch || 'all');
+  const old = sessions.find(x => x.id === id), list = students.filter(s => !batch || s.batch === batch);
+  $('#atList').innerHTML = list.length ? list.map(s => { const v = old && old.marks[s.uid] || 'p'; return `<div class="atrow" data-u="${s.uid}"><span><b>${esc(s.sid)}</b> ${esc(s.name)}</span><span class="seg3">${['p', 'l', 'a'].map(k => `<label class="${k}"><input type="radio" name="at_${s.uid}" value="${k}" ${v === k ? 'checked' : ''}>${attLabel[k]}</label>`).join('')}</span></div>` }).join('') : '<p class="muted">No students in this batch.</p>';
+  $('#atMsg').textContent = old ? 'This class was already marked. Saving will replace it.' : ''; $('#atMsg').className = 'pmsg2';
+}
+async function saveAtt(e) {
+  e.preventDefault(); const m = $('#atMsg'), batch = $('#atBatch').value, date = $('#atDate').value;
+  const rows = $$('#atList .atrow'); if (!date || !rows.length) { m.className = 'pmsg2 err'; m.textContent = 'Choose a date and a batch with students.'; return }
+  const marks = {}; rows.forEach(r => { const c = r.querySelector('input:checked'); if (c) marks[r.dataset.u] = c.value });
+  const id = date + '_' + slug(batch || 'all'), data = { date, batch: batch || 'All students', marks, uids: Object.keys(marks), takenBy: coach.user.email, updatedAt: F.serverTimestamp() };
+  m.className = 'pmsg2'; m.textContent = 'Saving…';
+  try { await F.setDoc(F.doc(db, 'attendance', id), data); sessions = sessions.filter(x => x.id !== id); sessions.push({ id, ...data }); sessions.sort((a, b) => b.date.localeCompare(a.date)); paintTable(); if (openUid) showDetail(openUid); m.className = 'pmsg2 ok'; m.textContent = `Attendance saved for ${Object.keys(marks).length} students.` }
+  catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save: ' + (err.code || err.message) }
 }
 
 /* ---------- homework ---------- */
@@ -226,6 +256,7 @@ function showDetail(uid) {
     <p class="muted small">Active time counts only while the page is open and in use. Idle for more than 2 minutes is not counted.</p>
     <h4>Last 14 days (minutes of active study)</h4>${dayBars(tm)}
     ${weak.length ? `<h4>Needs work</h4><p>${weak.map(w => `<span class="chip bad">${esc(lessonName(w.l.id))} · ${w.v}%</span>`).join(' ')}</p>` : ''}
+    <h4>Attendance</h4>${(() => { const a = attStat(sessions, uid); return a.total ? `<p><b>${a.pct}%</b> attended · ${a.present} present, ${a.late} late, ${a.absent} absent (${a.total} classes)</p>` + attTable(a, uid) : '<p class="muted">No classes marked yet.</p>' })()}
     <h4>Homework</h4>${mine.length ? `<table class="stu mini-t"><thead><tr><th>Homework</th><th>Due</th><th>Done</th><th>Status</th></tr></thead><tbody>${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<tr><td>${esc(a.title)}</td><td>${dueText(a)}</td><td>${st.done}/${st.total}</td><td>${statePill(st.state)}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">None given yet.</p>'}
     <h4>Modules and lessons</h4>${lessonTable(p, tm)}
     <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
@@ -233,9 +264,9 @@ function showDetail(uid) {
   d.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function exportCsv() {
-  const head = ['ID', 'Name', 'Level', 'Batch', 'Lessons passed', 'Average %', 'XP', 'Puzzles solved', 'Active min (all)', 'Active min (7 days)', 'Overdue homework', ...LESSONS.map(l => 'M' + (l.mod + 1) + ' ' + l.title.en + ' %')];
+  const head = ['ID', 'Name', 'Level', 'Batch', 'Lessons passed', 'Average %', 'XP', 'Puzzles solved', 'Active min (all)', 'Active min (7 days)', 'Overdue homework', 'Classes marked', 'Attendance %', ...LESSONS.map(l => 'M' + (l.mod + 1) + ' ' + l.title.en + ' %')];
   const rows = students.map(s => { const t = stat(s.uid), tm = times[s.uid] || {}, L = (progress[s.uid] || {}).lessons || {};
     const late = assigns.filter(a => (a.uids || []).includes(s.uid) && assignStat(a, s.uid, progress[s.uid], statuses[a.id + '_' + s.uid], tm).late).length;
-    return [s.sid, s.name, s.level, s.batch || '', t.passed, t.avg ?? '', t.xp, t.puzzles, Math.round((tm.total || 0) / 60), Math.round(secsInLastDays(tm, 7) / 60), late, ...LESSONS.map(l => L[l.id] ?? '')] });
+    return [s.sid, s.name, s.level, s.batch || '', t.passed, t.avg ?? '', t.xp, t.puzzles, Math.round((tm.total || 0) / 60), Math.round(secsInLastDays(tm, 7) / 60), late, attStat(sessions, s.uid).total, attStat(sessions, s.uid).pct ?? '', ...LESSONS.map(l => L[l.id] ?? '')] });
   download('purple-queen-students-' + today() + '.csv', toCsv([head, ...rows]));
 }

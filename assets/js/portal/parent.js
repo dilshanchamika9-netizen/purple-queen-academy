@@ -1,5 +1,5 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn, fmtTime } from './fb.js';
-import { MODS, LESSONS, PASS, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, lessonTable } from './lms.js';
+import { attStat, attTable, MODS, LESSONS, PASS, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, lessonTable } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalParent');
 const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediate)', 3: 'Level 3 · Queen (Advanced)' };
@@ -19,6 +19,8 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
   try { const s = await F.getDoc(F.doc(db, 'time', kid)); if (s.exists()) tm = s.data() } catch {}
   try { const q = await F.getDocs(F.query(F.collection(db, 'assignments'), F.where('uids', 'array-contains', kid))); assigns = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.due || '').localeCompare(a.due || '')) } catch {}
   try { const q = await F.getDocs(F.query(F.collection(db, 'astatus'), F.where('uid', '==', kid))); q.docs.forEach(d => st[d.id] = d.data()) } catch {}
+  let sess = []; try { const q = await F.getDocs(F.query(F.collection(db, 'attendance'), F.where('uids', 'array-contains', kid))); sess = q.docs.map(d => d.data()) } catch {}
+  const att = attStat(sess, kid);
   const L = prog.lessons || {}, passed = LESSONS.filter(l => (L[l.id] || 0) >= PASS).length;
   const vals = LESSONS.map(l => L[l.id]).filter(v => v != null), avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
   const late = assigns.filter(a => assignStat(a, kid, prog, st[a.id + '_' + kid], tm).late).length;
@@ -26,9 +28,10 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
     <div class="acc-head"><div class="acc-av">${esc((child.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2))}</div>
       <div><p class="eyebrow">Parent view · ${esc(child.sid || '')}</p><h1><em>${esc(child.name || 'Your child')}</em></h1><p class="acc-sub">${esc(LEVEL[child.level] || '')}${child.batch ? ' · ' + esc(child.batch) : ''}</p></div>
       <div class="acc-actions"><button type="button" class="btn btn-ghost btn-sm" id="accPw">Change password</button><button type="button" class="btn btn-ghost btn-sm" id="accOut">Sign out</button></div></div>
-    <div class="acc-stats"><div><b>${passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${avg}%</b><span>Average mark</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study time, 7 days</span></div><div><b>${late}</b><span>Homework overdue</span></div></div>
+    <div class="acc-stats"><div><b>${passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${avg}%</b><span>Average mark</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Study time, 7 days</span></div><div><b>${late}</b><span>Homework overdue</span></div><div><b>${att.pct == null ? '—' : att.pct + '%'}</b><span>Attendance</span></div></div>
     <section class="acc-card"><h3>Homework</h3>${assigns.length ? `<ul class="hw-list">${assigns.map(a => { const x = assignStat(a, kid, prog, st[a.id + '_' + kid], tm);
       return `<li class="${x.state}"><div class="hw-top"><b>${esc(a.title)}</b><span>Due ${dueText(a)}</span>${statePill(x.state)}</div>${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<ul class="hw-items">${x.items.map(r => `<li class="${r.done ? 'ok' : ''}"><span class="n">${r.done ? '✓' : '•'}</span><span>${esc(itemLabel(r.it))}</span><b>${r.mark == null ? '' : r.mark + '%'}</b></li>`).join('')}</ul></li>` }).join('')}</ul>` : '<p class="muted">No homework given yet.</p>'}</section>
+    <section class="acc-card"><h3>Attendance</h3>${att.total ? `<p><b>${att.pct}%</b> attended · ${att.present} present, ${att.late} late, ${att.absent} absent</p>` : ''}${attTable(att, kid)}</section>
     <section class="acc-card"><h3>Study time</h3><p class="muted small">Active time only: the page open and in use. Total ${fmtTime(tm.total || 0)}.</p>${dayBars(tm)}</section>
     <section class="acc-card"><h3>Lessons and marks</h3>${lessonTable(prog, tm)}</section>
     <form class="acc-card acc-pw" id="pwForm" hidden><h3>Change password</h3>

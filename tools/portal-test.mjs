@@ -157,6 +157,24 @@ ok(tot >= 3 && tot <= 12, 'active study time was saved (' + tot + ' s of about 6
 await pg.waitForTimeout(500);
 
 
+// attendance: coach marks a class, student and parent see the percentage
+await coachPage.selectOption('#atBatch', 'Saturday 8:30 AM');
+ok(await coachPage.locator('#atList .atrow').count() === 1, 'attendance list shows only the chosen batch');
+await coachPage.check('#atList input[value="l"]', { force: true });
+await coachPage.click('#atForm button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
+await coachPage.fill('#atDate', '2026-01-05'); await coachPage.dispatchEvent('#atDate', 'change');
+await coachPage.check('#atList input[value="a"]', { force: true });
+await coachPage.click('#atForm button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
+ok((await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox', { timeout: 15000 }); await pg.waitForTimeout(1000);
+ok((await pg.textContent('.acc-stats')).includes('50%') && (await pg.textContent('#portalAccount')).includes('Absent'), 'student sees 50% attendance and the absent class');
+await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
+ok((await pp.textContent('#portalParent')).includes('50%') && (await pp.textContent('#portalParent')).includes('Late'), 'parent sees attendance');
+const aden = await pg.evaluate(async () => { const m = await import('./assets/js/portal/fb.js'); try { await m.F.setDoc(m.F.doc(m.db, 'attendance', 'x'), { date: '2026-01-01', batch: 'x', marks: {}, uids: [] }); return 'allowed' } catch (e) { return e.code } });
+ok(aden === 'permission-denied', 'student cannot write attendance');
+
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
