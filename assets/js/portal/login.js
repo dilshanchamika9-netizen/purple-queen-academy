@@ -1,21 +1,21 @@
-import { auth, db, F, idToEmail, isStudentEmail, whoAmI, markSignedIn, esc } from './fb.js';
+import { auth, db, F, idToEmail, isStudentEmail, isParentEmail, whoAmI, markSignedIn, esc } from './fb.js';
 const $ = (s) => document.querySelector(s);
 const box = $('#portalLogin');
 const say = (el, t, cls = '') => { el.className = 'pmsg2 ' + cls; el.textContent = t };
 
-function go(role) { location.href = role === 'coach' ? 'coach.html' : 'account.html' }
+function go(role) { location.href = role === 'coach' ? 'coach.html' : role === 'parent' ? 'parent.html' : 'account.html' }
 
 async function afterSignIn() {
   const me = await whoAmI();
   if (!me) return;
-  if (me.role === 'student') {
+  if (me.role === 'student' || me.role === 'parent') {
     markSignedIn(true);
     if (me.profile && me.profile.mustChange) return showChange(me);
-    return go('student');
+    return go(me.role);
   }
   if (me.role === 'coach') { markSignedIn(true); return go('coach') }
   // signed in but not a student and not a listed coach
-  if (!me.user.emailVerified && !isStudentEmail(me.user.email)) {
+  if (!me.user.emailVerified && !isStudentEmail(me.user.email) && !isParentEmail(me.user.email)) {
     showTab('coach'); say($('#cMsg'), 'Please verify your email first: open the link we sent you, then sign in again.', 'err');
   } else { showTab('coach'); say($('#cMsg'), 'This email is not registered as a coach. Ask the academy to add it.', 'err') }
   await F.signOut(auth);
@@ -30,10 +30,10 @@ box.querySelectorAll('.ptab').forEach(b => b.addEventListener('click', () => sho
 $('#stuForm').addEventListener('submit', async (e) => {
   e.preventDefault(); const m = $('#sMsg');
   const id = $('#sId').value.trim(), pw = $('#sPw').value;
-  if (!id || !pw) return say(m, 'Enter your student ID and password.', 'err');
+  if (!id || !pw) return say(m, 'Enter your ID and password.', 'err');
   say(m, 'Signing in…');
   try { await F.signInWithEmailAndPassword(auth, idToEmail(id), pw); await afterSignIn() }
-  catch (err) { say(m, /too-many/.test(err.code) ? 'Too many tries. Wait a few minutes, then try again.' : 'Student ID or password is not correct. Ask your coach if you forgot your password.', 'err') }
+  catch (err) { say(m, /too-many/.test(err.code) ? 'Too many tries. Wait a few minutes, then try again.' : 'ID or password is not correct. Ask your coach if you forgot your password.', 'err') }
 });
 
 $('#coachForm').addEventListener('submit', async (e) => {
@@ -83,11 +83,11 @@ $('#changeForm').addEventListener('submit', async (e) => {
   try {
     await F.updatePassword(auth.currentUser, a);
     await F.updateDoc(F.doc(db, 'users', auth.currentUser.uid), { mustChange: false });
-    say(m, 'Password saved.', 'ok'); setTimeout(() => go('student'), 600);
+    say(m, 'Password saved.', 'ok'); setTimeout(() => go(isParentEmail(auth.currentUser.email) ? 'parent' : 'student'), 600);
   } catch (err) { say(m, 'Could not save the password: ' + (err.code || err.message), 'err') }
 });
 
 // already signed in? continue
-whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach')) { if (me.role === 'student' && me.profile && me.profile.mustChange) showChange(me); else go(me.role) } });
+whoAmI().then(me => { if (me && (me.role === 'student' || me.role === 'coach' || me.role === 'parent')) { if (me.role !== 'coach' && me.profile && me.profile.mustChange) showChange(me); else go(me.role) } });
 const t = new URLSearchParams(location.search).get('as'); if (t === 'coach') showTab('coach');
 window.PQ_PORTAL = { esc };

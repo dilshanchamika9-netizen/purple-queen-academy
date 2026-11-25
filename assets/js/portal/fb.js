@@ -21,9 +21,14 @@ if (EMU) { F.connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarning
 export { F, EMU };
 
 export const STUDENT_DOMAIN = 'pq-students.example.com';
-export const idToEmail = (sid) => sid.trim().toLowerCase().replace(/[^a-z0-9]/g, '') + '@' + STUDENT_DOMAIN;
+export const PARENT_DOMAIN = 'pq-parents.example.com';
+// student ID: PQ0001. parent ID: PQ0001-P (the same ID plus P)
+export const idToEmail = (sid) => { const k = sid.trim().toLowerCase().replace(/[^a-z0-9]/g, ''); return k + '@' + (/^pq\d+p$/.test(k) ? PARENT_DOMAIN : STUDENT_DOMAIN) };
 export const isStudentEmail = (e) => !!e && e.endsWith('@' + STUDENT_DOMAIN);
+export const isParentEmail = (e) => !!e && e.endsWith('@' + PARENT_DOMAIN);
 export const emailToId = (e) => e.split('@')[0].toUpperCase();
+export const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') };
+export const fmtTime = (sec) => { sec = Math.round(sec || 0); if (sec < 60) return sec + ' s'; const m = Math.round(sec / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' };
 
 /* who is signed in: resolves to {user, role, profile} or null */
 export function whoAmI() {
@@ -33,6 +38,10 @@ export function whoAmI() {
       if (isStudentEmail(user.email)) {
         let profile = null; try { const s = await F.getDoc(F.doc(db, 'users', user.uid)); profile = s.exists() ? s.data() : null } catch {}
         return res({ user, role: 'student', profile });
+      }
+      if (isParentEmail(user.email)) {
+        let profile = null; try { const s = await F.getDoc(F.doc(db, 'users', user.uid)); profile = s.exists() ? s.data() : null } catch {}
+        return res({ user, role: 'parent', profile });
       }
       // coach: allowed only if listed in /coaches (the rules decide; reading our own entry proves it)
       try { const s = await F.getDoc(F.doc(db, 'coaches', user.email.toLowerCase())); if (s.exists() && user.emailVerified) return res({ user, role: 'coach', profile: s.data() }) } catch {}

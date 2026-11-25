@@ -10,6 +10,8 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/coaches/$(myEmail()));
     }
     function isStudent() { return signedIn() && myEmail().matches('.*@pq-students[.]example[.]com'); }
+    function isParent() { return signedIn() && myEmail().matches('.*@pq-parents[.]example[.]com'); }
+    function myChild() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.childUid; }
 
     match /coaches/{email} {
       allow read: if signedIn() && (myEmail() == email || isCoach());
@@ -17,17 +19,37 @@ service cloud.firestore {
     }
     match /users/{uid} {
       allow read: if isCoach() || (signedIn() && request.auth.uid == uid);
-      allow create: if isCoach() && request.resource.data.role == 'student';
+      allow create: if isCoach() && request.resource.data.role in ['student', 'parent'];
       allow update: if isCoach()
-        || (isStudent() && request.auth.uid == uid
+        || ((isStudent() || isParent()) && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'lastSeen'])
             && (request.resource.data.mustChange == false || request.resource.data.mustChange == resource.data.mustChange));
       allow delete: if false;
     }
     match /progress/{uid} {
-      allow read: if isCoach() || (signedIn() && request.auth.uid == uid);
+      allow read: if isCoach() || (signedIn() && request.auth.uid == uid) || (isParent() && myChild() == uid);
       allow write: if isStudent() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['lessons', 'xp', 'puzzles', 'updatedAt']);
+    }
+    // active study time and attempts per lesson (written by the student's own browser)
+    match /time/{uid} {
+      allow read: if isCoach() || (signedIn() && request.auth.uid == uid) || (isParent() && myChild() == uid);
+      allow write: if isStudent() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['total', 'days', 'lessons', 'updatedAt']);
+    }
+    // homework set by coaches; uids lists the students it is for
+    match /assignments/{id} {
+      allow read: if isCoach() || (isStudent() && request.auth.uid in resource.data.uids) || (isParent() && myChild() in resource.data.uids);
+      allow create: if isCoach() && request.resource.data.keys().hasAll(['title', 'items', 'uids', 'due', 'createdBy']);
+      allow update, delete: if isCoach();
+    }
+    // a student's ticks on the manual items of one assignment; document id = assignmentId_studentUid
+    match /astatus/{id} {
+      allow read: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
+      allow create, update: if isStudent() && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.aid + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'updatedAt']);
+      allow delete: if false;
     }
     match /meta/{doc} {
       allow read, write: if isCoach();

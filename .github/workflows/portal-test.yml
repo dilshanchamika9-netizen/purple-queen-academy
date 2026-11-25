@@ -9,6 +9,7 @@ on:
       - 'tools/portal-*.mjs'
       - 'login.html'
       - 'coach.html'
+      - 'parent.html'
       - 'account.html'
       - '.github/workflows/portal-test.yml'
 jobs:

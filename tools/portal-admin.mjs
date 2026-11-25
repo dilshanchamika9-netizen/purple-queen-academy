@@ -32,6 +32,12 @@ for (const q of pending.docs) {
       await q.ref.update({ status: 'done', tempPassword: pw, doneAt: admin.firestore.FieldValue.serverTimestamp() });
     } else if (r.type === 'delete') {
       await auth.deleteUser(r.uid).catch(e => { if (e.code !== 'auth/user-not-found') throw e });
+      // the student's parent login, study time and homework ticks go too
+      const ps = await db.collection('users').where('childUid', '==', r.uid).get();
+      for (const d of ps.docs) { await auth.deleteUser(d.id).catch(e => { if (e.code !== 'auth/user-not-found') throw e }); await d.ref.delete() }
+      const sts = await db.collection('astatus').where('uid', '==', r.uid).get();
+      for (const d of sts.docs) await d.ref.delete();
+      await db.doc(`time/${r.uid}`).delete();
       await db.doc(`users/${r.uid}`).delete(); await db.doc(`progress/${r.uid}`).delete();
       await q.ref.update({ status: 'done', doneAt: admin.firestore.FieldValue.serverTimestamp() });
     } else await q.ref.update({ status: 'error', error: 'unknown request' });

@@ -1,17 +1,16 @@
-import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn } from './fb.js';
+import { app, auth, db, F, EMU, whoAmI, logout, esc, idToEmail, markSignedIn, fmtTime, today } from './fb.js';
+import { MODS, LESSONS, PASS, lessonName, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, toCsv, download, lessonTable } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalCoach');
-const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []);
-const LESSONS = MODS.flatMap(m => m.lessons);
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const tempPw = () => words[Math.floor(Math.random() * words.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
-let students = [], progress = {}, queue = [], coach = null;
+let students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
 
 (async () => {
   const me = await whoAmI();
   if (!me) return (location.href = 'login.html?as=coach');
-  if (me.role !== 'coach') return (location.href = me.role === 'student' ? 'account.html' : 'login.html?as=coach');
+  if (me.role !== 'coach') return (location.href = me.role === 'student' ? 'account.html' : me.role === 'parent' ? 'parent.html' : 'login.html?as=coach');
   coach = me; markSignedIn(true);
   render(); await load();
   F.onSnapshot(F.query(F.collection(db, 'adminQueue'), F.orderBy('createdAt', 'desc'), F.limit(20)), s => { queue = s.docs.map(d => ({ id: d.id, ...d.data() })); paintQueue() }, () => {});
@@ -27,45 +26,75 @@ function render() {
       <label for="aName">Full name<input id="aName" required placeholder="e.g. Kavindu Perera"></label>
       <div class="row2"><label for="aLevel">Level<select id="aLevel"><option value="1">Level 1 · Pawn (Basic)</option><option value="2">Level 2 · Knight (Intermediate)</option><option value="3">Level 3 · Queen (Advanced)</option></select></label>
       <label for="aBatch">Batch<input id="aBatch" placeholder="e.g. Saturday 8:30 AM"></label></div>
+      <label class="chk" for="aParent"><input type="checkbox" id="aParent" checked> Also create a parent login (read-only view of this student)</label>
       <button class="btn btn-primary btn-sm" type="submit">Create login</button>
       <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form>
     <section class="acc-card"><h3>Requests</h3><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></section>
   </div>
-  <section class="acc-card"><div class="tbl-head"><h3>Students</h3><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"></div>
-    <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Average</th><th>XP</th><th>Puzzles</th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="10" class="muted">Loading…</td></tr></tbody></table></div></section>`;
+  <form class="acc-card" id="hwForm"><h3>Assign homework</h3>
+    <div class="row2"><label for="hTitle">Title<input id="hTitle" required placeholder="e.g. Week 3: forks and pins"></label>
+      <label for="hDue">Due date<input id="hDue" type="date" required></label></div>
+    <label for="hNote">Note for the student (optional)<textarea id="hNote" rows="2" placeholder="e.g. Finish before Saturday's class"></textarea></label>
+    <div class="row2"><label for="hWho">Give it to<select id="hWho"><option value="all">All students</option><option value="level">One level</option><option value="batch">One batch</option><option value="pick">Chosen students</option></select></label>
+      <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab">Level</span><select id="hWhoVal"></select></label></div>
+    <div class="pickbox" id="hPick" hidden></div>
+    <p class="lab">Lessons to complete (a lesson counts as done at ${PASS}% or more)</p>
+    <div class="lesspick" id="hLessons">${MODS.map((m, k) => `<details ${k === 2 ? 'open' : ''}><summary><label><input type="checkbox" data-mod="${k}"> <b>Module ${k + 1}</b> ${esc(m.title.en)}</label></summary>${m.lessons.map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"> ${esc(l.title.en)}</label>`).join('')}</details>`).join('')}</div>
+    <label for="hText">Extra tasks, one per line (the student ticks them off)<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label>
+    <button class="btn btn-primary btn-sm" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p></form>
+  <section class="acc-card" id="hwList"><h3>Homework given</h3><p class="muted">Loading…</p></section>
+  <section class="acc-card"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
+    <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Average</th><th>XP</th><th>Active time<br><small>7 days</small></th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="10" class="muted">Loading…</td></tr></tbody></table></div></section>
+  <section class="acc-card" id="detail" hidden></section>`;
   $('#cOut').onclick = logout;
   $('#addForm').onsubmit = addStudent;
+  $('#hwForm').onsubmit = addHomework;
   $('#filter').oninput = paintTable;
+  $('#csvBtn').onclick = exportCsv;
+  $('#hDue').min = today();
+  $('#hWho').onchange = paintWho;
+  $('#hLessons').addEventListener('change', (e) => { const m = e.target.dataset.mod; if (m != null) $$(`#hLessons input[data-m="${m}"]`).forEach(c => c.checked = e.target.checked) });
+}
+const $$ = (s) => [...document.querySelectorAll(s)];
+function paintWho() {
+  const w = $('#hWho').value, val = $('#hWhoVal');
+  $('#hWhoWrap').hidden = !(w === 'level' || w === 'batch'); $('#hPick').hidden = w !== 'pick';
+  if (w === 'level') { $('#hWhoLab').textContent = 'Level'; val.innerHTML = [1, 2, 3].map(l => `<option value="${l}">${LEVELS[l]}</option>`).join('') }
+  if (w === 'batch') { $('#hWhoLab').textContent = 'Batch'; const b = [...new Set(students.map(s => s.batch).filter(Boolean))]; val.innerHTML = b.length ? b.map(x => `<option>${esc(x)}</option>`).join('') : '<option value="">No batches yet</option>' }
+  if (w === 'pick') $('#hPick').innerHTML = students.map(s => `<label><input type="checkbox" value="${s.uid}"> ${esc(s.sid)} ${esc(s.name)}</label>`).join('') || '<p class="muted">No students yet.</p>';
 }
 
 async function load() {
   const us = await F.getDocs(F.query(F.collection(db, 'users'), F.where('role', '==', 'student')));
   students = us.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a, b) => (a.sid || '').localeCompare(b.sid || ''));
-  const ps = await F.getDocs(F.collection(db, 'progress'));
+  const [ps, ts, as, ss] = await Promise.all([F.getDocs(F.collection(db, 'progress')), F.getDocs(F.collection(db, 'time')), F.getDocs(F.query(F.collection(db, 'assignments'), F.orderBy('createdAt', 'desc'), F.limit(60))), F.getDocs(F.collection(db, 'astatus'))]);
   progress = {}; ps.docs.forEach(d => progress[d.id] = d.data());
-  paintStats(); paintTable();
+  times = {}; ts.docs.forEach(d => times[d.id] = d.data());
+  assigns = as.docs.map(d => ({ id: d.id, ...d.data() }));
+  statuses = {}; ss.docs.forEach(d => statuses[d.id] = d.data());
+  paintStats(); paintTable(); paintHw();
 }
 const stat = (uid) => {
   const p = progress[uid] || {}, L = p.lessons || {};
   const vals = LESSONS.map(l => L[l.id]).filter(v => v != null);
-  return { passed: LESSONS.filter(l => (L[l.id] || 0) >= 70).length, avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, xp: p.xp || 0, puzzles: p.puzzles && p.puzzles.solved ? Object.keys(p.puzzles.solved).length : 0 };
+  return { passed: LESSONS.filter(l => (L[l.id] || 0) >= PASS).length, avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, xp: p.xp || 0, puzzles: p.puzzles && p.puzzles.solved ? Object.keys(p.puzzles.solved).length : 0 };
 };
 function paintStats() {
   const week = Date.now() - 7 * 864e5;
   const active = students.filter(s => s.lastSeen && s.lastSeen.toMillis && s.lastSeen.toMillis() > week).length;
-  const done = students.filter(s => stat(s.uid).passed === LESSONS.length).length;
-  $('#cStats').innerHTML = `<div><b>${students.length}</b><span>Students</span></div><div><b>${active}</b><span>Active this week</span></div><div><b>${done}</b><span>Finished Module 1</span></div><div><b>${students.reduce((a, s) => a + stat(s.uid).puzzles, 0)}</b><span>Puzzles solved</span></div>`;
+  const late = assigns.reduce((n, a) => n + (a.uids || []).filter(u => assignStat(a, u, progress[u], statuses[a.id + '_' + u], times[u]).late).length, 0);
+  $('#cStats').innerHTML = `<div><b>${students.length}</b><span>Students</span></div><div><b>${active}</b><span>Active this week</span></div><div><b>${assigns.filter(a => a.due >= today()).length}</b><span>Homework open</span></div><div><b>${late}</b><span>Overdue (students)</span></div>`;
 }
 function ago(ts) { if (!ts || !ts.toMillis) return '—'; const d = (Date.now() - ts.toMillis()) / 864e5; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago' }
 function paintTable() {
   const f = ($('#filter').value || '').toLowerCase();
   const rows = students.filter(s => !f || [s.sid, s.name, s.batch].join(' ').toLowerCase().includes(f));
   $('#stuTable tbody').innerHTML = rows.length ? rows.map(s => { const t = stat(s.uid); return `<tr data-uid="${s.uid}">
-    <td><b>${esc(s.sid)}</b></td><td>${esc(s.name)}${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
+    <td><b>${esc(s.sid)}</b></td><td><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button>${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
     <td><select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></td>
     <td><input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></td>
-    <td>${t.passed}/${LESSONS.length}</td><td>${t.avg == null ? '—' : t.avg + '%'}</td><td>${t.xp}</td><td>${t.puzzles}</td><td>${ago(s.lastSeen)}</td>
-    <td class="acts"><button type="button" class="mini" data-a="reset">Reset password</button><button type="button" class="mini danger" data-a="delete">Remove</button></td></tr>` }).join('')
+    <td>${t.passed}/${LESSONS.length}</td><td>${t.avg == null ? '—' : t.avg + '%'}</td><td>${t.xp}</td><td>${fmtTime(secsInLastDays(times[s.uid], 7))}</td><td>${ago(s.lastSeen)}</td>
+    <td class="acts"><button type="button" class="mini" data-a="report">Report</button><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></td></tr>` }).join('')
     : `<tr><td colspan="10" class="muted">${students.length ? 'No match.' : 'No students yet. Add the first one above.'}</td></tr>`;
 }
 root.addEventListener('change', async (e) => {
@@ -75,10 +104,16 @@ root.addEventListener('change', async (e) => {
   try { await F.updateDoc(F.doc(db, 'users', uid), { [field]: v }); const s = students.find(x => x.uid === uid); s[field] = v; e.target.classList.add('saved'); setTimeout(() => e.target.classList.remove('saved'), 900) } catch { alertRow(tr, 'Could not save. Try again.') }
 });
 root.addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('tr'), s = students.find(x => x.uid === tr.dataset.uid);
-  if (b.dataset.a === 'delete' && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to remove'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Remove' }, 4000); return }
-  try { await F.addDoc(F.collection(db, 'adminQueue'), { type: b.dataset.a, uid: s.uid, sid: s.sid, name: s.name, status: 'pending', by: coach.user.email, createdAt: F.serverTimestamp() }); b.textContent = 'Requested'; b.disabled = true }
-  catch { alertRow(tr, 'Could not send the request.') }
+  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('tr'); if (!tr || !tr.dataset.uid) return; const s = students.find(x => x.uid === tr.dataset.uid);
+  const a = b.dataset.a;
+  if (a === 'report') return showDetail(s.uid);
+  if (a === 'addparent') { b.disabled = true; b.textContent = 'Creating…'; try { const c = await createParent(s); paintTable(); showCreds(s.name, s.sid, null, c) } catch (err) { b.disabled = false; b.textContent = 'Add parent login'; alertRow(tr, 'Could not create: ' + (err.code || err.message)) } return }
+  if (a === 'delete' && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to remove'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Remove' }, 4000); return }
+  try {
+    const parent = a === 'resetparent';
+    await F.addDoc(F.collection(db, 'adminQueue'), { type: parent ? 'reset' : a, uid: parent ? s.parentUid : s.uid, sid: parent ? s.sid + '-P' : s.sid, name: parent ? 'Parent of ' + s.name : s.name, status: 'pending', by: coach.user.email, createdAt: F.serverTimestamp() });
+    b.textContent = 'Requested'; b.disabled = true;
+  } catch { alertRow(tr, 'Could not send the request.') }
 });
 function alertRow(tr, t) { tr.querySelector('.acts').insertAdjacentHTML('beforeend', `<span class="tag err">${esc(t)}</span>`) }
 function paintQueue() {
@@ -87,28 +122,120 @@ function paintQueue() {
   if (queue.some(q => q.status === 'done' && q.type === 'delete')) { const gone = new Set(queue.filter(q => q.status === 'done' && q.type === 'delete').map(q => q.uid)); students = students.filter(s => !gone.has(s.uid)); paintTable(); paintStats() }
 }
 
+/* ---------- accounts ---------- */
+async function makeLogin(sidOrPid, pw) {
+  // create the login in a separate app instance so the coach stays signed in
+  const second = F.initializeApp(app.options, 'creator-' + Date.now() + Math.random());
+  const a2 = F.getAuth(second); await F.setPersistence(a2, F.inMemoryPersistence);
+  if (EMU) F.connectAuthEmulator(a2, 'http://127.0.0.1:9099', { disableWarnings: true });
+  try { const c = await F.createUserWithEmailAndPassword(a2, idToEmail(sidOrPid), pw); await F.signOut(a2); return c.user.uid }
+  finally { try { await F.deleteApp(second) } catch {} }
+}
+async function createParent(s) {
+  const pid = s.sid + '-P', pw = tempPw();
+  const puid = await makeLogin(pid, pw);
+  await F.setDoc(F.doc(db, 'users', puid), { role: 'parent', sid: pid, name: 'Parent of ' + s.name, childUid: s.uid, childSid: s.sid, childName: s.name, mustChange: true, createdAt: F.serverTimestamp(), createdBy: coach.user.email });
+  await F.updateDoc(F.doc(db, 'users', s.uid), { parentUid: puid });
+  s.parentUid = puid;
+  return { pid, pw };
+}
+function showCreds(name, sid, pw, parent) {
+  const box = $('#newAcc'); box.hidden = false;
+  box.innerHTML = `<p>Give these to <b>${esc(name)}</b>${parent && pw ? ' and the parent' : parent ? '’s parent' : ''}. Everyone chooses a new password at first sign-in.</p>
+    ${pw ? `<div class="cred"><span>Student ID</span><b id="nId">${esc(sid)}</b><span>Password</span><b id="nPw">${esc(pw)}</b></div>` : ''}
+    ${parent ? `<div class="cred"><span>Parent ID</span><b id="nPId">${esc(parent.pid)}</b><span>Parent password</span><b id="nPPw">${esc(parent.pw)}</b></div>` : ''}
+    <button type="button" class="btn btn-ghost btn-sm" id="cpy">Copy for WhatsApp</button>`;
+  $('#cpy').onclick = async () => {
+    const url = location.origin + location.pathname.replace(/coach\.html$/, 'login.html');
+    let t = `Purple Queen Chess Academy\nSign in: ${url}\n`;
+    if (pw) t += `Student ID: ${sid}\nPassword: ${pw}\n`;
+    if (parent) t += `Parent ID: ${parent.pid}\nParent password: ${parent.pw}\n`;
+    try { await navigator.clipboard.writeText(t.trim()); $('#cpy').textContent = 'Copied' } catch { $('#cpy').textContent = 'Select the text above' }
+  };
+  box.scrollIntoView({ block: 'nearest' });
+}
 async function addStudent(e) {
   e.preventDefault(); const m = $('#aMsg'); m.className = 'pmsg2'; m.textContent = 'Creating…';
-  const name = $('#aName').value.trim(), level = +$('#aLevel').value, batch = $('#aBatch').value.trim();
+  const name = $('#aName').value.trim(), level = +$('#aLevel').value, batch = $('#aBatch').value.trim(), wantParent = $('#aParent').checked;
   if (!name) { m.className = 'pmsg2 err'; m.textContent = 'Enter the student’s name.'; return }
   let sid;
   try {
     sid = await F.runTransaction(db, async (tx) => { const ref = F.doc(db, 'meta', 'counter'); const s = await tx.get(ref); const n = s.exists() ? s.data().next : 1; tx.set(ref, { next: n + 1 }); return 'PQ' + String(n).padStart(4, '0') });
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not get a new student ID: ' + (err.code || err.message); return }
   const pw = tempPw();
-  // create the login in a separate app instance so the coach stays signed in
-  const second = F.initializeApp(app.options, 'creator-' + Date.now());
-  const a2 = F.getAuth(second); await F.setPersistence(a2, F.inMemoryPersistence);
-  if (EMU) F.connectAuthEmulator(a2, 'http://127.0.0.1:9099', { disableWarnings: true });
   try {
-    const c = await F.createUserWithEmailAndPassword(a2, idToEmail(sid), pw);
-    await F.setDoc(F.doc(db, 'users', c.user.uid), { role: 'student', sid, name, level, batch, mustChange: true, createdAt: F.serverTimestamp(), createdBy: coach.user.email });
-    await F.signOut(a2);
-    students.push({ uid: c.user.uid, role: 'student', sid, name, level, batch, mustChange: true }); paintTable(); paintStats();
-    $('#newAcc').hidden = false;
-    $('#newAcc').innerHTML = `<p>Give these to <b>${esc(name)}</b>. The student chooses a new password at first sign-in.</p><div class="cred"><span>Student ID</span><b id="nId">${sid}</b><span>Password</span><b id="nPw">${esc(pw)}</b></div><button type="button" class="btn btn-ghost btn-sm" id="cpy">Copy for WhatsApp</button>`;
-    $('#cpy').onclick = async () => { const t = `Purple Queen Chess Academy\nStudent login: ${location.origin}${location.pathname.replace(/coach\.html$/, 'login.html')}\nStudent ID: ${sid}\nPassword: ${pw}`; try { await navigator.clipboard.writeText(t); $('#cpy').textContent = 'Copied' } catch { $('#cpy').textContent = 'Select the text above' } };
-    m.className = 'pmsg2 ok'; m.textContent = 'Student login created.'; e.target.reset();
+    const uid = await makeLogin(sid, pw);
+    await F.setDoc(F.doc(db, 'users', uid), { role: 'student', sid, name, level, batch, mustChange: true, createdAt: F.serverTimestamp(), createdBy: coach.user.email });
+    const s = { uid, role: 'student', sid, name, level, batch, mustChange: true }; students.push(s);
+    let parent = null, perr = '';
+    if (wantParent) { try { parent = await createParent(s) } catch (err) { perr = ' The parent login failed (' + (err.code || err.message) + '); use “Add parent login” in the table.' } }
+    paintTable(); paintStats(); showCreds(name, sid, pw, parent);
+    m.className = 'pmsg2 ' + (perr ? 'err' : 'ok'); m.textContent = (parent ? 'Student and parent logins created.' : 'Student login created.') + perr; e.target.reset(); $('#aParent').checked = wantParent;
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not create the login: ' + (err.code || err.message) }
-  finally { try { await F.deleteApp(second) } catch {} }
+}
+
+/* ---------- homework ---------- */
+async function addHomework(e) {
+  e.preventDefault(); const m = $('#hMsg'); m.className = 'pmsg2';
+  const title = $('#hTitle').value.trim(), due = $('#hDue').value, note = $('#hNote').value.trim();
+  const items = $$('#hLessons input[data-les]:checked').map(c => ({ t: 'lesson', id: c.dataset.les }))
+    .concat($('#hText').value.split('\n').map(x => x.trim()).filter(Boolean).map(text => ({ t: 'text', text })));
+  const w = $('#hWho').value; let list = students, label = 'All students';
+  if (w === 'level') { const v = +$('#hWhoVal').value; list = students.filter(s => +s.level === v); label = LEVELS[v] }
+  if (w === 'batch') { const v = $('#hWhoVal').value; list = students.filter(s => s.batch === v); label = 'Batch: ' + v }
+  if (w === 'pick') { const ids = $$('#hPick input:checked').map(c => c.value); list = students.filter(s => ids.includes(s.uid)); label = list.length === 1 ? list[0].name : list.length + ' students' }
+  if (!title || !due) { m.className = 'pmsg2 err'; m.textContent = 'Enter a title and a due date.'; return }
+  if (!items.length) { m.className = 'pmsg2 err'; m.textContent = 'Choose at least one lesson or write one task.'; return }
+  if (!list.length) { m.className = 'pmsg2 err'; m.textContent = 'No student matches this choice.'; return }
+  m.textContent = 'Saving…';
+  try {
+    const data = { title, note, due, items, uids: list.map(s => s.uid), target: label, createdBy: coach.user.email, createdAt: F.serverTimestamp() };
+    const ref = await F.addDoc(F.collection(db, 'assignments'), data);
+    assigns.unshift({ id: ref.id, ...data, createdAt: { toMillis: () => Date.now() } });
+    e.target.reset(); $('#hDue').min = today(); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
+    m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.`;
+  } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
+}
+function paintHw() {
+  const box = $('#hwList');
+  if (!assigns.length) { box.innerHTML = '<h3>Homework given</h3><p class="muted">No homework yet. Use the form above.</p>'; return }
+  box.innerHTML = '<h3>Homework given</h3>' + assigns.map(a => {
+    const rows = (a.uids || []).map(u => ({ s: students.find(x => x.uid === u), st: assignStat(a, u, progress[u], statuses[a.id + '_' + u], times[u]) })).filter(r => r.s);
+    const done = rows.filter(r => r.st.complete).length, late = rows.filter(r => r.st.late).length;
+    return `<details class="hw" data-id="${a.id}"><summary><b>${esc(a.title)}</b><span>Due ${dueText(a)} · ${esc(a.target || '')}</span><span class="pill ${late ? 'late' : done === rows.length && rows.length ? 'done' : 'open'}">${done}/${rows.length} done${late ? ' · ' + late + ' overdue' : ''}</span></summary>
+      ${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<p class="small">${a.items.map(it => `<span class="chip">${esc(itemLabel(it))}</span>`).join(' ')}</p>
+      <div class="tw"><table class="stu mini-t"><thead><tr><th>Student</th><th>Done</th><th>Time on these lessons</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.st.done}/${r.st.total}</td><td>${r.st.secs ? fmtTime(r.st.secs) : '—'}</td><td>${statePill(r.st.state)}</td></tr>`).join('')}</tbody></table></div>
+      <button type="button" class="mini danger" data-del="${a.id}">Delete homework</button></details>` }).join('');
+}
+root.addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-del]'); if (!b) return;
+  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to delete'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Delete homework' }, 4000); return }
+  try { await F.deleteDoc(F.doc(db, 'assignments', b.dataset.del)); assigns = assigns.filter(a => a.id !== b.dataset.del); paintHw(); paintStats() } catch { b.textContent = 'Could not delete' }
+});
+
+/* ---------- student report ---------- */
+function showDetail(uid) {
+  openUid = uid; const s = students.find(x => x.uid === uid); if (!s) return;
+  const t = stat(uid), tm = times[uid] || {}, p = progress[uid] || {}, L = p.lessons || {};
+  const tries = LESSONS.reduce((n, l) => n + ((tm.lessons && tm.lessons[l.id] && tm.lessons[l.id].a) || 0), 0);
+  const weak = LESSONS.filter(l => L[l.id] != null && L[l.id] < PASS).map(l => ({ l, v: L[l.id] })).sort((a, b) => a.v - b.v).slice(0, 5);
+  const mine = assigns.filter(a => (a.uids || []).includes(uid));
+  const d = $('#detail'); d.hidden = false;
+  d.innerHTML = `<div class="tbl-head"><h3>${esc(s.name)} <small class="muted">${esc(s.sid)} · ${LEVELS[s.level] || ''}${s.batch ? ' · ' + esc(s.batch) : ''}</small></h3><button type="button" class="btn btn-ghost btn-sm" id="dClose">Close</button></div>
+    <div class="acc-stats"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
+    <p class="muted small">Active time counts only while the page is open and in use. Idle for more than 2 minutes is not counted.</p>
+    <h4>Last 14 days (minutes of active study)</h4>${dayBars(tm)}
+    ${weak.length ? `<h4>Needs work</h4><p>${weak.map(w => `<span class="chip bad">${esc(lessonName(w.l.id))} · ${w.v}%</span>`).join(' ')}</p>` : ''}
+    <h4>Homework</h4>${mine.length ? `<table class="stu mini-t"><thead><tr><th>Homework</th><th>Due</th><th>Done</th><th>Status</th></tr></thead><tbody>${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<tr><td>${esc(a.title)}</td><td>${dueText(a)}</td><td>${st.done}/${st.total}</td><td>${statePill(st.state)}</td></tr>` }).join('')}</tbody></table>` : '<p class="muted">None given yet.</p>'}
+    <h4>Modules and lessons</h4>${lessonTable(p, tm)}
+    <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
+  $('#dClose').onclick = () => { d.hidden = true; openUid = null };
+  d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function exportCsv() {
+  const head = ['ID', 'Name', 'Level', 'Batch', 'Lessons passed', 'Average %', 'XP', 'Puzzles solved', 'Active min (all)', 'Active min (7 days)', 'Overdue homework', ...LESSONS.map(l => 'M' + (l.mod + 1) + ' ' + l.title.en + ' %')];
+  const rows = students.map(s => { const t = stat(s.uid), tm = times[s.uid] || {}, L = (progress[s.uid] || {}).lessons || {};
+    const late = assigns.filter(a => (a.uids || []).includes(s.uid) && assignStat(a, s.uid, progress[s.uid], statuses[a.id + '_' + s.uid], tm).late).length;
+    return [s.sid, s.name, s.level, s.batch || '', t.passed, t.avg ?? '', t.xp, t.puzzles, Math.round((tm.total || 0) / 60), Math.round(secsInLastDays(tm, 7) / 60), late, ...LESSONS.map(l => L[l.id] ?? '')] });
+  download('purple-queen-students-' + today() + '.csv', toCsv([head, ...rows]));
 }

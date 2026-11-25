@@ -288,6 +288,7 @@
   function result() {
     hush(); board.click = null; root.classList.remove('board-dim');
     const pct = Math.round(score / tasks.length * 100), id = M.lessons[li].id;
+    window.dispatchEvent(new CustomEvent('pq-attempt', { detail: { id, pct } }));
     const prevBest = progress[id]; if (prevBest == null || pct > prevBest) { progress[id] = pct; store.set('progress', progress) }
     const pass = pct >= PASS, stars = pct >= 90 ? 3 : pct >= PASS ? 2 : pct >= 50 ? 1 : 0;
     paintStatic();
@@ -340,5 +341,5 @@
     if (qm != null && MODS[+qm] && modOpen(+qm)) { mi = +qm; M = MODS[mi]; li = 0; if (!unlocked(0)) li = 0; if (ql != null && M.lessons[+ql] && unlocked(+ql)) li = +ql; else li = Math.max(0, M.lessons.findIndex(l => (progress[l.id] || 0) < PASS)); if (!unlocked(li)) li = 0; store.set('mi', mi); store.set(lkey(), li) } }
   renderWatch(false);
   window.addEventListener('pq-reload', () => { progress = store.get('progress', {}); xp = store.get('xp', 0); paintStatic() });
-  window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { li, si, mode, ti, score } } };
+  window.PQ_LEARN = { openLesson, switchModule, board, get state() { return { mi, li, si, mode, ti, score } } };
 })();
