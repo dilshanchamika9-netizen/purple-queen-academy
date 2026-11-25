@@ -893,3 +893,18 @@ details.tbd { margin:6px 0 16px; border:1px dashed var(--lilac); border-radius:1
 .plist { list-style:none; padding:0; margin:0 0 12px; display:grid; gap:6px } .plist li { padding:8px 12px; border-radius:10px; background:var(--paper); font-size:14px } .plist li.ok { background:#EAF6EF }
 .q.big { font:700 20px/1.35 var(--body); color:var(--night); margin:0 0 6px } .lp-boardwrap.tk { max-width:520px; margin:14px 0 }
 @media (max-width:720px) { .tb-wrap { grid-template-columns:1fr } .tbp { width:42px; height:42px } }
+
+/* ===== coach tabs, fees, receipt ===== */
+.tab-off { display:none !important }
+.ctabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 20px; padding:6px; background:var(--mist); border-radius:16px; width:fit-content; max-width:100% }
+.ctabs button { border:0; background:transparent; padding:10px 18px; border-radius:12px; font:700 14px var(--body); color:var(--purple); cursor:pointer } .ctabs button[aria-current="page"] { background:#fff; box-shadow:0 2px 8px rgba(42,18,64,.12); color:var(--night) }
+.fee-owe { font-size:16px; margin:6px 0 12px } .fee-owe.bad b { color:#A3213C } .fee-owe.good { color:#1E6B3A; font-weight:700 }
+.fee-list { list-style:none; padding:0; margin:0; display:grid; gap:12px } .fee-list > li { border:1px solid var(--line); border-radius:16px; padding:14px 16px; background:#fff } .fee-list > li.overdue { border-color:#E8A9B6 } .fee-list > li.paid { background:#F3FAF6 }
+a.chip { text-decoration:none }
+tr.payrow td { background:var(--paper) } .payf { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:6px 0 } .payf label { display:grid; gap:4px; font-size:12px; color:var(--muted) } .payf input, .payf select { min-width:120px }
+.receipt { max-width:640px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:20px; padding:32px; box-shadow:0 10px 30px rgba(42,18,64,.08) }
+.receipt header { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; align-items:center; border-bottom:2px solid var(--purple); padding-bottom:16px; margin-bottom:18px } .receipt header b { font:700 22px var(--body); color:var(--night) } .receipt header span { color:var(--muted); font-size:13px; display:block } .receipt header h1 { grid-column:1 / -1; font-size:26px; margin:10px 0 0 }
+.receipt dl { display:grid; grid-template-columns:minmax(150px, 40%) 1fr; gap:10px 16px; margin:0 } .receipt dt { color:var(--muted); font-size:13px } .receipt dd { margin:0; font-weight:600 } .receipt dd.big { font-size:24px; color:var(--purple) } .receipt .thanks { margin:24px 0 0; text-align:center; color:var(--muted) }
+.noprint { text-align:center; margin-top:18px }
+@media print { #portalReceipt, #portalReceipt * { visibility:visible } #portalReceipt { position:absolute; left:0; top:0; width:100% } #portalReceipt .noprint { display:none } .receipt { box-shadow:none; border:0 } }
+@media (max-width:720px) { .receipt { padding:20px } .receipt dl { grid-template-columns:1fr } .ctabs button { padding:9px 12px } }

@@ -49,3 +49,57 @@ const old = await db.collection('adminQueue').where('status', 'in', ['done', 'er
 const cutoff = Date.now() - 3 * 864e5;
 for (const d of old.docs) { const t = d.get('doneAt'); if (t && t.toMillis() < cutoff) await d.ref.delete() }
 console.log(`queue: ${pending.size} processed`);
+
+// ---------- emails ----------
+// Pending messages in /outbox are sent with Gmail (secrets GMAIL_USER and GMAIL_APP_PASSWORD).
+const colombo = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' });
+const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) };
+const diffDays = (a, b) => Math.round((new Date(a + 'T00:00:00Z') - new Date(b + 'T00:00:00Z')) / 864e5);
+const SITE = process.env.SITE_URL || 'https://dilshanchamika9-netizen.github.io/purple-queen-academy/';
+const queueOnce = async (key, msg) => { try { await db.doc(`outbox/${key}`).create({ ...msg, status: 'pending', by: 'auto', createdAt: admin.firestore.FieldValue.serverTimestamp() }); return 1 } catch (e) { if (e.code === 6 || /ALREADY_EXISTS/.test(String(e.message))) return 0; throw e } };
+
+// automatic reminders: once a day around 8 am Sri Lanka time (the keys make every reminder go out only once)
+const hour = +new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', hour12: false });
+if (hour === 8 || process.env.REMIND_NOW === '1') {
+  const today = colombo(); let n = 0;
+  const parentOf = async (uid) => { const u = await db.doc(`users/${uid}`).get(); return u.exists ? u.data() : null };
+  const hws = await db.collection('assignments').where('due', '>=', today).where('due', '<=', addDays(today, 1)).get();
+  for (const a of hws.docs) {
+    const A = a.data();
+    for (const uid of A.uids || []) {
+      const u = await parentOf(uid); if (!u || !u.parentEmail) continue;
+      const prog = (await db.doc(`progress/${uid}`).get()).data() || {}, st = (await db.doc(`astatus/${a.id}_${uid}`).get()).data() || {};
+      const done = A.items.every((it, i) => it.t === 'lesson' ? ((prog.lessons || {})[it.id] || 0) >= 70 : !!(st.checks && st.checks[i]));
+      if (done) continue;
+      n += await queueOnce(`hw_${a.id}_${uid}`, { to: u.parentEmail, subject: `Homework due ${A.due}: ${A.title}`, text: `Hello,\n\nA reminder that the homework "${A.title}" for ${u.name} is due on ${A.due} and is not finished yet.\nThe student can open it after signing in: ${SITE}login.html\n\nPurple Queen Chess Academy`, kind: 'reminder' });
+    }
+  }
+  const invs = await db.collection('invoices').where('open', '==', true).get();
+  for (const d of invs.docs) {
+    const I = d.data(), bal = Math.round((I.amount - (I.paid || 0)) * 100) / 100; if (bal <= 0) continue;
+    const days = diffDays(I.due, today); if (days > 3) continue;
+    const u = await parentOf(I.uid); if (!u || !u.parentEmail) continue;
+    const late = days < 0, key = late ? `fee_${d.id}_late_${Math.floor(-days / 7)}` : `fee_${d.id}_soon`;
+    n += await queueOnce(key, { to: u.parentEmail, subject: late ? `Fee overdue: ${I.title}` : `Fee due ${I.due}: ${I.title}`, text: `Hello,\n\nThe fee "${I.title}" for ${I.name} (${I.currency || 'LKR'} ${bal.toFixed(2)} balance) ${late ? 'was due on' : 'is due on'} ${I.due}.\nYou can see it and pay it after signing in with the parent login: ${SITE}login.html\n\nPurple Queen Chess Academy`, kind: 'reminder' });
+  }
+  console.log(`reminders queued: ${n}`);
+}
+
+const out = await db.collection('outbox').where('status', '==', 'pending').limit(40).get();
+if (out.size) {
+  const user = process.env.GMAIL_USER, pass = process.env.GMAIL_APP_PASSWORD, stub = process.env.MAIL_STUB === '1';
+  if (!stub && (!user || !pass)) console.log(`${out.size} email(s) waiting: add GMAIL_USER and GMAIL_APP_PASSWORD secrets to send them.`);
+  else {
+    let tr = null; if (!stub) { const nm = await import('nodemailer'); tr = nm.default.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } }) }
+    for (const m of out.docs) {
+      const r = m.data();
+      try {
+        if (!stub) await tr.sendMail({ from: `Purple Queen Chess Academy <${user}>`, to: r.to, subject: r.subject, text: r.text });
+        await m.ref.update({ status: 'done', doneAt: admin.firestore.FieldValue.serverTimestamp(), stub });
+      } catch (e) { await m.ref.update({ status: 'error', error: String(e.message || e).slice(0, 200) }) }
+    }
+    console.log(`emails sent: ${out.size}`);
+  }
+}
+const oldMail = await db.collection('outbox').where('status', '==', 'done').get();
+for (const d of oldMail.docs) { const t = d.get('doneAt'); if (t && t.toMillis() < Date.now() - 30 * 864e5) await d.ref.delete() }

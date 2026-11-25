@@ -1,5 +1,5 @@
 // Shared helpers for homework, time and reports (coach, student and parent pages).
-import { esc, fmtTime, today } from './fb.js';
+import { esc, fmtTime, today, money } from './fb.js';
 export const MODS = window.PQ_MODULES || [];
 export const LESSONS = MODS.flatMap((m, k) => m.lessons.map(l => ({ ...l, mod: k })));
 export const byId = Object.fromEntries(LESSONS.map(l => [l.id, l]));
@@ -53,3 +53,24 @@ export function attStat(sessions, uid) {
 }
 export const attLabel = { p: 'Present', l: 'Late', a: 'Absent' };
 export const attTable = (a, u) => a.total ? `<table class="stu mini-t"><thead><tr><th>Date</th><th>Class</th><th>Status</th></tr></thead><tbody>${a.recent.map(x => `<tr><td>${x.date}</td><td>${esc(x.batch)}</td><td><span class="pill ${x.marks[u] === 'a' ? 'late' : x.marks[u] === 'l' ? 'open' : 'done'}">${attLabel[x.marks[u]]}</span></td></tr>`).join('')}</tbody></table>` : '<p class="muted">No classes marked yet.</p>';
+
+// fees
+export function invStat(inv) {
+  const paid = Math.round((inv.paid || 0) * 100) / 100, bal = Math.round(((inv.amount || 0) - paid) * 100) / 100;
+  const state = bal <= 0 ? 'paid' : inv.due && inv.due < today() ? 'overdue' : paid > 0 ? 'part' : 'due';
+  return { paid, bal: Math.max(0, bal), state };
+}
+export const invPill = (st) => `<span class="pill ${st === 'paid' ? 'done' : st === 'overdue' ? 'late' : 'open'}">${{ paid: 'Paid', overdue: 'Overdue', part: 'Part paid', due: 'Due' }[st]}</span>`;
+export const waNumber = (p) => { let d = String(p || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) return d.slice(1).replace(/\D/g, ''); d = d.replace(/\D/g, ''); if (d.startsWith('00')) return d.slice(2); if (d.startsWith('0')) return '94' + d.slice(1); return d };
+export const waLink = (phone, text) => { const n = waNumber(phone); return n.length >= 9 ? 'https://wa.me/' + n + '?text=' + encodeURIComponent(text) : '' };
+export const feeText = (inv, st) => `Hello, this is a reminder from Purple Queen Chess Academy. The fee “${inv.title}” for ${inv.name} (${money(st.bal, inv.currency)} balance) ${st.state === 'overdue' ? 'was due on ' : 'is due on '}${inv.due}. Please pay at your earliest convenience. Thank you.`;
+export const feesBlock = (invs, { payBtn = false } = {}) => {
+  if (!invs.length) return '<p class="muted">No fees yet.</p>';
+  const sorted = invs.slice().sort((a, b) => (b.due || '').localeCompare(a.due || ''));
+  const owe = sorted.reduce((n, i) => n + invStat(i).bal, 0);
+  return `<p class="fee-owe ${owe ? 'bad' : 'good'}">${owe ? 'Balance to pay: <b>' + money(owe, sorted[0].currency) + '</b>' : 'Nothing to pay. Thank you!'}</p>
+    <ul class="fee-list">${sorted.map(i => { const st = invStat(i); return `<li class="${st.state}"><div class="hw-top"><b>${esc(i.title)}</b><span>Due ${i.due}</span>${invPill(st.state)}</div>
+      <p class="small">${money(i.amount, i.currency)} · paid ${money(st.paid, i.currency)}${st.bal ? ' · <b>balance ' + money(st.bal, i.currency) + '</b>' : ''}</p>
+      ${(i.payments || []).length ? '<p class="small">' + i.payments.map((p, k) => `<a class="chip" href="receipt.html?i=${i.id}&p=${k}">Receipt ${k + 1} · ${money(p.amount, i.currency)}</a>`).join(' ') + '</p>' : ''}
+      ${payBtn && st.bal ? `<button type="button" class="btn btn-primary btn-sm" data-pay="${i.id}">Pay online</button>` : ''}</li>` }).join('')}</ul>`;
+};

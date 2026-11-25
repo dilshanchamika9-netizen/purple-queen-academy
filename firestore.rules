@@ -18,7 +18,7 @@ service cloud.firestore {
       allow write: if false;                       // managed by the GitHub admin workflow only
     }
     match /users/{uid} {
-      allow read: if isCoach() || (signedIn() && request.auth.uid == uid);
+      allow read: if isCoach() || (signedIn() && request.auth.uid == uid) || (isParent() && myChild() == uid);
       allow create: if isCoach() && request.resource.data.role in ['student', 'parent'];
       allow update: if isCoach()
         || ((isStudent() || isParent()) && request.auth.uid == uid
@@ -56,6 +56,17 @@ service cloud.firestore {
       allow read: if isCoach() || (isStudent() && request.auth.uid in resource.data.uids) || (isParent() && myChild() in resource.data.uids);
       allow create, update: if isCoach() && request.resource.data.keys().hasAll(['date', 'batch', 'marks', 'uids']);
       allow delete: if false;
+    }
+    // fees: one document per student per charge; payments is a list of {id, amount, method, ref, date, by}
+    match /invoices/{id} {
+      allow read: if isCoach() || (isStudent() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
+      allow create, update, delete: if isCoach();
+    }
+    // emails waiting to be sent by the GitHub job; clients can only add pending messages
+    match /outbox/{id} {
+      allow read: if isCoach();
+      allow create: if isCoach() && request.resource.data.status == 'pending' && request.resource.data.keys().hasAll(['to', 'subject', 'text', 'kind']);
+      allow update, delete: if false;
     }
     match /meta/{doc} {
       allow read, write: if isCoach();

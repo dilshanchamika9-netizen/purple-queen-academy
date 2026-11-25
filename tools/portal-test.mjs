@@ -47,6 +47,7 @@ await pg.fill('#aName', 'Second Student'); await pg.click('#addForm button[type=
 await pg.waitForFunction(() => document.querySelector('#nId') && document.querySelector('#nId').textContent === 'PQ0002', null, { timeout: 15000 });
 ok(true, 'second student gets PQ0002');
 const coachPage = pg;
+const tab = (n) => coachPage.click(`#cTabs [data-t="${n}"]`);
 
 // 3) student first login: must choose a password
 pg = await page();
@@ -120,6 +121,7 @@ ok(pden.makeHomework === 'permission-denied', 'parent cannot create homework');
 ok(pden.listChildHomework === 'allowed', 'parent can list own child’s homework');
 
 // coach gives homework: lesson "board" + one written task, to all students
+await tab('homework');
 await coachPage.fill('#hTitle', 'Week 1 homework'); await coachPage.fill('#hDue', '2099-01-01'); await coachPage.fill('#hNote', 'Finish before class');
 await coachPage.click('#hLessons details:first-child summary'); await coachPage.check('#hLessons input[data-les="board"]'); await coachPage.fill('#hText', 'Play two games with a friend');
 await coachPage.click('#hwForm button[type=submit]');
@@ -158,6 +160,7 @@ await pg.waitForTimeout(500);
 
 
 // attendance: coach marks a class, student and parent see the percentage
+await tab('attendance');
 await coachPage.selectOption('#atBatch', 'Saturday 8:30 AM');
 ok(await coachPage.locator('#atList .atrow').count() === 1, 'attendance list shows only the chosen batch');
 await coachPage.click('#atList .seg3 label.l');
@@ -202,6 +205,7 @@ const bt = await fsDoc(`astatus/${(await pg.evaluate(() => new URLSearchParams(l
 ok(!!(bt.fields && bt.fields.checks), 'solving the board task is saved');
 
 // Level 1 promotion: test mark + supervised games, then the coach promotes
+await tab('students');
 await fsSet('progress/' + uid2, { lessons: { mapValue: { fields: { 'l1-promotion': { integerValue: '90' } } } } });
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 await coachPage.click(`#stuTable tr[data-uid="${uid2}"] button[data-a="report"]:not(.nm)`);
@@ -212,6 +216,62 @@ await coachPage.click('#promoBtn');
 await coachPage.waitForFunction((u) => document.querySelector(`#stuTable tr[data-uid="${u}"] select.lv`).value === '2', uid2, { timeout: 10000 });
 ok(true, 'coach promotes the student to Level 2');
 
+// parent contact, fees, receipts, e-mail queue, WhatsApp links
+await tab('students');
+await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
+await coachPage.waitForSelector('#dpPhone', { timeout: 10000 });
+await coachPage.fill('#dpPhone', '077 123 4567'); await coachPage.fill('#dpEmail', 'p1@test.lk'); await coachPage.click('#dpSave');
+await coachPage.waitForFunction(() => document.querySelector('#dpMsg').textContent === 'Saved.', null, { timeout: 10000 });
+await tab('fees'); await coachPage.waitForSelector('#feeForm', { timeout: 10000 });
+await coachPage.fill('#fTitle', 'November fee'); await coachPage.fill('#fAmt', '5000'); await coachPage.fill('#fDue', '2099-03-01'); await coachPage.check('#fMail');
+await coachPage.click('#feeForm button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#fMsg').textContent.includes('Fees created'), null, { timeout: 15000 });
+ok((await coachPage.textContent('#fMsg')).includes('1 email'), 'fee creates one queued e-mail (only the parent with an e-mail)');
+await coachPage.fill('#fTitle', 'Old fee'); await coachPage.fill('#fAmt', '1000'); await coachPage.fill('#fDue', '2020-01-01'); await coachPage.selectOption('#fWho', 'pick');
+await coachPage.check(`#fPick input[value="${uid1}"]`); await coachPage.uncheck('#fMail');
+await coachPage.click('#feeForm button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#fMsg').textContent.includes('1 student'), null, { timeout: 15000 });
+await coachPage.selectOption('#fFilter', 'all');
+const ftxt = await coachPage.textContent('#fTable');
+ok(ftxt.includes('November fee') && ftxt.includes('5,000.00') && ftxt.includes('Old fee') && ftxt.includes('Overdue'), 'coach fee table lists both fees with the overdue one marked');
+ok(await coachPage.locator('#fTable a[href^="https://wa.me/94771234567"]').count() >= 1, 'WhatsApp reminder link uses the parent number in international form');
+// record a part payment on the November fee for student 1
+const nov = coachPage.locator(`#fTable tr[data-id]:has-text("November fee"):has-text("PQ0001")`);
+await nov.locator('button[data-f="pay"]').click();
+await coachPage.fill('.payf input[name="a"]', '2000'); await coachPage.selectOption('.payf select[name="m"]', 'bank'); await coachPage.fill('.payf input[name="r"]', 'REF123');
+await coachPage.click('.payf button[type=submit]');
+await coachPage.waitForFunction(() => document.querySelector('#fTable').textContent.includes('Part paid'), null, { timeout: 10000 });
+ok(await coachPage.locator('#fTable a[href^="receipt.html"]').count() === 1, 'a receipt link appears after recording a payment');
+// student and parent see the balance and the receipt
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#feeBox .fee-list', { timeout: 15000 });
+const ft = await pg.textContent('#feeBox');
+ok(ft.includes('Balance to pay') && ft.includes('4,000.00') && ft.includes('Receipt 1'), 'student sees the balance (5,000 + 1,000 - 2,000 = 4,000) and the receipt');
+const rhref = await pg.getAttribute('#feeBox a[href^="receipt.html"]', 'href');
+await pg.goto(`${SITE}/${rhref}`); await pg.waitForSelector('.receipt', { timeout: 15000 });
+const rt = await pg.textContent('.receipt');
+ok(rt.includes('Payment receipt') && rt.includes('2,000.00') && rt.includes('REF123') && rt.includes('3,000.00'), 'receipt shows amount, reference and the balance after payment');
+await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#feeBox .fee-list', { timeout: 15000 });
+ok((await pp.textContent('#feeBox')).includes('Balance to pay'), 'parent sees the fees');
+const fden = await pg.evaluate(async ([uid2]) => {
+  const m = await import('./assets/js/portal/fb.js'); const r = {};
+  const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
+  await t('write', () => m.F.addDoc(m.F.collection(m.db, 'invoices'), { uid: m.auth.currentUser.uid, amount: 1, due: '2099-01-01' }));
+  await t('other', () => m.F.getDocs(m.F.query(m.F.collection(m.db, 'invoices'), m.F.where('uid', '==', uid2))));
+  await t('mail', () => m.F.addDoc(m.F.collection(m.db, 'outbox'), { to: 'a@b.c', subject: 's', text: 't', kind: 'x', status: 'pending' }));
+  return r;
+}, [uid2]);
+ok(fden.write === 'permission-denied' && fden.other === 'permission-denied' && fden.mail === 'permission-denied', 'student cannot create fees, read other students’ fees or queue e-mails');
+// admin job: sends queued e-mails (stub) and creates the automatic reminders once
+const adminEnv = { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P, MAIL_STUB: '1', REMIND_NOW: '1' };
+execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: adminEnv });
+execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: adminEnv });
+const outbox = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/outbox`, { headers: owner }).then(r => r.json());
+const docsO = outbox.documents || [];
+ok(docsO.length >= 2 && docsO.every(d => d.fields.status.stringValue === 'done'), 'queued e-mails are processed (' + docsO.length + ')');
+ok(docsO.filter(d => d.fields.kind.stringValue === 'reminder').length === 1, 'the overdue fee reminder is created exactly once even after two runs');
+ok(docsO.every(d => d.fields.to.stringValue === 'p1@test.lk'), 'e-mails go only to the saved parent address');
+
+await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);

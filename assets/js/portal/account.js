@@ -1,5 +1,5 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn, fmtTime, today } from './fb.js';
-import { attStat, attTable, assignStat, itemLabel, secsInLastDays, dueText, statePill, byId, MODS as LMODS } from './lms.js';
+import { feesBlock, attStat, attTable, assignStat, itemLabel, secsInLastDays, dueText, statePill, byId, MODS as LMODS } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalAccount');
 const MODS = window.PQ_MODULES || (window.PQ_MODULE ? [window.PQ_MODULE] : []);
@@ -25,6 +25,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
   try { const q = await F.getDocs(F.query(F.collection(db, 'astatus'), F.where('uid', '==', me.user.uid))); q.docs.forEach(d => st[d.id] = d.data()) } catch {}
   let sess = []; try { const q = await F.getDocs(F.query(F.collection(db, 'attendance'), F.where('uids', 'array-contains', me.user.uid))); sess = q.docs.map(d => d.data()) } catch {}
   const att = attStat(sess, me.user.uid);
+  let invs = []; try { const q = await F.getDocs(F.query(F.collection(db, 'invoices'), F.where('uid', '==', me.user.uid))); invs = q.docs.map(d => ({ id: d.id, ...d.data() })) } catch {}
   const solved = prog.puzzles && prog.puzzles.solved ? Object.keys(prog.puzzles.solved).length : 0;
   const nextIdx = LESSONS.findIndex(l => (L[l.id] || 0) < 70);
   root.innerHTML = `
@@ -41,6 +42,7 @@ const LEVEL = { 1: 'Level 1 · Pawn (Basic)', 2: 'Level 2 · Knight (Intermediat
       <div><b>${att.pct == null ? '—' : att.pct + '%'}</b><span>Attendance</span></div>
     </div>
     <section class="acc-card" id="hwBox"></section>
+    <section class="acc-card" id="feeBox"><h3>Fees</h3>${feesBlock(invs, { payBtn: true })}</section>
     <section class="acc-card"><h3>My attendance</h3>${attTable(att, me.user.uid)}</section>
     <div class="acc-grid">
       <div class="acc-mods">${MODS.map((m, k) => {
