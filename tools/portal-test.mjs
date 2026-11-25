@@ -179,6 +179,14 @@ await pg.goto(`${SITE}/login.html?emu=1`);
 await pg.fill('#sId', 'PQ0001'); await pg.fill('#sPw', newPw); await pg.click('#stuForm button[type=submit]');
 await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(true, 'student signs in with the reset password and must choose a new one');
 
+// removing a student also removes the parent login, study time and ticks
+const delBtn = `#stuTable tr[data-uid="${uid2}"] button[data-a="delete"]`;
+await coachPage.click(delBtn); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
+execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
+const after = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/users`, { headers: owner }).then(r => r.json());
+ok(!after.documents.some(d => d.fields.sid && /^PQ0002/.test(d.fields.sid.stringValue)), 'removing a student also removes the parent login');
+ok(after.documents.some(d => d.fields.sid && d.fields.sid.stringValue === 'PQ0001-P'), 'other parent logins stay');
+
 // 7) phone width: no sideways scroll on portal pages
 await pg.setViewportSize({ width: 390, height: 844 });
 for (const p of ['login.html', 'account.html', 'parent.html']) { await pg.goto(`${SITE}/${p}`); await pg.waitForTimeout(1500); const sw = await pg.evaluate(() => document.documentElement.scrollWidth); ok(sw <= 390, `${p} fits a phone (${sw}px)`) }
