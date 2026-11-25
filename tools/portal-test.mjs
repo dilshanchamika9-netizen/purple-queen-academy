@@ -179,6 +179,7 @@ const aden = await pg.evaluate(async () => { const m = await import('./assets/js
 ok(aden === 'permission-denied', 'student cannot write attendance');
 
 // coach builds a board task and gives it as homework; the student solves it
+await tab('homework');
 await coachPage.click('#tbDet summary'); await coachPage.waitForSelector('#tbBoard .lsq');
 await coachPage.fill('#tbQ', 'White to move. Win the queen.');
 await coachPage.click('#tbClear');
