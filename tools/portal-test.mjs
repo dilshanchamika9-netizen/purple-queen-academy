@@ -218,7 +218,7 @@ ok(aden === 'permission-denied', 'student cannot write attendance');
 
 // coach builds a board task and gives it as homework; the student solves it
 await tab('homework');
-await coachPage.click('#tbDet summary'); await coachPage.waitForSelector('#tbBoard .lsq');
+await coachPage.evaluate(() => { document.querySelector('#hMore').open = true }); await coachPage.click('#tbDet summary'); await coachPage.waitForSelector('#tbBoard .lsq');
 await coachPage.fill('#tbQ', 'White to move. Win the queen.');
 await coachPage.click('#tbClear');
 for (const [p, sq] of [['wK', 'e1'], ['bK', 'h8'], ['wR', 'a1'], ['bQ', 'a8']]) { await coachPage.click(`#tbPal .tbp[data-p="${p}"]`); await coachPage.click(`#tbBoard .lsq[data-sq="${sq}"]`) }
