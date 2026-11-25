@@ -1,4 +1,5 @@
 // Shared helpers for homework, time and reports (coach, student and parent pages).
+import { PAY_URL } from './pay-config.js';
 import { esc, fmtTime, today, money } from './fb.js';
 export const MODS = window.PQ_MODULES || [];
 export const LESSONS = MODS.flatMap((m, k) => m.lessons.map(l => ({ ...l, mod: k })));
@@ -72,5 +73,5 @@ export const feesBlock = (invs, { payBtn = false } = {}) => {
     <ul class="fee-list">${sorted.map(i => { const st = invStat(i); return `<li class="${st.state}"><div class="hw-top"><b>${esc(i.title)}</b><span>Due ${i.due}</span>${invPill(st.state)}</div>
       <p class="small">${money(i.amount, i.currency)} · paid ${money(st.paid, i.currency)}${st.bal ? ' · <b>balance ' + money(st.bal, i.currency) + '</b>' : ''}</p>
       ${(i.payments || []).length ? '<p class="small">' + i.payments.map((p, k) => `<a class="chip" href="receipt.html?i=${i.id}&p=${k}">Receipt ${k + 1} · ${money(p.amount, i.currency)}</a>`).join(' ') + '</p>' : ''}
-      ${payBtn && st.bal ? `<button type="button" class="btn btn-primary btn-sm" data-pay="${i.id}">Pay online</button>` : ''}</li>` }).join('')}</ul>`;
+      ${payBtn && PAY_URL && st.bal ? `<button type="button" class="btn btn-primary btn-sm" data-pay="${i.id}">Pay online</button>` : ''}</li>` }).join('')}</ul>`;
 };

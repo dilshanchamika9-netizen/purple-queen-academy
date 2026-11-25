@@ -1,4 +1,5 @@
 import { auth, db, F, whoAmI, logout, esc, markSignedIn, fmtTime } from './fb.js';
+import './pay.js';
 import { feesBlock, attStat, attTable, MODS, LESSONS, PASS, assignStat, itemLabel, secsInLastDays, dayBars, dueText, statePill, lessonTable } from './lms.js';
 const $ = (s) => document.querySelector(s);
 const root = $('#portalParent');

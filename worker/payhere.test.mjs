@@ -1,0 +1,11 @@
+import { md5, checkoutHash, notifySig, fmtAmount, toFs, fromFs } from './payhere.js';
+import { createHash } from 'node:crypto';
+import assert from 'node:assert/strict';
+const ref = (s) => createHash('md5').update(s).digest('hex');
+for (const s of ['', 'a', 'abc', 'The quick brown fox', 'x'.repeat(55), 'x'.repeat(56), 'x'.repeat(64), 'x'.repeat(200), 'ශ්‍රී ලංකා']) assert.equal(md5(s), ref(s), 'md5 ' + s.length);
+const up = (s) => s.toUpperCase();
+assert.equal(checkoutHash({ merchantId: '121XXXX', orderId: 'inv1-abc', amount: 1500, currency: 'LKR', secret: 'sec' }), up(ref('121XXXX' + 'inv1-abc' + '1500.00' + 'LKR' + up(ref('sec')))));
+assert.equal(notifySig({ merchantId: 'm', orderId: 'o', amount: '1500.00', currency: 'LKR', statusCode: '2', secret: 's' }), up(ref('mo1500.00LKR2' + up(ref('s')))));
+assert.equal(fmtAmount(1234.5), '1234.50'); assert.equal(fmtAmount(0.1 + 0.2), '0.30');
+const o = { a: 'x', b: 5, c: 1.5, d: true, e: [{ f: 'g' }], h: null }; assert.deepEqual(fromFs(toFs(o)), o);
+console.log('payhere tests ok');

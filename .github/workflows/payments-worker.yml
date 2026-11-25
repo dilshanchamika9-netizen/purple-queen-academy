@@ -1,0 +1,28 @@
+name: Payments worker
+on:
+  push:
+    paths: ['worker/**', '.github/workflows/payments-worker.yml']
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Unit tests (hash, signature, Firestore value conversion)
+        run: node worker/payhere.test.mjs
+      - name: Deploy to Cloudflare (only when the secrets exist)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAYHERE_MERCHANT_ID: ${{ secrets.PAYHERE_MERCHANT_ID }}
+          PAYHERE_SECRET: ${{ secrets.PAYHERE_SECRET }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$PAYHERE_MERCHANT_ID" ]; then echo "Payment secrets not set yet - skipping deploy."; exit 0; fi
+          cd worker
+          npx --yes wrangler@3 deploy
+          printf %s "$PAYHERE_MERCHANT_ID" | npx wrangler@3 secret put PAYHERE_MERCHANT_ID
+          printf %s "$PAYHERE_SECRET" | npx wrangler@3 secret put PAYHERE_SECRET
+          printf %s "$FIREBASE_SA" | npx wrangler@3 secret put FIREBASE_SA

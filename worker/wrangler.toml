@@ -1,0 +1,10 @@
+name = "pq-payments"
+main = "payhere.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+[vars]
+FIREBASE_API_KEY = "AIzaSyCqXiPLDV0T3ASvrQyRg-6f0taUpedwngg"
+SITE_URL = "https://dilshanchamika9-netizen.github.io/purple-queen-academy/"
+ALLOWED_ORIGIN = "https://dilshanchamika9-netizen.github.io"
+PAYHERE_SANDBOX = "1"
