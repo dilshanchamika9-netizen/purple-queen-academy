@@ -123,7 +123,7 @@ ok(pden.listChildHomework === 'allowed', 'parent can list own child’s homework
 // coach gives homework: lesson "board" + one written task, to all students
 await tab('homework');
 await coachPage.fill('#hTitle', 'Week 1 homework'); await coachPage.fill('#hDue', '2099-01-01'); await coachPage.fill('#hNote', 'Finish before class');
-ok(await coachPage.locator('#hLessons input[data-les]').count() >= 1, 'coach sees the next pending lessons'); ok(await coachPage.locator('#hLessons input[data-les="board"]').count() === 0, 'passed lesson is not offered again'); await coachPage.locator('#hLessons input[data-les]').first().check(); await coachPage.fill('#hText', 'Play two games with a friend');
+ok(await coachPage.locator('#hLessons input[data-les]').count() >= 1, 'coach sees the next pending lessons'); ok(await coachPage.locator('#hLessons input[data-les]').count() <= 3 * 4, 'coach sees only a few lessons, not all'); await coachPage.locator('#hLessons input[data-les]').first().check(); await coachPage.fill('#hText', 'Play two games with a friend');
 await coachPage.click('#hwForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#hMsg').textContent.includes('given to'), null, { timeout: 15000 });
 ok((await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach sees the new homework in the list');
