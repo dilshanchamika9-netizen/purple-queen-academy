@@ -20,9 +20,9 @@
       { id: "l2-double-check", title: {en:"Double check",si:"ඩබල් චෙක්"}, steps: [
         { pos: fp("r1b1kb1r/ppp2ppp/5q2/3p4/3P4/2P2N1P/PP1NB1P1/R3Q1K1"), text: {en:"A double check is check from two pieces at the same time. One move gives check and uncovers a second check.",si:"ඩබල් චෙක් (double check) එකක් කියන්නේ ඉත්තන් දෙකකින් එකවර දෙන චෙක් එකක්. එක ඇදීමකින් චෙක් එකක් දීලා දෙවැනි චෙක් එකත් විවෘත කරනවා."} },
         { text: {en:"You cannot capture or block two checking pieces in one move. The king must move. That is why a double check is so strong.",si:"ඉත්තන් දෙකක චෙක් එක එක ඇදීමකින් කපන්නවත් අවහිර කරන්නවත් බෑ. රජුට ඇදෙන්නම වෙනවා. ඒකයි ඩබල් චෙක් එක මේ තරම් ශක්තිමත්."} },
-        { pos: fp("r1b1kb1r/ppp2ppp/5q2/3p4/3P4/2P2N1P/PP1NB1P1/R3Q1K1"), move: ["e2","b5"], text: {en:"Bb4+. This move gives check with two pieces at once.",si:"Bb4+. මේ ඇදීමෙන් ඉත්තන් දෙකකින් එකවර චෙක් දෙනවා."} },
-        { move: ["e8","d8"], text: {en:"Black replies Kd1.",si:"කළු Kd1 ලෙස පිළිතුරු දෙනවා."} },
-        { move: ["e1","e8"], text: {en:"Qe1#. Checkmate.",si:"Qe1#. චෙක්මේට්."} },
+        { pos: fp("r1b1kb1r/ppp2ppp/5q2/3p4/3P4/2P2N1P/PP1NB1P1/R3Q1K1"), move: ["e2","b5"], text: {en:"Bb5+. This move gives check with two pieces at once.",si:"Bb5+. මේ ඇදීමෙන් ඉත්තන් දෙකකින් එකවර චෙක් දෙනවා."} },
+        { move: ["e8","d8"], text: {en:"Black replies Kd8.",si:"කළු Kd8 ලෙස පිළිතුරු දෙනවා."} },
+        { move: ["e1","e8"], text: {en:"Qe8#. Checkmate.",si:"Qe8#. චෙක්මේට්."} },
         { text: {en:"When the enemy king is exposed, look for a double check. The king must move, and often it walks into mate.",si:"සතුරු රජු නිරාවරණයි නම් ඩබල් චෙක් එකක් හොයන්න. රජුට ඇදෙන්න වෙනවා, බොහෝ වෙලාවට මේට් වෙනවා."} }
       ] },
       { id: "l2-deflection", title: {en:"Deflection",si:"ඩිෆ්ලෙක්ෂන් (ඉවතට ඇද දැමීම)"}, steps: [

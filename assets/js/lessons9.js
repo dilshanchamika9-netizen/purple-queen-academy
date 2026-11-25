@@ -10,9 +10,9 @@
       { id: "l2-candidates", title: {en:"Candidate moves",si:"කැන්ඩිඩේට් ඇදීම් (ඇදිය හැකි ඇදීම්)"}, steps: [
         { pos: fp("6k1/6p1/2R2bK1/P6p/1PR5/2P3P1/r5r1/8"), text: {en:"A candidate move is a move worth looking at. Before choosing, write down two or three candidates instead of playing the first move you see.",si:"කැන්ඩිඩේට් මූවි (candidate move) එකක් කියන්නේ සලකා බලන්න වටින ඇදීමක්. තෝරන්න කලින්, ඔයාට පළවෙනියට පෙනෙන ඇදීම ඇදෙන්නේ නැතුව ඇදීම් දෙකක් තුනක් ලියාගන්න."} },
         { text: {en:"Start with forcing moves: checks, captures and threats. They limit what the opponent can do, so they are easier to calculate.",si:"බලකරන ඇදීම් වලින් පටන් ගන්න: චෙක්, කැපීම් සහ තර්ජන. ඒවා සතුරාගේ විකල්ප අඩු කරනවා, ඒ නිසා ගණනය කරන්න ලේසියි."} },
-        { pos: fp("6k1/6p1/2R2bK1/P6p/1PR5/2P3P1/r5r1/8"), move: ["c6","c8"], text: {en:"Rc1+. A forcing first move. Now see how the opponent must answer.",si:"Rc1+. බලකරන පළවෙනි ඇදීමක්. දැන් සතුරාට පිළිතුරු දෙන්න වෙන්නේ කොහොමද කියලා බලන්න."} },
-        { move: ["f6","d8"], text: {en:"Black replies Bd1.",si:"කළු Bd1 ලෙස පිළිතුරු දෙනවා."} },
-        { move: ["c8","d8"], caps: ["d8"], text: {en:"Rxd1#. Checkmate.",si:"Rxd1#. චෙක්මේට්."} },
+        { pos: fp("6k1/6p1/2R2bK1/P6p/1PR5/2P3P1/r5r1/8"), move: ["c6","c8"], text: {en:"Rc8+. A forcing first move. Now see how the opponent must answer.",si:"Rc8+. බලකරන පළවෙනි ඇදීමක්. දැන් සතුරාට පිළිතුරු දෙන්න වෙන්නේ කොහොමද කියලා බලන්න."} },
+        { move: ["f6","d8"], text: {en:"Black replies Bd8.",si:"කළු Bd8 ලෙස පිළිතුරු දෙනවා."} },
+        { move: ["c8","d8"], caps: ["d8"], text: {en:"Rxd8#. Checkmate.",si:"Rxd8#. චෙක්මේට්."} },
         { text: {en:"Write down two or three candidates, then calculate the most forcing one first.",si:"කැන්ඩිඩේට් ඇදීම් දෙකක් තුනක් ලියලා, වඩාත්ම බලකරන එක මුලින් ගණනය කරන්න."} }
       ] },
       { id: "l2-checks-captures", title: {en:"Checks, captures, threats",si:"චෙක්, කැපීම්, තර්ජන"}, steps: [
@@ -31,9 +31,9 @@
       { id: "l2-combinations", title: {en:"Two and three move combinations",si:"ඇදීම් දෙක තුනක සංයෝජන"}, steps: [
         { pos: fp("3r2k1/pp3npp/4Q3/6q1/4Rp2/2P5/PP3PP1/6K1"), text: {en:"A combination is a forcing series of moves that wins something. Often it starts with a sacrifice.",si:"සංයෝජනයක් (combination) කියන්නේ යමක් දිනාගන්න බලකරන ඇදීම් මාලාවක්. බොහෝ වෙලාවට පටන් ගන්නේ පූජාවකින්."} },
         { text: {en:"Calculate one move at a time: your move, the opponent’s best reply, your next move. If it ends well, play it.",si:"එක ඇදීමක් එක ඇදීමක් ගණනය කරන්න: ඔයාගේ ඇදීම, සතුරාගේ හොඳම පිළිතුර, ඔයාගේ ඊළඟ ඇදීම. හොඳින් අවසන් වෙනවා නම් ඒක ඇදෙන්න."} },
-        { pos: fp("3r2k1/pp3npp/4Q3/6q1/4Rp2/2P5/PP3PP1/6K1"), move: ["e6","e8"], text: {en:"Qe1+. The first move gives something up to start the combination.",si:"Qe1+. පළවෙනි ඇදීමෙන් සංයෝජනය පටන් ගන්න යමක් අත්හරිනවා."} },
-        { move: ["d8","e8"], caps: ["e8"], text: {en:"Black replies Rxe1.",si:"කළු Rxe1 ලෙස පිළිතුරු දෙනවා."} },
-        { move: ["e4","e8"], caps: ["e8"], text: {en:"Rxe1#. Checkmate.",si:"Rxe1#. චෙක්මේට්."} },
+        { pos: fp("3r2k1/pp3npp/4Q3/6q1/4Rp2/2P5/PP3PP1/6K1"), move: ["e6","e8"], text: {en:"Qe8+. The first move gives something up to start the combination.",si:"Qe8+. පළවෙනි ඇදීමෙන් සංයෝජනය පටන් ගන්න යමක් අත්හරිනවා."} },
+        { move: ["d8","e8"], caps: ["e8"], text: {en:"Black replies Rxe8.",si:"කළු Rxe8 ලෙස පිළිතුරු දෙනවා."} },
+        { move: ["e4","e8"], caps: ["e8"], text: {en:"Rxe8#. Checkmate.",si:"Rxe8#. චෙක්මේට්."} },
         { text: {en:"See the end of the line before you play the first move. If you cannot, do not start.",si:"පළවෙනි ඇදීම ඇදෙන්න කලින් මාලාවේ අවසානය බලන්න. බැරි නම් පටන් ගන්න එපා."} }
       ] },
     ],

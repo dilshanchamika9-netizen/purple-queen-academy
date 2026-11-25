@@ -10,9 +10,9 @@
       { id: "l3-rook-endgames", title: {en:"Rook endgames",si:"රුක් අවසාන ක්‍රීඩා"}, steps: [
         { pos: fp("7R/7p/3k2p1/5p2/5P2/3r2PP/8/6K1"), text: {en:"Rook endgames are the most common endgames. Keep your rook active: attack pawns and the king, do not sit passively in front of a pawn.",si:"රුක් අවසාන ක්‍රීඩා තමයි වඩාත්ම සුලභ අවසාන ක්‍රීඩා. ඔයාගේ රුක් ක්‍රියාශීලීව තියාගන්න: පෝන් වලටත් රජුටත් ප්‍රහාර කරන්න, පෝන් එකක් ඉස්සරහ අක්‍රියව ඉන්න එපා."} },
         { text: {en:"Tarrasch rule: put your rook behind a passed pawn, yours or your opponent's. A rook behind its own pawn gets stronger as the pawn advances.",si:"ටරාෂ් රීතිය: ඔයාගේ රුක් එක පාස්ඩ් පෝන් එකක පිටිපස්සේ තියන්න, ඒක ඔයාගේ එකක් වුණත් ප්‍රතිවාදියාගේ එකක් වුණත්. තමන්ගේ පෝන් එකේ පිටිපස්සේ රුක් එක පෝන් එක ඉදිරියට යද්දී ශක්තිමත් වෙනවා."} },
-        { pos: fp("7R/7p/3k2p1/5p2/5P2/3r2PP/8/6K1"), move: ["h8","d8"], text: {en:"Rd1+. Checks and captures come first.",si:"Rd1+. චෙක් සහ කැපීම් මුලින්ම."} },
-        { move: ["d6","e6"], text: {en:"Black replies Ke3.",si:"කළු Ke3 ලෙස පිළිතුරු දෙනවා."} },
-        { move: ["d8","d3"], caps: ["d3"], text: {en:"Rxd6. White follows up and wins the advantage.",si:"Rxd6. සුදු ඉදිරියට ගිහින් වාසිය දිනාගන්නවා."} },
+        { pos: fp("7R/7p/3k2p1/5p2/5P2/3r2PP/8/6K1"), move: ["h8","d8"], text: {en:"Rd8+. Checks and captures come first.",si:"Rd8+. චෙක් සහ කැපීම් මුලින්ම."} },
+        { move: ["d6","e6"], text: {en:"Black replies Ke6.",si:"කළු Ke6 ලෙස පිළිතුරු දෙනවා."} },
+        { move: ["d8","d3"], caps: ["d3"], text: {en:"Rxd3. White follows up and wins the advantage.",si:"Rxd3. සුදු ඉදිරියට ගිහින් වාසිය දිනාගන්නවා."} },
         { text: {en:"Rook endgames: keep the rook active, put it behind passed pawns, and use checks to win material.",si:"රුක් අවසාන ක්‍රීඩා: රුක් ක්‍රියාශීලීව තියාගන්න, පාස්ඩ් පෝන් වල පිටිපස්සේ තියන්න, චෙක් පාවිච්චි කරලා ඉත්තන් දිනන්න."} }
       ] },
       { id: "l3-minor-endgames", title: {en:"Bishop and knight endgames",si:"බිෂොප් සහ නයිට් අවසාන ක්‍රීඩා"}, steps: [
