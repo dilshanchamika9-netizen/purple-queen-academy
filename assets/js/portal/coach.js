@@ -17,8 +17,37 @@ let feesApi = null, tab = 'students', custom = [], sessions = [], students = [],
   document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' }); { const c = document.getElementById('pqUserChip'); if (c) c.hidden = true }
   render(); await load();
   feesApi = initFees({ box: $('#feesBox'), getStudents: () => students, coach, queueEmail });
+  initOnline();
   F.onSnapshot(F.query(F.collection(db, 'adminQueue'), F.orderBy('createdAt', 'desc'), F.limit(20)), s => { queue = s.docs.map(d => ({ id: d.id, ...d.data() })); paintQueue() }, () => {});
 })();
+
+/* ---------- online now (students send a heartbeat every minute while a page is open) ---------- */
+let live = [];
+function initOnline() {
+  const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'onl-tab'; tab.id = 'onlTab'; tab.setAttribute('aria-label', 'Students online now');
+  const back = document.createElement('div'); back.className = 'onl-back';
+  const pane = document.createElement('aside'); pane.className = 'onl'; pane.id = 'onl'; pane.setAttribute('aria-label', 'Students online');
+  pane.innerHTML = '<div class="onl-h"><h3><i class="onl-dot on"></i>Online now</h3><button type="button" aria-label="Close">×</button></div><div id="onlBody" style="overflow:auto"></div>';
+  document.body.append(tab, back, pane);
+  const open = (v) => { pane.classList.toggle('open', v); back.classList.toggle('open', v) };
+  tab.onclick = () => open(true); document.addEventListener('keydown', (e) => { if (e.key === 'Escape') open(false) }); back.onclick = () => open(false); pane.querySelector('.onl-h button').onclick = () => open(false);
+  pane.addEventListener('click', (e) => { const li = e.target.closest('li[data-uid]'); if (li) { open(false); showTab('students'); showDetail(li.dataset.uid) } });
+  F.onSnapshot(F.query(F.collection(db, 'users'), F.where('role', '==', 'student')), s => { live = s.docs.map(d => ({ uid: d.id, ...d.data() })); paintOnline() }, () => {});
+  setInterval(paintOnline, 30000);
+}
+function paintOnline() {
+  const tab = $('#onlTab'), body = $('#onlBody'); if (!tab || !body) return;
+  const now = Date.now(), ms = (s) => (s.lastSeen && s.lastSeen.toMillis ? s.lastSeen.toMillis() : 0);
+  const on = live.filter(s => now - ms(s) < 3 * 60e3).sort((a, b) => ms(b) - ms(a));
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const earlier = live.filter(s => !on.includes(s) && ms(s) >= today0.getTime()).sort((a, b) => ms(b) - ms(a));
+  tab.innerHTML = `<i class="onl-dot${on.length ? ' on' : ''}"></i><b>${on.length}</b><span>Online</span>`;
+  const ini = (n) => esc((n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
+  const mins = (s) => { const m = Math.round((now - ms(s)) / 60e3); return m < 1 ? 'now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago' };
+  const row = (s, cls) => `<li class="${cls}" data-uid="${s.uid}" style="cursor:pointer"><span class="ini">${ini(s.name)}</span><div><b>${esc(s.name || s.sid)}</b><small>${cls === 'on' ? esc(s.onPage || 'Online') : s.onPage ? 'Was on: ' + esc(s.onPage) : 'Signed in today'}</small></div><em>${mins(s)}</em></li>`;
+  body.innerHTML = (on.length ? `<ul class="onl-list">${on.map(s => row(s, 'on')).join('')}</ul>` : '<p class="onl-empty">No student is online right now.</p>')
+    + (earlier.length ? `<p class="onl-sub">Earlier today</p><ul class="onl-list">${earlier.map(s => row(s, 'off')).join('')}</ul>` : '');
+}
 
 function render() {
   root.innerHTML = `
@@ -26,8 +55,42 @@ function render() {
     <div class="acc-actions"><button type="button" class="btn btn-ghost btn-sm" id="cOut">Sign out</button></div></div>
   <div class="acc-stats" id="cStats"></div>
   <nav class="ctabs" id="cTabs" aria-label="Coach panel sections"><button type="button" data-t="students">Students</button><button type="button" data-t="homework">Homework</button><button type="button" data-t="attendance">Attendance</button><button type="button" data-t="fees">Fees</button></nav>
-  <div class="coach-tools" data-tab="students">
-    <details class="acc-card slim" id="addDet"><summary>＋ Add a student</summary><form id="addForm">
+  <form class="acc-card" id="atForm" data-tab="attendance"><h3>Attendance</h3>
+    <div class="row2"><label for="atDate">Class date<input id="atDate" type="date" required></label>
+      <label for="atBatch">Class (batch)<select id="atBatch"></select></label></div>
+    <div id="atList" class="atlist"></div>
+    <label class="chk" for="atMail"><input type="checkbox" id="atMail"> Email the parents of absent students</label>
+    <div class="tools"><button type="button" class="btn btn-ghost btn-sm" id="atAll">Mark everyone present</button><button class="btn btn-primary btn-sm" type="submit">Save attendance</button></div><p class="pmsg2" id="atMsg"></p><div id="atWa" class="tblist"></div></form>
+  <form class="hwlay" id="hwForm" data-tab="homework">
+    <div class="acc-card hwmain"><h3>Assign homework</h3>
+      <div class="hws"><span class="hwn">1</span><div class="hwb"><p class="hwt">Who gets it?</p>
+        <div class="chipseg" id="hWhoSeg">${[['all', 'All students'], ['level', 'One level'], ['batch', 'One batch'], ['pick', 'Choose students']].map(([v, x], i) => `<button type="button" data-w="${v}" aria-pressed="${i ? 'false' : 'true'}">${x}</button>`).join('')}</div>
+        <select id="hWho" class="sr" tabindex="-1" aria-hidden="true"><option value="all">All students</option><option value="level">One level</option><option value="batch">One batch</option><option value="pick">Chosen students</option></select>
+        <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab" class="sr">Level</span><select id="hWhoVal"></select></label>
+        <div class="pickbox" id="hPick" hidden></div></div></div>
+      <div class="hws"><span class="hwn">2</span><div class="hwb"><p class="hwt">What do you want to give?</p>
+        <div class="modepick" id="hMode" role="group" aria-label="Homework type"><button type="button" data-mode="lessons" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></svg><span><b>Lessons</b><small>Next lessons in order</small></span></button><button type="button" data-mode="puzzles" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M10 3h4v3a2 2 0 1 0 4 0h3v5h-3a2 2 0 1 0 0 4h3v5H3v-5h3a2 2 0 1 0 0-4H3V3z"/></svg><span><b>Puzzles</b><small>New puzzles by level</small></span></button></div>
+        <div id="hModeL"><p class="hint">Only the next lessons each student has not passed (pass mark ${PASS}%). Later lessons stay locked.</p><div class="lesspick" id="hLessons"></div></div>
+        <div id="hModeP" hidden><p class="hint">Choose how many from each level. They are picked at random, and a student never gets a puzzle she already solved or was given.</p>
+          <div class="pzpick" id="hPz">${[1, 2, 3, 4, 5].map(l => `<div class="pzrow"><span>${PZ_LEVELS[l]}</span><div class="stepper"><button type="button" data-d="-1" data-l="${l}" aria-label="Fewer">−</button><input type="number" min="0" max="50" value="0" inputmode="numeric" data-pz="${l}" aria-label="${PZ_LEVELS[l]} puzzles"><button type="button" data-d="1" data-l="${l}" aria-label="More">+</button></div></div>`).join('')}</div>
+          <p class="pztot" id="hPzTot">0 puzzles in total</p></div></div></div>
+    </div>
+    <aside class="acc-card hwside"><h3>Check and send</h3>
+      <div class="hwsum" id="hSum"></div>
+      <label for="hTitle">Title<input id="hTitle" required value="${esc(defTitle())}"></label>
+      <label for="hDue">Finish by<input id="hDue" type="date" required></label>
+      <label for="hNote">Note for the student<textarea id="hNote" rows="2">Please complete this before the next class.</textarea></label>
+      <label class="chk" for="hMail"><input type="checkbox" id="hMail"> Email the parents (only those with an email saved)</label>
+      <details class="more" id="hMore"><summary>More options: board task, written task</summary>
+        <p class="lab">Board tasks you made</p><div id="tbList" class="tblist"><span class="muted small">None yet.</span></div>
+        <details class="tbd" id="tbDet"><summary>＋ Make a board task</summary><div id="tbBox"></div></details>
+        <label for="hText">Written tasks, one per line<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label></details>
+      <button class="btn btn-primary hwgo" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p><div class="chips" id="hSend"></div>
+    </aside>
+  </form>
+  <section class="acc-card" id="hwList" data-tab="homework"><h3>Homework given</h3><p class="muted">Loading…</p></section>
+  <section class="acc-card stucard" data-tab="students"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-primary btn-sm" id="addToggle">＋ Add student</button><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
+    <details class="addpanel" id="addDet"><summary class="sr">Add a student</summary><div class="addin"><p class="addt">New student</p><form id="addForm">
       <label for="aName">Full name<input id="aName" required placeholder="e.g. Kavindu Perera"></label>
       <div class="row2"><label for="aLevel">Level<select id="aLevel"><option value="1">Level 1 · Pawn (Basic)</option><option value="2">Level 2 · Knight (Intermediate)</option><option value="3">Level 3 · Queen (Advanced)</option></select></label>
       <label for="aBatch">Batch<input id="aBatch" placeholder="e.g. Saturday 8:30 AM"></label></div>
@@ -35,38 +98,9 @@ function render() {
       <label for="aPEmail">Parent email (optional)<input id="aPEmail" type="email" placeholder="e.g. parent@gmail.com"></label></div>
       <label class="chk" for="aParent"><input type="checkbox" id="aParent" checked> Also create a parent login (read-only view of this student)</label>
       <button class="btn btn-primary btn-sm" type="submit">Create login</button>
-      <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form></details>
-    <details class="acc-card slim" id="reqDet"><summary>Requests <small class="muted">password resets and removals</small></summary><div><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></div></details>
-  </div>
-  <form class="acc-card" id="atForm" data-tab="attendance"><h3>Attendance</h3>
-    <div class="row2"><label for="atDate">Class date<input id="atDate" type="date" required></label>
-      <label for="atBatch">Class (batch)<select id="atBatch"></select></label></div>
-    <div id="atList" class="atlist"></div>
-    <label class="chk" for="atMail"><input type="checkbox" id="atMail"> Email the parents of absent students</label>
-    <div class="tools"><button type="button" class="btn btn-ghost btn-sm" id="atAll">Mark everyone present</button><button class="btn btn-primary btn-sm" type="submit">Save attendance</button></div><p class="pmsg2" id="atMsg"></p><div id="atWa" class="tblist"></div></form>
-  <form class="acc-card hwx" id="hwForm" data-tab="homework"><h3>Assign homework</h3>
-    <div class="step"><span class="sn">1</span><div class="sb"><b>Who gets it?</b>
-      <div class="row2"><select id="hWho" aria-label="Give it to"><option value="all">All students</option><option value="level">One level</option><option value="batch">One batch</option><option value="pick">Chosen students</option></select>
-      <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab" class="sr">Level</span><select id="hWhoVal"></select></label></div>
-      <div class="pickbox" id="hPick" hidden></div></div></div>
-    <div class="step"><span class="sn">2</span><div class="sb"><b>What do you want to give?</b>
-      <div class="seg" id="hMode" role="group" aria-label="Homework type"><button type="button" data-mode="lessons" aria-pressed="true">Lessons</button><button type="button" data-mode="puzzles" aria-pressed="false">Puzzles</button></div>
-      <div id="hModeL"><p class="hint">The next lessons each student has not passed yet (pass mark ${PASS}%). Everything after them stays locked.</p><div class="lesspick" id="hLessons"></div></div>
-      <div id="hModeP" hidden><p class="hint">How many puzzles from each level? New ones are picked at random. A student never gets a puzzle she already solved or was given before.</p>
-        <div class="pzpick" id="hPz">${[1, 2, 3, 4, 5].map(l => `<div class="pzrow"><span>${PZ_LEVELS[l]}</span><div class="stepper"><button type="button" data-d="-1" data-l="${l}" aria-label="Fewer">−</button><input type="number" min="0" max="50" value="0" inputmode="numeric" data-pz="${l}" aria-label="${PZ_LEVELS[l]} puzzles"><button type="button" data-d="1" data-l="${l}" aria-label="More">+</button></div></div>`).join('')}</div>
-        <p class="pztot" id="hPzTot">0 puzzles in total</p></div></div></div>
-    <div class="step"><span class="sn">3</span><div class="sb"><b>Check and send</b>
-      <div class="row2"><label for="hTitle">Title<input id="hTitle" required value="${esc(defTitle())}"></label>
-        <label for="hDue">Finish by<input id="hDue" type="date" required></label></div>
-      <label for="hNote">Note for the student<textarea id="hNote" rows="2">Please complete this before the next class.</textarea></label>
-      <label class="chk" for="hMail"><input type="checkbox" id="hMail"> Email the parents about this homework (only those with an email saved)</label>
-      <details class="more" id="hMore"><summary>More options: board task, written task</summary>
-        <p class="lab">Board tasks you made</p><div id="tbList" class="tblist"><span class="muted small">None yet.</span></div>
-        <details class="tbd" id="tbDet"><summary>＋ Make a board task (set up a position and the right answer)</summary><div id="tbBox"></div></details>
-        <label for="hText">Written tasks, one per line (the student ticks them off)<textarea id="hText" rows="3" placeholder="e.g. Play 2 games with a friend and write the moves"></textarea></label></details>
-      <button class="btn btn-primary" type="submit">Assign homework</button><p class="pmsg2" id="hMsg"></p><div class="chips" id="hSend"></div></div></div></form>
-  <section class="acc-card" id="hwList" data-tab="homework"><h3>Homework given</h3><p class="muted">Loading…</p></section>
-  <section class="acc-card" data-tab="students"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
+      <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form></div></details>
+    <details class="reqline" id="reqDet"><summary><span class="dot"></span>Requests: password resets and removals</summary><div><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></div></details>
+
     <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Attendance</th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div></section>
   <section class="acc-card" id="detail" data-tab="students" hidden></section>
   <div id="feesBox" data-tab="fees"></div>`;
@@ -83,6 +117,9 @@ function render() {
   $('#hPz').addEventListener('click', (e) => { const b = e.target.closest('button[data-d]'); if (!b) return; const i = $('#hPz input[data-pz="' + b.dataset.l + '"]'); i.value = Math.max(0, Math.min(50, (+i.value || 0) + +b.dataset.d)); pzTot() });
   $('#hPz').addEventListener('input', pzTot);
   $('#hWho').onchange = paintWho;
+  $('#hWhoSeg').onclick = (e) => { const b = e.target.closest('button[data-w]'); if (!b) return; $('#hWho').value = b.dataset.w; paintWho() };
+  $('#addToggle').onclick = () => { const d = $('#addDet'); d.open = !d.open; if (d.open) $('#aName').focus() };
+  ['input', 'change', 'click'].forEach(ev => $('#hwForm').addEventListener(ev, () => setTimeout(paintSum, 0)));
   let built = false; $('#tbDet').addEventListener('toggle', () => { if ($('#tbDet').open && !built) { built = true; initBuilder($('#tbBox'), (t) => { custom.push(t); paintCustom() }) } });
   $('#atForm').onsubmit = saveAtt; $('#atDate').value = today(); $('#atDate').max = today();
   $('#atDate').onchange = paintAtt; $('#atBatch').onchange = paintAtt;
@@ -134,13 +171,21 @@ function paintLessons() {
   const byMod = {}; ids.forEach(l => (byMod[l.mod] = byMod[l.mod] || []).push(l));
   box.innerHTML = Object.keys(byMod).map(k => `<details open><summary><b>${PQ_MOD(MODS, +k).label}</b> ${esc(MODS[+k].title.en)}</summary>${byMod[k].map(l => `<label class="lp"><input type="checkbox" data-les="${l.id}" data-m="${k}"${keep.has(l.id) ? ' checked' : ''}> ${esc(l.title.en)}${list.length > 1 ? ` <small class="muted">for ${count[l.id]} of ${list.length} students</small>` : ''}</label>`).join('')}</details>`).join('');
 }
+function paintSum() {
+  const s = $('#hSum'); if (!s) return; const { list, label } = whoList(), mode = hMode();
+  const nL = $$('#hLessons input[data-les]:checked').length, nP = $$('#hPz input[data-pz]').reduce((a, i) => a + Math.max(0, Math.min(50, +i.value || 0)), 0);
+  const nX = custom.length + ($('#hText').value.split('\n').filter(x => x.trim()).length);
+  const what = mode === 'lessons' ? (nL ? nL + (nL > 1 ? ' lessons' : ' lesson') : 'No lesson chosen yet') : (nP ? nP + (nP > 1 ? ' puzzles' : ' puzzle') : 'No puzzles chosen yet');
+  s.innerHTML = `<div><small>For</small><b>${esc(label)}</b><em>${list.length} student${list.length === 1 ? '' : 's'}</em></div><div><small>Giving</small><b>${what}</b>${nX ? `<em>+ ${nX} extra task${nX > 1 ? 's' : ''}</em>` : ''}</div>`;
+}
 function paintWho() {
   const w = $('#hWho').value, val = $('#hWhoVal');
+  $$('#hWhoSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === w ? 'true' : 'false'));
   $('#hWhoWrap').hidden = !(w === 'level' || w === 'batch'); $('#hPick').hidden = w !== 'pick';
   if (w === 'level') { $('#hWhoLab').textContent = 'Level'; val.innerHTML = [1, 2, 3].map(l => `<option value="${l}">${LEVELS[l]}</option>`).join('') }
   if (w === 'batch') { $('#hWhoLab').textContent = 'Batch'; const b = [...new Set(students.map(s => s.batch).filter(Boolean))]; val.innerHTML = b.length ? b.map(x => `<option>${esc(x)}</option>`).join('') : '<option value="">No batches yet</option>' }
   if (w === 'pick') $('#hPick').innerHTML = students.map(s => `<label><input type="checkbox" value="${s.uid}"> ${esc(s.sid)} ${esc(s.name)}</label>`).join('') || '<p class="muted">No students yet.</p>';
-  paintLessons();
+  paintLessons(); paintSum();
 }
 
 async function load() {
@@ -171,11 +216,11 @@ function paintTable() {
   const f = ($('#filter').value || '').toLowerCase();
   const rows = students.filter(s => !f || [s.sid, s.name, s.batch].join(' ').toLowerCase().includes(f));
   $('#stuTable tbody').innerHTML = rows.length ? rows.map(s => { const t = stat(s.uid); return `<tr data-uid="${s.uid}">
-    <td><b>${esc(s.sid)}</b></td><td><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button>${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
+    <td><b>${esc(s.sid)}</b></td><td class="nmc"><span class="ini" aria-hidden="true">${esc((s.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}</span><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button>${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
     <td><select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></td>
     <td><input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></td>
     <td>${t.passed}/${LESSONS.length}</td><td>${(() => { const a = attStat(sessions, s.uid); return a.pct == null ? '—' : a.pct + '%' })()}</td><td>${ago(s.lastSeen)}</td>
-    <td class="acts"><button type="button" class="mini" data-a="report">Report</button><details class="rowmenu"><summary class="mini">More</summary><div><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></td></tr>` }).join('')
+    <td class="acts"><button type="button" class="mini" data-a="report">Report</button><details class="rowmenu"><summary class="mini" aria-label="More actions">•••</summary><div><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></td></tr>` }).join('')
     : `<tr><td colspan="8" class="muted">${students.length ? 'No match.' : 'No students yet. Press “Add a student” above.'}</td></tr>`;
 }
 root.addEventListener('change', async (e) => {
@@ -306,7 +351,7 @@ async function addHomework(e) {
     let mails = 0;
     if ($('#hMail').checked) for (const s of list) if (s.parentEmail) { try { await queueEmail({ to: s.parentEmail, subject: `New homework: ${title}`, text: `Hello,\n\nNew homework for ${s.name}: ${title}. Due ${due}.${note ? '\n' + note : ''}\nThe student can open it after signing in on the academy website.\n\nPurple Queen Chess Academy`, kind: 'homework' }); mails++ } catch {} }
     $('#hSend').innerHTML = list.map(s => { const txt = `Hello, this is Purple Queen Chess Academy. New homework for ${s.name}: ${title}. Due ${due}.${note ? ' ' + note : ''} The student can open it after signing in on the academy website. Thank you.`, w = waLink(s.parentPhone, txt), ml = mailLink(s.parentEmail, `New homework: ${title}`, txt); return (w ? `<a class="chip" target="_blank" rel="noopener" href="${w}">WhatsApp: parent of ${esc(s.name)}</a>` : '') + (ml ? `<a class="chip" target="_blank" rel="noopener" href="${ml}">Email: parent of ${esc(s.name)}</a>` : '') }).join('');
-    e.target.reset(); $('#hTitle').value = defTitle(); $('#hPzTot').textContent = '0 puzzles in total'; $('#hMore').open = false; setMode('lessons'); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
+    e.target.reset(); $('#hTitle').value = defTitle(); $('#hPzTot').textContent = '0 puzzles in total'; $('#hMore').open = false; setMode('lessons'); paintSum(); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
     m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.` + (short.length ? ' Not enough new puzzles: ' + short.join('; ') + '.' : '') + (mails ? ` ${mails} email${mails > 1 ? 's' : ''} queued.` : '');
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
 }
@@ -350,7 +395,7 @@ function showDetail(uid) {
     <h4>Parent contact</h4><div class="row2"><label for="dpPhone">WhatsApp number<input id="dpPhone" type="tel" value="${esc(s.parentPhone || '')}"></label><label for="dpEmail">Email<input id="dpEmail" type="email" value="${esc(s.parentEmail || '')}"></label></div>
     <button type="button" class="btn btn-ghost btn-sm" id="dpSave">Save contact</button> <span class="pmsg2" id="dpMsg"></span>
     <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use “Add parent login” in the table)'}</p>`;
-  $('#dAssign').onclick = () => { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === uid }); $('#hwForm').scrollIntoView({ behavior: 'smooth', block: 'start' }) };
+  $('#dAssign').onclick = () => { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === uid }); paintLessons(); paintSum(); $('#hwForm').scrollIntoView({ behavior: 'smooth', block: 'start' }) };
   loadPuzzles().then(all => { const sv = (p.puzzles || {}).solved || {}, ids = Object.keys(sv), by = {}; ids.forEach(id => { const q = all.find(x => x.id === id); if (q) by[q.l] = (by[q.l] || 0) + 1 }); const el = $('#dPz'); if (el) el.textContent = ids.length ? `${ids.length} solved · ` + Object.entries(by).map(([l, n]) => `${PZ_LEVELS[l]} ${n}`).join(' · ') + ` · best streak ${(p.puzzles || {}).best || 0}` : 'No puzzles solved yet.' }).catch(() => { const el = $('#dPz'); if (el) el.textContent = '' });
   $('#dClose').onclick = () => { d.hidden = true; openUid = null };
   $('#dpSave').onclick = async () => { const ph = $('#dpPhone').value.trim(), em = $('#dpEmail').value.trim().toLowerCase(); try { await F.updateDoc(F.doc(db, 'users', uid), { parentPhone: ph, parentEmail: em }); s.parentPhone = ph; s.parentEmail = em; $('#dpMsg').className = 'pmsg2 ok'; $('#dpMsg').textContent = 'Saved.' } catch { $('#dpMsg').className = 'pmsg2 err'; $('#dpMsg').textContent = 'Could not save.' } };

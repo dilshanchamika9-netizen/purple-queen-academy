@@ -153,7 +153,7 @@ ok(sden.otherTime === 'permission-denied', 'student cannot read another studentâ
 await tab('homework');
 for (const name of ['Puzzles A', 'Puzzles B']) {
   await coachPage.fill('#hTitle', name); await coachPage.fill('#hDue', '2099-01-02');
-  await coachPage.selectOption('#hWho', 'pick'); await coachPage.check(`#hPick input[value="${uid1}"]`);
+  await coachPage.click('#hWhoSeg button[data-w="pick"]'); await coachPage.check(`#hPick input[value="${uid1}"]`);
   await coachPage.click('#hMode button[data-mode="puzzles"]'); await coachPage.fill('#hPz input[data-pz="1"]', '5');
   await coachPage.click('#hwForm button[type=submit]');
   await coachPage.waitForFunction((n) => [...document.querySelectorAll('#hwList summary b')].some(b => b.textContent === n), name, { timeout: 20000 });
@@ -316,6 +316,7 @@ await tab('students');
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
 ok(row.includes('1/98'), 'coach table shows 1/98 lessons');
+await coachPage.waitForSelector('#onlTab b', { timeout: 10000 }); ok(+(await coachPage.textContent('#onlTab b')) >= 0, 'coach sees the online-now sidebar'); await coachPage.click('#onlTab'); await coachPage.waitForSelector('#onl.open', { timeout: 5000 }); ok(true, 'online sidebar opens'); await coachPage.keyboard.press('Escape');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
 const det = await coachPage.textContent('#detail');
@@ -323,7 +324,7 @@ ok(det.includes('Active time') && det.includes('Week 1 homework') && det.include
 ok((await coachPage.textContent('#hwList')).includes('1/2') || (await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach homework list shows progress');
 const [dl] = await Promise.all([coachPage.waitForEvent('download', { timeout: 10000 }), coachPage.click('#csvBtn')]);
 ok(/purple-queen-students-.*\.csv/.test(dl.suggestedFilename()), 'coach can download the CSV');
-await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="reset"]`);
+await coachPage.evaluate((u) => document.querySelector(`#stuTable tr[data-uid="${u}"] button[data-a="reset"]`).click(), uid1);
 await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 await coachPage.waitForSelector('#queue code', { timeout: 15000 });
@@ -336,7 +337,7 @@ await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(tr
 
 // removing a student also removes the parent login, study time and ticks
 const delBtn = `#stuTable tr[data-uid="${uid2}"] button[data-a="delete"]`;
-await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.evaluate(() => document.querySelectorAll('.rowmenu').forEach(d => { d.open = true })); await coachPage.click(delBtn); await coachPage.waitForTimeout(1500);
+await coachPage.evaluate((s) => document.querySelector(s).click(), delBtn); await coachPage.waitForTimeout(300); await coachPage.evaluate((s) => document.querySelector(s).click(), delBtn); await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 const after = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/users`, { headers: owner }).then(r => r.json());
 ok(!after.documents.some(d => d.fields.sid && /^PQ0002/.test(d.fields.sid.stringValue)), 'removing a student also removes the parent login');

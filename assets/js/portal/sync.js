@@ -41,7 +41,11 @@ addEventListener('pagehide', push);
   LS.set('pq-progress', m.lessons); LS.set('pq-xp', m.xp); LS.set('pqz-solved', m.puzzles.solved); LS.set('pqz-best', m.puzzles.best);
   window.dispatchEvent(new Event('pq-reload'));
   await push();
-  try { await F.updateDoc(F.doc(db, 'users', uid), { lastSeen: F.serverTimestamp() }) } catch {}
+  // presence: the coach panel shows who is online and where
+  const qs = new URLSearchParams(location.search), path = location.pathname;
+  const onPage = /learn/.test(path) ? 'Lessons' : /puzzle/.test(path) ? (qs.get('hw') ? 'Homework puzzles' : 'Puzzles') : /task/.test(path) ? 'Board task' : 'My account';
+  const beat = () => { if (document.visibilityState === 'visible') F.updateDoc(F.doc(db, 'users', uid), { lastSeen: F.serverTimestamp(), onPage }).catch(() => {}) };
+  beat(); setInterval(beat, 60000); document.addEventListener('visibilitychange', beat);
   const chip = document.getElementById('pqUserChip');
   if (chip && me.profile) { chip.hidden = false; chip.querySelector('b').textContent = me.profile.name ? me.profile.name.split(' ')[0] : me.profile.sid }
 })();

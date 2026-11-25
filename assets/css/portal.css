@@ -220,34 +220,97 @@ body.pq-coach { --accent:#6B3FB0 }
 body.pq-coach .page-top .eyebrow { color:#A57A1F }
 .pz-hw #pzMeta { display:none }
 
-/* ---------- simple coach panel ---------- */
-.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0) }
-.coach-tools { display:grid; gap:12px; margin-bottom:16px }
-.pqp .acc-card.slim { padding:0; overflow:hidden }
-.slim > summary { list-style:none; cursor:pointer; padding:16px 20px; font:700 15px var(--body); color:var(--purple); display:flex; gap:10px; align-items:baseline }
-.slim > summary::-webkit-details-marker { display:none }
-.slim[open] > summary { border-bottom:1px solid var(--line) }
-.slim > form, .slim > div { padding:16px 20px 20px }
-.hwx .step { display:grid; grid-template-columns:40px 1fr; gap:14px; padding:18px 0; border-top:1px solid var(--line) }
-.hwx .step:first-of-type { border-top:0; padding-top:4px }
-.hwx .sn { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; font:700 15px var(--body); display:grid; place-items:center }
-.hwx .sb { display:grid; gap:12px; min-width:0 } .hwx .sb > b { font:700 17px var(--body); color:var(--night) }
-.hwx .hint { margin:0; font-size:13px; color:var(--muted) }
-.hwx .seg { justify-self:start } .hwx .seg button { padding:10px 26px; font-size:15px }
-.hwx .lesspick { display:grid; gap:10px; border:0; padding:0; max-height:none }
-.hwx .lesspick details { border:0; padding:0 } .hwx .lesspick summary { font:700 12px var(--caps); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:4px 0 8px; cursor:default; list-style:none }
-.hwx .lesspick summary::-webkit-details-marker { display:none }
-.hwx .lesspick label.lp { display:flex; gap:12px; align-items:center; padding:14px 16px; border:1.5px solid var(--edge); border-radius:16px; background:var(--glass-2); cursor:pointer; font:600 15px var(--body); margin:0 0 8px }
-.hwx .lesspick label.lp:has(input:checked) { border-color:var(--accent); background:rgba(122,63,208,.1) }
-.hwx .lesspick input[type=checkbox] { width:20px; height:20px; accent-color:var(--accent) }
-.pzpick { display:grid; gap:10px }
-.pzrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border:1.5px solid var(--edge); border-radius:16px; background:var(--glass-2); font:600 15px var(--body) }
-.stepper { display:flex; align-items:center; gap:8px }
-.stepper button { width:38px; height:38px; border-radius:50%; border:1px solid var(--edge); background:#fff; color:var(--accent); font:700 20px/1 var(--body); cursor:pointer }
-.stepper input { width:64px; text-align:center; font:700 18px var(--body); padding:8px 4px }
-.pztot { margin:0; font:700 15px var(--body); color:var(--accent) }
-.hwx .more { border:1px dashed var(--edge); border-radius:14px; padding:10px 14px } .hwx .more > summary { cursor:pointer; font:600 14px var(--body); color:var(--purple) }
-.hwx > .step .btn-primary { justify-self:start; padding:14px 34px; font-size:16px }
 .acts { white-space:nowrap } .acts > * { vertical-align:middle }
 .rowmenu { display:inline-block; position:relative } .rowmenu > summary { list-style:none; cursor:pointer; display:inline-block } .rowmenu > summary::-webkit-details-marker { display:none }
 .rowmenu > div { position:absolute; right:0; z-index:5; margin-top:6px; background:#fff; border:1px solid var(--edge); border-radius:14px; padding:8px; display:grid; gap:6px; box-shadow:var(--glow); min-width:160px }
+
+/* ================= coach panel (simple) ================= */
+.sr { position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+/* students card */
+.stucard .tbl-head { align-items:center; gap:14px; flex-wrap:wrap }
+.stucard .tools { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+.stucard #filter { min-width:240px; border-radius:999px; padding-left:16px }
+.addpanel > summary { display:none }
+.addpanel[open] { margin:6px 0 18px }
+.addin { border:1.5px solid var(--edge); border-radius:18px; padding:18px 20px; background:linear-gradient(180deg, rgba(122,63,208,.06), transparent) }
+.addt { margin:0 0 10px; font:700 12px var(--caps); letter-spacing:.16em; text-transform:uppercase; color:var(--purple) }
+.reqline { margin:0 0 12px } .reqline > summary { list-style:none; cursor:pointer; font:600 13px var(--body); color:var(--muted); display:inline-flex; gap:8px; align-items:center }
+.reqline > summary::-webkit-details-marker { display:none } .reqline > summary .dot { width:7px; height:7px; border-radius:50%; background:var(--gold) }
+.reqline[open] > summary { color:var(--purple); margin-bottom:8px }
+.nmc { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+.ini { width:34px; height:34px; flex:none; border-radius:50%; display:grid; place-items:center; font:700 12px var(--body); color:#fff; background:linear-gradient(135deg, #8B5FC2, #5B2C91); box-shadow:0 6px 14px -8px rgba(91,44,145,.8) }
+.pqp .stu td select.lv, .pqp .stu td input.bt { border-color:transparent; background:transparent; padding-inline:8px; border-radius:10px }
+.pqp .stu td select.lv:hover, .pqp .stu td input.bt:hover, .pqp .stu td select.lv:focus, .pqp .stu td input.bt:focus { border-color:var(--edge); background:#fff }
+.acts { white-space:nowrap } .acts > * { vertical-align:middle }
+.rowmenu { display:inline-block; position:relative; margin-left:6px } .rowmenu > summary { list-style:none; cursor:pointer; letter-spacing:.12em } .rowmenu > summary::-webkit-details-marker { display:none }
+.rowmenu > div { position:absolute; right:0; z-index:6; margin-top:6px; background:#fff; border:1px solid var(--edge); border-radius:14px; padding:8px; display:grid; gap:6px; box-shadow:0 20px 40px -18px rgba(42,18,64,.45); min-width:170px }
+html[data-theme="dark"] .rowmenu > div { background:var(--surf) }
+/* homework: two columns, steps on the left, live summary and send on the right */
+.hwlay { display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(300px, 1fr); gap:20px; align-items:start }
+.hwside { display:grid; gap:12px }
+.hwside label { margin:0 }
+.hws { display:grid; grid-template-columns:38px minmax(0, 1fr); gap:14px; padding:18px 0 }
+.hws + .hws { border-top:1px solid var(--line) }
+.hwn { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font:700 14px var(--body); color:#fff; background:linear-gradient(135deg, var(--accent), #5B2C91); box-shadow:0 8px 18px -10px var(--accent) }
+.hwb { display:grid; gap:12px; min-width:0 }
+.hwt { margin:6px 0 0; font:700 17px var(--body); color:var(--night) }
+.hwb .hint { margin:0; font-size:13px; color:var(--muted) }
+.chipseg { display:flex; flex-wrap:wrap; gap:8px }
+.chipseg button { border:1.5px solid var(--edge); background:var(--glass-2); color:var(--ink); border-radius:999px; padding:9px 16px; font:600 14px var(--body); cursor:pointer; transition:all .15s }
+.chipseg button:hover { border-color:var(--accent) }
+.chipseg button[aria-pressed="true"] { background:var(--night); border-color:var(--night); color:#fff }
+html[data-theme="dark"] .chipseg button[aria-pressed="true"] { background:var(--accent); color:#1A0B2E }
+#hWhoWrap select { max-width:320px }
+.modepick { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.modepick button { display:flex; gap:12px; align-items:center; text-align:left; padding:16px; border:1.5px solid var(--edge); border-radius:18px; background:var(--glass-2); cursor:pointer; color:var(--ink); transition:all .18s }
+.modepick button svg { width:30px; height:30px; flex:none; color:var(--purple) }
+.modepick button b { display:block; font:700 16px var(--body); color:var(--night) } .modepick button small { color:var(--muted); font-size:12.5px }
+.modepick button:hover { border-color:var(--accent); transform:translateY(-1px) }
+.modepick button[aria-pressed="true"] { border-color:var(--accent); background:linear-gradient(135deg, rgba(122,63,208,.14), rgba(201,164,92,.08)); box-shadow:0 0 0 3px rgba(122,63,208,.12) }
+.hwb .lesspick { display:grid; gap:8px; border:0; padding:0; margin:0; max-height:none; overflow:visible }
+.hwb .lesspick details { background:transparent; border:0; padding:0 }
+.hwb .lesspick summary { display:block; list-style:none; pointer-events:none; font:700 11px var(--caps); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); padding:6px 2px }
+.hwb .lesspick summary::-webkit-details-marker { display:none } .hwb .lesspick summary b { font:inherit; color:var(--purple); margin-right:6px }
+.hwb .lesspick label.lp { display:flex; gap:12px; align-items:center; padding:13px 16px; margin:0 0 8px; border:1.5px solid var(--edge); border-radius:14px; background:var(--glass-2); font:600 15px var(--body); color:var(--night); cursor:pointer; transition:all .15s }
+.hwb .lesspick label.lp small { margin-left:auto; white-space:nowrap }
+.hwb .lesspick label.lp:hover { border-color:var(--accent) }
+.hwb .lesspick label.lp:has(input:checked) { border-color:var(--accent); background:rgba(122,63,208,.09) }
+.hwb .lesspick input[type=checkbox] { width:20px; height:20px; flex:none; accent-color:var(--accent); margin:0 }
+.hwb .pzpick { display:grid; grid-template-columns:minmax(0, 1fr); gap:8px; margin:0 }
+.pzrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px 10px 16px; border:1.5px solid var(--edge); border-radius:14px; background:var(--glass-2); font:600 15px var(--body); color:var(--night) }
+.stepper { display:flex; align-items:center; gap:6px }
+.stepper button { width:36px; height:36px; border-radius:50%; border:1px solid var(--edge); background:#fff; color:var(--accent); font:700 19px/1 var(--body); cursor:pointer }
+.stepper button:hover { background:var(--accent); color:#fff }
+.stepper input { width:58px; text-align:center; font:700 17px var(--body); padding:7px 4px; margin:0 }
+.pztot { margin:2px 0 0; font:700 15px var(--body); color:var(--accent) }
+.hwsum { display:grid; gap:8px; padding:14px 16px; border-radius:16px; background:linear-gradient(135deg, var(--night), #4A2478); color:#fff }
+.hwsum div { display:grid; grid-template-columns:62px 1fr; column-gap:10px; align-items:baseline }
+.hwsum small { font:700 10.5px var(--caps); letter-spacing:.16em; text-transform:uppercase; color:#C9B3EC }
+.hwsum b { font:700 15px var(--body) } .hwsum em { grid-column:2; font-style:normal; font-size:12.5px; color:#D9CCF0 }
+.hwside .more { border:1px dashed var(--edge); border-radius:14px; padding:10px 14px } .hwside .more > summary { cursor:pointer; font:600 13.5px var(--body); color:var(--purple) }
+.hwgo { width:100%; justify-content:center; padding:14px 20px; font-size:16px }
+@media (max-width:1040px) { .hwlay { grid-template-columns:1fr } .hwside { position:static } }
+@media (max-width:560px) { .modepick { grid-template-columns:1fr } .stucard #filter { min-width:0; width:100% } .hws { grid-template-columns:minmax(0, 1fr) } .hwn { display:none } }
+body.pq-coach { --accent:#6B3FB0 }
+.hwb, .hwmain, .hwside, .hwlay > * { min-width:0 }
+/* ---------- online now: right-side drawer ---------- */
+.onl-tab { position:fixed; right:0; top:50%; transform:translateY(-50%); z-index:60; display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 10px; border:1px solid var(--edge); border-right:0; border-radius:16px 0 0 16px; background:var(--glass-2); backdrop-filter:blur(12px); box-shadow:var(--glow); cursor:pointer; color:var(--night); font:700 12px var(--body) }
+.onl-tab b { font:700 18px/1 var(--body) } .onl-tab span { writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:.14em; text-transform:uppercase; font-size:10.5px; color:var(--muted) }
+.onl-dot { width:10px; height:10px; border-radius:50%; background:#9AA0A6 } .onl-dot.on { background:#22C55E; box-shadow:0 0 0 0 rgba(34,197,94,.6); animation:onlp 2s infinite }
+@keyframes onlp { 70% { box-shadow:0 0 0 8px rgba(34,197,94,0) } 100% { box-shadow:0 0 0 0 rgba(34,197,94,0) } }
+.onl { position:fixed; top:0; right:0; bottom:0; width:min(320px, 88vw); z-index:70; background:var(--paper); border-left:1px solid var(--edge); box-shadow:-30px 0 60px -30px rgba(42,18,64,.45); transform:translateX(102%); transition:transform .28s ease; display:flex; flex-direction:column }
+.onl.open { transform:none; visibility:visible }
+.onl:not(.open) { visibility:hidden; transition:transform .28s ease, visibility 0s .28s }
+html:has(body.pq-coach), body.pq-coach { overflow-x:clip }
+.onl-h { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 12px; border-bottom:1px solid var(--line) }
+.onl-h h3 { margin:0; font:700 13px var(--caps); letter-spacing:.18em; text-transform:uppercase; color:var(--purple); display:flex; gap:10px; align-items:center }
+.onl-h button { border:0; background:transparent; font-size:22px; color:var(--muted); cursor:pointer }
+.onl-list { list-style:none; margin:0; padding:12px; overflow:auto; display:grid; gap:8px; align-content:start }
+.onl-list li { display:grid; grid-template-columns:38px 1fr auto; gap:10px; align-items:center; padding:10px 12px; border:1px solid var(--edge); border-radius:14px; background:var(--glass-2) }
+.onl-list li .ini { position:relative } .onl-list li.on .ini::after { content:""; position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%; background:#22C55E; border:2px solid #fff }
+.onl-list b { display:block; font:700 14px var(--body); color:var(--night) } .onl-list small { color:var(--muted); font-size:12px }
+.onl-list em { font-style:normal; font-size:11.5px; color:var(--muted); white-space:nowrap }
+.onl-list li.off { opacity:.62 } .onl-sub { padding:12px 20px 4px; margin:0; font:700 10.5px var(--caps); letter-spacing:.16em; text-transform:uppercase; color:var(--muted) }
+.onl-empty { padding:6px 20px; color:var(--muted); font-size:13px }
+.onl-back { position:fixed; inset:0; z-index:65; background:rgba(26,11,46,.25); opacity:0; pointer-events:none; transition:opacity .2s } .onl-back.open { opacity:1; pointer-events:auto }
+html[data-theme="dark"] .onl { background:var(--mist) }
