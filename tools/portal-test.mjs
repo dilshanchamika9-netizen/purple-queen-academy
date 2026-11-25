@@ -56,7 +56,7 @@ await pg.fill('#sId', 'pq0001'); await pg.fill('#sPw', tmp); await pg.click('#st
 await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(true, 'first login asks for a new password');
 await pg.fill('#ch1', 'mypass99'); await pg.fill('#ch2', 'mypass99'); await pg.click('#changeForm button[type=submit]');
 await pg.waitForURL('**/account.html', { timeout: 15000 });
-await pg.waitForSelector('.acc-stats', { timeout: 15000 });
+await pg.waitForSelector('.stats6', { timeout: 15000 });
 ok((await pg.textContent('#portalAccount')).includes('Kavindu'), 'account page shows the student');
 
 // 4) progress sync: pass lesson 1 practice on learn.html, then check Firestore
@@ -172,7 +172,7 @@ await coachPage.click('#atForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
 ok((await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox', { timeout: 15000 }); await pg.waitForTimeout(1000);
-ok((await pg.textContent('.acc-stats')).includes('50%') && (await pg.textContent('#portalAccount')).includes('Absent'), 'student sees 50% attendance and the absent class');
+ok((await pg.textContent('.stats6')).includes('50%') && (await pg.textContent('#portalAccount')).includes('Absent'), 'student sees 50% attendance and the absent class');
 await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
 ok((await pp.textContent('#portalParent')).includes('50%') && (await pp.textContent('#portalParent')).includes('Late'), 'parent sees attendance');
 const aden = await pg.evaluate(async () => { const m = await import('./assets/js/portal/fb.js'); try { await m.F.setDoc(m.F.doc(m.db, 'attendance', 'x'), { date: '2026-01-01', batch: 'x', marks: {}, uids: [] }); return 'allowed' } catch (e) { return e.code } });
