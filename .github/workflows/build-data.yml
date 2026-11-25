@@ -19,6 +19,7 @@ on:
       - 'assets/js/lessons12.js'
       - 'assets/js/lessons13.js'
       - 'assets/js/lessons14.js'
+      - 'assets/js/lessons22.js'
       - 'assets/js/lessons15.js'
       - 'assets/js/lessons16.js'
       - 'assets/js/lessons17.js'
