@@ -177,6 +177,7 @@ ok((await pg.getAttribute('#portalHw a[href*="practice.html?hw="]', 'href')).inc
 
 // profile photo: saved on the student's own profile, size-limited, not writable for others
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#avFile', { state: 'attached', timeout: 15000 });
 await pg.setInputFiles('#avFile', { name: 'me.png', mimeType: 'image/png', buffer: PNG }); await pg.waitForTimeout(2000);
 const udoc = await fsDoc('users/' + uid1);
 ok(!!(udoc.fields && udoc.fields.photo && udoc.fields.photo.stringValue.startsWith('data:image/jpeg')), 'profile photo is saved');
