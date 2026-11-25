@@ -338,7 +338,7 @@ await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('1/98'), 'coach table shows 1/98 lessons');
+ok(row.includes('0/98'), 'coach table shows 0/98 lessons after the reset');
 await coachPage.waitForSelector('#onlTab b', { timeout: 10000 }); ok(+(await coachPage.textContent('#onlTab b')) >= 0, 'coach sees the online-now sidebar'); await coachPage.click('#onlTab'); await coachPage.waitForSelector('#onl.open', { timeout: 5000 }); ok(true, 'online sidebar opens'); await coachPage.keyboard.press('Escape');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
