@@ -99,7 +99,7 @@ await pp.fill('#ch1', 'parentpw1'); await pp.fill('#ch2', 'parentpw1'); await pp
 await pp.waitForURL('**/parent.html', { timeout: 15000 });
 await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
 const ptxt = await pp.textContent('#portalParent');
-ok(ptxt.includes('Kavindu') && ptxt.includes('1/46'), 'parent page shows the child and 1/46 lessons');
+ok(ptxt.includes('Kavindu') && ptxt.includes('1/50'), 'parent page shows the child and 1/50 lessons');
 const pden = await pp.evaluate(async ([uid1, uid2]) => {
   const m = await import('./assets/js/portal/fb.js'); const r = {};
   const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
@@ -276,7 +276,7 @@ await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
 await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
 const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('1/46') && row.includes('100%'), 'coach table shows 1/46 lessons and 100%');
+ok(row.includes('1/50') && row.includes('100%'), 'coach table shows 1/50 lessons and 100%');
 await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
 const det = await coachPage.textContent('#detail');
