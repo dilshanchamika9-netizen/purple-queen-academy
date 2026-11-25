@@ -365,7 +365,7 @@ html[data-theme="dark"] .dhw li { background:var(--surf) }
 .tw { overflow-x:auto; -webkit-overflow-scrolling:touch }
 /* students table becomes cards on phones */
 @media (max-width:720px) {
-  #stuTable { min-width:0 } #stuTable thead { display:none } #stuTable, #stuTable tbody { display:block }
+  #stuTable { min-width:0 } #stuTable thead { display:none } table#stuTable, #stuTable tbody { display:block }
   #stuTable tbody tr { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; padding:14px; margin-bottom:10px; border:1px solid var(--edge); border-radius:16px; background:var(--glass-2) }
   #stuTable td { display:block; padding:0 !important; border:0 !important; font-size:13.5px }
   #stuTable td:nth-child(1) { grid-column:1 / -1; color:var(--muted); font-size:12px }

@@ -41,7 +41,7 @@ const sid = (await pg.textContent('#nId')).trim(), tmp = (await pg.textContent('
 ok(sid === 'PQ0001', 'first student gets ID PQ0001 (got ' + sid + ')');
 const pid = (await pg.textContent('#nPId')).trim(), ppw = (await pg.textContent('#nPPw')).trim();
 ok(pid === 'PQ0001-P', 'parent login is created with the student (got ' + pid + ')');
-ok((await pg.textContent('#stuTable tbody')).includes('Kavindu'), 'student appears in the coach table');
+ok((await pg.textContent('#stuTable')).includes('Kavindu'), 'student appears in the coach table');
 // second student to test isolation
 await pg.evaluate(() => { document.querySelector('#addDet').open = true }); await pg.fill('#aName', 'Second Student'); await pg.click('#addForm button[type=submit]');
 await pg.waitForFunction(() => document.querySelector('#nId') && document.querySelector('#nId').textContent === 'PQ0002', null, { timeout: 15000 });
@@ -225,7 +225,7 @@ await coachPage.fill('#atDate', '2026-01-05'); await coachPage.dispatchEvent('#a
 await coachPage.click('#atList .seg3 label.a');
 await coachPage.click('#atForm button[type=submit]');
 await coachPage.waitForFunction(() => document.querySelector('#atMsg').textContent.includes('saved'), null, { timeout: 15000 });
-ok((await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
+ok((await coachPage.textContent(`#stuTable [data-uid="${uid1}"]`)).includes('50%'), 'coach table shows 50% attendance (1 late, 1 absent)');
 await pg.goto(`${SITE}/profile.html#attendance`); await pg.waitForSelector('#spAtt', { timeout: 15000 }); await pg.waitForTimeout(500);
 ok((await pg.textContent('#spAtt')).includes('50%') && (await pg.textContent('#spAtt')).includes('Absent'), 'student sees 50% attendance and the absent class');
 await pp.goto(`${SITE}/parent.html`); await pp.waitForSelector('#portalParent .acc-stats', { timeout: 15000 });
@@ -263,18 +263,18 @@ ok(!!(bt.fields && bt.fields.checks), 'solving the board task is saved');
 // Level 1 promotion: test mark + supervised games, then the coach promotes
 await tab('students');
 await fsSet('progress/' + uid2, { lessons: { mapValue: { fields: { 'l1-promotion': { integerValue: '90' } } } } });
-await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
-await coachPage.click(`#stuTable tr[data-uid="${uid2}"] button[data-a="report"]:not(.nm)`);
+await coachPage.reload(); await coachPage.waitForSelector('#stuTable [data-uid]', { timeout: 15000 });
+await coachPage.click(`#stuTable [data-uid="${uid2}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#promoBtn', { timeout: 10000 });
 ok(await coachPage.isDisabled('#promoBtn'), 'promote is locked until the supervised games are ticked');
 await coachPage.check('#l1g'); await coachPage.waitForSelector('#promoBtn:not([disabled])', { timeout: 10000 });
 await coachPage.click('#promoBtn');
-await coachPage.waitForFunction((u) => document.querySelector(`#stuTable tr[data-uid="${u}"] select.lv`).value === '2', uid2, { timeout: 10000 });
+await coachPage.waitForFunction((u) => document.querySelector(`#stuTable [data-uid="${u}"] select.lv`).value === '2', uid2, { timeout: 10000 });
 ok(true, 'coach promotes the student to Level 2');
 
 // parent contact, fees, receipts, e-mail queue, WhatsApp links
 await tab('students');
-await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
+await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#dpPhone', { timeout: 10000 });
 await coachPage.fill('#dpPhone', '077 123 4567'); await coachPage.fill('#dpEmail', 'p1@test.lk'); await coachPage.click('#dpSave');
 await coachPage.waitForFunction(() => document.querySelector('#dpMsg').textContent === 'Saved.', null, { timeout: 10000 });
@@ -334,20 +334,33 @@ ok(docsO.length >= 2 && docsO.every(d => d.fields.status.stringValue === 'done')
 ok(docsO.filter(d => d.fields.kind.stringValue === 'reminder').length === 1, 'the overdue fee reminder is created exactly once even after two runs');
 ok(docsO.every(d => d.fields.to.stringValue === 'p1@test.lk'), 'e-mails go only to the saved parent address');
 
+// monthly fee: set once on the student card, then tick Received (cash/bank) for this month
+await tab('students');
+const ym = new Date().toISOString().slice(0, 7);
+await coachPage.evaluate((u) => { const c = document.querySelector(`#stuTable [data-uid="${u}"]`); c.querySelector('.cp-fee .mf').value = '3500'; c.querySelector('.cp-fee button[data-a="savefee"]').click() }, uid1);
+await coachPage.waitForSelector(`#stuTable [data-uid="${uid1}"] button[data-a="recv"]`, { timeout: 10000 });
+let mi = await fsDoc(`invoices/m-${ym}-${uid1}`);
+ok(mi.fields && +mi.fields.amount.integerValue === 3500 && mi.fields.open.booleanValue === true, 'setting a monthly fee creates this month’s fee');
+await coachPage.selectOption(`#stuTable [data-uid="${uid1}"] select.fm`, 'bank');
+await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="recv"]`);
+await coachPage.waitForSelector(`#stuTable [data-uid="${uid1}"] .cp-got`, { timeout: 10000 });
+mi = await fsDoc(`invoices/m-${ym}-${uid1}`);
+ok(mi.fields.open.booleanValue === false && mi.fields.payments.arrayValue.values[0].mapValue.fields.method.stringValue === 'bank', 'ticking Received marks the month paid by bank');
+ok((await coachPage.textContent(`#stuTable [data-uid="${uid1}"] .cp-got`)).includes('Bank'), 'student card shows the fee as received');
 await tab('students');
 // 6) coach sees the mark and requests a password reset; admin job processes it
-await coachPage.reload(); await coachPage.waitForSelector('#stuTable tbody tr[data-uid]', { timeout: 15000 });
-const row = await coachPage.textContent(`#stuTable tr[data-uid="${uid1}"]`);
-ok(row.includes('0/98'), 'coach table shows 0/98 lessons after the reset');
+await coachPage.reload(); await coachPage.waitForSelector('#stuTable [data-uid]', { timeout: 15000 });
+const row = await coachPage.textContent(`#stuTable [data-uid="${uid1}"]`);
+ok(row.includes('0/41'), 'coach card shows 0/41 Level 1 lessons after the reset');
 await coachPage.waitForSelector('#onlTab b', { timeout: 10000 }); ok(+(await coachPage.textContent('#onlTab b')) >= 0, 'coach sees the online-now sidebar'); await coachPage.click('#onlTab'); await coachPage.waitForSelector('#onl.open', { timeout: 5000 }); ok(true, 'online sidebar opens'); await coachPage.keyboard.press('Escape');
-await coachPage.click(`#stuTable tr[data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
+await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="report"]:not(.nm)`);
 await coachPage.waitForSelector('#detail:not([hidden])', { timeout: 10000 });
 const det = await coachPage.textContent('#detail');
 ok(det.includes('Active time') && det.includes('Week 1 homework') && det.includes('Module 1'), 'coach report shows time, homework and modules');
 ok((await coachPage.textContent('#hwList')).includes('1/2') || (await coachPage.textContent('#hwList')).includes('Week 1 homework'), 'coach homework list shows progress');
 const [dl] = await Promise.all([coachPage.waitForEvent('download', { timeout: 10000 }), coachPage.click('#csvBtn')]);
 ok(/purple-queen-students-.*\.csv/.test(dl.suggestedFilename()), 'coach can download the CSV');
-await coachPage.evaluate((u) => document.querySelector(`#stuTable tr[data-uid="${u}"] button[data-a="reset"]`).click(), uid1);
+await coachPage.evaluate((u) => document.querySelector(`#stuTable [data-uid="${u}"] button[data-a="reset"]`).click(), uid1);
 await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 await coachPage.waitForSelector('#queue code', { timeout: 15000 });
@@ -359,7 +372,7 @@ await pg.fill('#sId', 'PQ0001'); await pg.fill('#sPw', newPw); await pg.click('#
 await pg.waitForSelector('#changeForm:not([hidden])', { timeout: 15000 }); ok(true, 'student signs in with the reset password and must choose a new one');
 
 // removing a student also removes the parent login, study time and ticks
-const delBtn = `#stuTable tr[data-uid="${uid2}"] button[data-a="delete"]`;
+const delBtn = `#stuTable [data-uid="${uid2}"] button[data-a="delete"]`;
 await coachPage.evaluate((s) => document.querySelector(s).click(), delBtn); await coachPage.waitForTimeout(300); await coachPage.evaluate((s) => document.querySelector(s).click(), delBtn); await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
 const after = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/users`, { headers: owner }).then(r => r.json());

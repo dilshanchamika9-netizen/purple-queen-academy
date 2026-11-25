@@ -36,6 +36,21 @@ const RESET_EPOCH = 1;
   } else console.log('lesson reset: already done');
 }
 
+
+// --- monthly fees: each student with a monthly fee gets this month's fee once (id m-YYYY-MM-uid, due on the 10th) ---
+{
+  const ym = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }).slice(0, 7);
+  const label = new Date(ym + '-15T00:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const us = await db.collection('users').where('role', '==', 'student').get(); let made = 0;
+  for (const u of us.docs) {
+    const d = u.data(), amt = +d.monthlyFee || 0; if (!(amt > 0)) continue;
+    if (d.feeFrom && d.feeFrom > ym) continue;
+    try { await db.doc(`invoices/m-${ym}-${u.id}`).create({ uid: u.id, sid: d.sid || '', name: d.name || '', title: `${label} fee`, amount: amt, currency: 'LKR', due: ym + '-10', month: ym, monthly: true, paid: 0, open: true, payments: [], createdBy: 'auto', createdAt: admin.firestore.FieldValue.serverTimestamp() }); made++ }
+    catch (e) { if (!(e.code === 6 || /ALREADY_EXISTS/.test(String(e.message)))) throw e }
+  }
+  console.log(`monthly fees created: ${made}`);
+}
+
 // --- queue ---
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const temp = () => words[Math.floor(Math.random() * words.length)] + '-' + String(Math.floor(1000 + Math.random() * 9000));

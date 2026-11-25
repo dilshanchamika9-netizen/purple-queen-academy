@@ -9,6 +9,7 @@ on:
       - 'tools/portal-*.mjs'
       - 'login.html'
       - 'coach.html'
+      - 'assets/css/**'
       - 'parent.html'
       - 'account.html'
       - 'course.html'

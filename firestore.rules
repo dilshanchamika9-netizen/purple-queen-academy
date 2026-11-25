@@ -64,6 +64,15 @@ service cloud.firestore {
       allow delete: if false;
     }
     // fees: one document per student per charge; payments is a list of {id, amount, method, ref, date, by}
+    // a coach's own profile card (name, title, phone, photo, short bio)
+    match /coachProfiles/{email} {
+      allow read: if isCoach();
+      allow write: if isCoach() && email == myEmail()
+        && request.resource.data.keys().hasOnly(['name', 'display', 'title', 'phone', 'photo', 'bio', 'since', 'updatedAt'])
+        && okText('name') && okText('display') && okText('title') && okText('phone') && okText('since')
+        && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 600))
+        && (!('photo' in request.resource.data) || (request.resource.data.photo is string && request.resource.data.photo.size() < 60000));
+    }
     match /invoices/{id} {
       allow read: if isCoach() || (isStudent() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
       allow create, update, delete: if isCoach();

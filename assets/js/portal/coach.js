@@ -7,15 +7,15 @@ const root = $('#portalCoach');
 const LEVELS = { 1: 'L1 · Pawn', 2: 'L2 · Knight', 3: 'L3 · Queen' };
 const words = ['queen', 'rook', 'knight', 'bishop', 'pawn', 'castle', 'check', 'board'];
 const tempPw = () => words[Math.floor(Math.random() * words.length)] + '-' + (1000 + Math.floor(Math.random() * 9000));
-let feesApi = null, tab = 'students', custom = [], sessions = [], students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
+let cprof = {}, monthInv = {}, feesApi = null, tab = 'students', custom = [], sessions = [], students = [], progress = {}, times = {}, assigns = [], statuses = {}, queue = [], coach = null, openUid = null;
 
 (async () => {
   const me = await whoAmI();
   if (!me) return (location.href = 'login.html?as=coach');
   if (me.role !== 'coach') return (location.href = me.role === 'student' ? 'account.html' : me.role === 'parent' ? 'parent.html' : 'login.html?as=coach');
   coach = me; markSignedIn(true, 'coach'); document.body.classList.add('pq-coach');
-  document.querySelectorAll('a[href="login.html"].btn').forEach(a => { a.href = 'coach.html'; a.lastChild.textContent = 'Coach portal' }); { const c = document.getElementById('pqUserChip'); if (c) c.hidden = true }
-  render(); await load();
+  try { const c = await F.getDoc(F.doc(db, 'coachProfiles', me.user.email.toLowerCase())); if (c.exists()) cprof = c.data() } catch {}
+  render(); mountCoachMenu(); await load();
   feesApi = initFees({ box: $('#feesBox'), getStudents: () => students, coach, queueEmail });
   initOnline();
   F.onSnapshot(F.query(F.collection(db, 'adminQueue'), F.orderBy('createdAt', 'desc'), F.limit(20)), s => { queue = s.docs.map(d => ({ id: d.id, ...d.data() })); paintQueue() }, () => {});
@@ -24,16 +24,16 @@ let feesApi = null, tab = 'students', custom = [], sessions = [], students = [],
 /* ---------- online now (students send a heartbeat every minute while a page is open) ---------- */
 let live = [];
 function initOnline() {
-  const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'onl-tab'; tab.id = 'onlTab'; tab.setAttribute('aria-label', 'Students online now');
+  const tab = $('#onlTab');
   const back = document.createElement('div'); back.className = 'onl-back';
   const pane = document.createElement('aside'); pane.className = 'onl'; pane.id = 'onl'; pane.setAttribute('aria-label', 'Students online');
   pane.innerHTML = '<div class="onl-h"><h3><i class="onl-dot on"></i>Online now</h3><button type="button" aria-label="Close">×</button></div><div id="onlBody" style="overflow:auto"></div>';
-  document.body.append(tab, back, pane);
+  document.body.append(back, pane);
   const open = (v) => { pane.classList.toggle('open', v); back.classList.toggle('open', v) };
   tab.onclick = () => open(true); document.addEventListener('keydown', (e) => { if (e.key === 'Escape') open(false) }); back.onclick = () => open(false); pane.querySelector('.onl-h button').onclick = () => open(false);
   pane.addEventListener('click', (e) => { const li = e.target.closest('li[data-uid]'); if (li) { open(false); showTab('students'); showDetail(li.dataset.uid) } });
-  F.onSnapshot(F.query(F.collection(db, 'users'), F.where('role', '==', 'student')), s => { live = s.docs.map(d => ({ uid: d.id, ...d.data() })); paintOnline() }, () => {});
-  setInterval(paintOnline, 30000);
+  F.onSnapshot(F.query(F.collection(db, 'users'), F.where('role', '==', 'student')), s => { live = s.docs.map(d => ({ uid: d.id, ...d.data() })); live.forEach(l => { const st = students.find(x => x.uid === l.uid); if (st) { st.lastSeen = l.lastSeen; st.onPage = l.onPage } }); paintOnline(); paintTable() }, () => {});
+  setInterval(() => { paintOnline(); paintTable() }, 60000);
 }
 function paintOnline() {
   const tab = $('#onlTab'), body = $('#onlBody'); if (!tab || !body) return;
@@ -41,8 +41,9 @@ function paintOnline() {
   const on = live.filter(s => now - ms(s) < 3 * 60e3).sort((a, b) => ms(b) - ms(a));
   const today0 = new Date(); today0.setHours(0, 0, 0, 0);
   const earlier = live.filter(s => !on.includes(s) && ms(s) >= today0.getTime()).sort((a, b) => ms(b) - ms(a));
-  tab.innerHTML = `<i class="onl-dot${on.length ? ' on' : ''}"></i><b>${on.length}</b><span>Online</span>`;
   const ini = (n) => esc((n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
+  tab.querySelector('b').textContent = on.length; tab.classList.toggle('live', on.length > 0);
+  $('#onlMini').innerHTML = on.slice(0, 5).map(s => `<span>${ini(s.name)}</span>`).join('');
   const mins = (s) => { const m = Math.round((now - ms(s)) / 60e3); return m < 1 ? 'now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago' };
   const row = (s, cls) => `<li class="${cls}" data-uid="${s.uid}" style="cursor:pointer"><span class="ini">${ini(s.name)}</span><div><b>${esc(s.name || s.sid)}</b><small>${cls === 'on' ? esc(s.onPage || 'Online') : s.onPage ? 'Was on: ' + esc(s.onPage) : 'Signed in today'}</small></div><em>${mins(s)}</em></li>`;
   body.innerHTML = (on.length ? `<ul class="onl-list">${on.map(s => row(s, 'on')).join('')}</ul>` : '<p class="onl-empty">No student is online right now.</p>')
@@ -51,10 +52,12 @@ function paintOnline() {
 
 function render() {
   root.innerHTML = `
-  <div class="acc-head"><div class="acc-av coach">♛&#xFE0E;</div><div><p class="eyebrow">Coach panel</p><h1>Welcome, <em>${esc((coach.profile.name || coach.user.email).split(' ')[0])}</em></h1><p class="acc-sub">${esc(coach.user.email)}</p></div>
-    <div class="acc-actions"><button type="button" class="btn btn-ghost btn-sm" id="cOut">Sign out</button></div></div>
-  <div class="acc-stats" id="cStats"></div>
-  <nav class="ctabs" id="cTabs" aria-label="Coach panel sections"><button type="button" data-t="students">Students</button><button type="button" data-t="homework">Homework</button><button type="button" data-t="attendance">Attendance</button><button type="button" data-t="fees">Fees</button></nav>
+  <div class="cp-head" data-tab="students"><div><h1>Students</h1><p id="stuSub">Loading…</p></div><div class="cp-hb"><button type="button" class="sp-btn" id="csvBtn">Download CSV</button><button type="button" class="sp-btn p" id="addToggle">＋ Add student</button></div></div>
+  <div class="cp-head" data-tab="homework"><div><h1>Homework</h1><p>Give lessons or puzzles, and see who has finished.</p></div></div>
+  <div class="cp-head" data-tab="attendance"><div><h1>Attendance</h1><p>Mark each class: present, late or absent.</p></div></div>
+  <div class="cp-head" data-tab="fees"><div><h1>Fees</h1><p>Monthly fees are created on the 1st. Tick “Received” on each student card; special charges and part payments are here.</p></div></div>
+  <div class="cp-head" data-tab="profile"><div><h1>My profile</h1><p>Your coach card. The sign-in email cannot be changed here.</p></div></div>
+  <div class="cp-stats" id="cStats" data-tab="students"></div>
   <form class="acc-card" id="atForm" data-tab="attendance"><h3>Attendance</h3>
     <div class="row2"><label for="atDate">Class date<input id="atDate" type="date" required></label>
       <label for="atBatch">Class (batch)<select id="atBatch"></select></label></div>
@@ -89,24 +92,26 @@ function render() {
     </aside>
   </form>
   <section class="acc-card" id="hwList" data-tab="homework"><h3>Homework given</h3><p class="muted">Loading…</p></section>
-  <section class="acc-card stucard" data-tab="students"><div class="tbl-head"><h3>Students</h3><div class="tools"><input id="filter" type="search" placeholder="Search name, ID or batch" aria-label="Search students"><button type="button" class="btn btn-primary btn-sm" id="addToggle">＋ Add student</button><button type="button" class="btn btn-ghost btn-sm" id="csvBtn">Download CSV</button></div></div>
-    <details class="addpanel" id="addDet"><summary class="sr">Add a student</summary><div class="addin"><p class="addt">New student</p><form id="addForm">
+  <div data-tab="students">
+    <details class="addpanel acc-card" id="addDet"><summary class="sr">Add a student</summary><div class="addin"><p class="addt">New student</p><form id="addForm">
       <label for="aName">Full name<input id="aName" required placeholder="e.g. Kavindu Perera"></label>
-      <div class="row2"><label for="aLevel">Level<select id="aLevel"><option value="1">Level 1 · Pawn (Basic)</option><option value="2">Level 2 · Knight (Intermediate)</option><option value="3">Level 3 · Queen (Advanced)</option></select></label>
+      <div class="row2"><label for="aLevel">Level<select id="aLevel"><option value="1">Level 1 · Basic</option><option value="2">Level 2 · Intermediate</option><option value="3">Level 3 · Advanced</option></select></label>
       <label for="aBatch">Batch<input id="aBatch" placeholder="e.g. Saturday 8:30 AM"></label></div>
       <div class="row2"><label for="aPPhone">Parent WhatsApp number (optional)<input id="aPPhone" type="tel" placeholder="e.g. 077 123 4567"></label>
       <label for="aPEmail">Parent email (optional)<input id="aPEmail" type="email" placeholder="e.g. parent@gmail.com"></label></div>
+      <label for="aFee">Monthly fee, LKR (optional)<input id="aFee" type="number" min="0" step="1" placeholder="e.g. 3500"></label>
       <label class="chk" for="aParent"><input type="checkbox" id="aParent" checked> Also create a parent login (read-only view of this student)</label>
       <button class="btn btn-primary btn-sm" type="submit">Create login</button>
       <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form></div></details>
     <details class="reqline" id="reqDet"><summary><span class="dot"></span>Requests: password resets and removals</summary><div><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></div></details>
-
-    <div class="tw"><table class="stu" id="stuTable"><thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Batch</th><th>Lessons</th><th>Attendance</th><th>Last active</th><th></th></tr></thead><tbody><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div></section>
+  </div>
   <section class="acc-card" id="detail" data-tab="students" hidden></section>
-  <div id="feesBox" data-tab="fees"></div>`;
-  $('#cOut').onclick = logout;
+  <div class="cp-grid" id="stuTable" data-tab="students"><p class="muted">Loading…</p></div>
+  <div id="feesBox" data-tab="fees"></div>
+  <div id="cpProfile" data-tab="profile"></div>`;
   try { tab = sessionStorage.getItem('pq-ctab') || 'students' } catch {}
   $('#cTabs').onclick = (e) => { const b = e.target.closest('button[data-t]'); if (b) showTab(b.dataset.t) };
+  paintProfile();
   showTab(tab);
   $('#addForm').onsubmit = addStudent;
   $('#hwForm').onsubmit = addHomework;
@@ -139,7 +144,8 @@ const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) {
 function showTab(t) {
   tab = t; try { sessionStorage.setItem('pq-ctab', t) } catch {}
   root.querySelectorAll('[data-tab]').forEach(e => e.classList.toggle('tab-off', e.dataset.tab !== t));
-  root.querySelectorAll('#cTabs button').forEach(b => b.setAttribute('aria-current', b.dataset.t === t ? 'page' : 'false'));
+  document.querySelectorAll('#cTabs button[data-t]').forEach(b => b.setAttribute('aria-current', b.dataset.t === t ? 'page' : 'false'));
+  const ff = document.querySelector('.cp-search'); if (ff) ff.hidden = t !== 'students';
 }
 async function queueEmail(m) { return F.addDoc(F.collection(db, 'outbox'), { to: m.to, subject: m.subject, text: m.text, kind: m.kind || 'note', status: 'pending', by: coach.user.email, createdAt: F.serverTimestamp() }) }
 function paintCustom() {
@@ -199,50 +205,132 @@ async function load() {
   times = {}; ts.docs.forEach(d => times[d.id] = d.data());
   assigns = as.docs.map(d => ({ id: d.id, ...d.data() }));
   statuses = {}; ss.docs.forEach(d => statuses[d.id] = d.data());
-  paintStats(); paintTable(); paintHw(); paintAtt(true); paintWho();
+  await loadMonth();
+  paintStats(); paintTable(); paintHw(); paintAtt(true); paintWho(); paintProfile();
 }
 const stat = (uid) => {
   const p = progress[uid] || {}, L = p.lessons || {};
   const vals = LESSONS.map(l => L[l.id]).filter(v => v != null);
   return { passed: LESSONS.filter(l => (L[l.id] || 0) >= PASS).length, avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, xp: p.xp || 0, puzzles: p.puzzles && p.puzzles.solved ? Object.keys(p.puzzles.solved).length : 0 };
 };
-function paintStats() {
-  const week = Date.now() - 7 * 864e5;
-  const active = students.filter(s => s.lastSeen && s.lastSeen.toMillis && s.lastSeen.toMillis() > week).length;
-  const late = assigns.reduce((n, a) => n + (a.uids || []).filter(u => assignStat(a, u, progress[u], statuses[a.id + '_' + u], times[u]).late).length, 0);
-  $('#cStats').innerHTML = `<div><b>${students.length}</b><span>Students</span></div><div><b>${active}</b><span>Active this week</span></div><div><b>${assigns.filter(a => a.due >= today()).length}</b><span>Homework open</span></div><div><b>${late}</b><span>Overdue (students)</span></div>`;
+/* ---------- monthly fees ---------- */
+const ymNow = () => today().slice(0, 7);
+const monthName = (ym) => new Date(ym + '-15T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+const shortMonth = (ym) => new Date(ym + '-15T00:00:00').toLocaleDateString('en-GB', { month: 'short' });
+const money0 = (n) => 'LKR ' + Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+async function loadMonth() {
+  monthInv = {};
+  try { const q = await F.getDocs(F.query(F.collection(db, 'invoices'), F.where('month', '==', ymNow()))); q.docs.forEach(d => { const x = { id: d.id, ...d.data() }; if (x.month === ymNow()) monthInv[x.uid] = x }) } catch {}
+  for (const s of students) await ensureMonth(s);
 }
-function ago(ts) { if (!ts || !ts.toMillis) return '—'; const d = (Date.now() - ts.toMillis()) / 864e5; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago' }
+// this month's fee for a student with a monthly fee (the GitHub job makes the same one on the 1st; whichever runs first wins)
+async function ensureMonth(s) {
+  if (!(+s.monthlyFee > 0) || monthInv[s.uid] || (s.feeFrom && s.feeFrom > ymNow())) return;
+  const ym = ymNow(), id = `m-${ym}-${s.uid}`, ref = F.doc(db, 'invoices', id);
+  try {
+    const ex = await F.getDoc(ref);
+    if (ex.exists()) { monthInv[s.uid] = { id, ...ex.data() }; return }
+    const due = ym + '-10' < today() && s.feeFrom === ym ? today() : ym + '-10';
+    const data = { uid: s.uid, sid: s.sid || '', name: s.name || '', title: `${monthName(ym)} fee`, amount: +s.monthlyFee, currency: 'LKR', due, month: ym, monthly: true, paid: 0, open: true, payments: [], createdBy: coach.user.email, createdAt: F.serverTimestamp() };
+    await F.setDoc(ref, data); monthInv[s.uid] = { id, ...data };
+  } catch {}
+}
+const isOnline = (s) => s.lastSeen && s.lastSeen.toMillis && Date.now() - s.lastSeen.toMillis() < 3 * 60e3;
+const ini = (n) => esc((n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase());
+const ring = (p, label, red) => `<span class="cp-ring${red ? ' red' : ''}" style="--p:${Math.max(0, Math.min(100, p))}"><span>${label}</span></span>`;
+function paintStats() {
+  const week = Date.now() - 7 * 864e5, n = students.length;
+  const active = students.filter(s => s.lastSeen && s.lastSeen.toMillis && s.lastSeen.toMillis() > week).length;
+  const open = assigns.filter(a => a.due >= today());
+  let given = 0, fin = 0, late = 0; assigns.forEach(a => (a.uids || []).forEach(u => { if (!students.some(x => x.uid === u)) return; const st = assignStat(a, u, progress[u], statuses[a.id + '_' + u], times[u]); if (a.due >= today()) { given++; if (st.complete) fin++ } if (st.late) late++ }));
+  const last = sessions[0], lm = last ? Object.values(last.marks || {}) : [], lp = lm.length ? Math.round(lm.filter(v => v !== 'a').length / lm.length * 100) : null;
+  const fees = students.filter(s => +s.monthlyFee > 0), unpaid = fees.filter(s => { const i = monthInv[s.uid]; return i && i.open !== false && (i.amount - (i.paid || 0)) > 0.001 });
+  const toGet = unpaid.reduce((a, s) => a + (monthInv[s.uid].amount - (monthInv[s.uid].paid || 0)), 0);
+  $('#cStats').innerHTML = `<div class="cp-st">${ring(n ? active / n * 100 : 0, n ? Math.round(active / n * 100) + '%' : '0')}<div><b>${active} / ${n}</b><small>studied this week</small></div></div>
+    <div class="cp-st">${ring(lp || 0, lp == null ? '—' : lp + '%')}<div><b>Attendance</b><small>${last ? 'last class, ' + new Date(last.date + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'no class marked yet'}</small></div></div>
+    <div class="cp-st">${ring(given ? fin / given * 100 : 0, given ? fin + '/' + given : '0')}<div><b>${open.length} homework</b><small>open${late ? ' · ' + late + ' overdue' : ''}</small></div></div>
+    <div class="cp-st">${ring(fees.length ? unpaid.length / fees.length * 100 : 0, String(unpaid.length), true)}<div><b>${shortMonth(ymNow())} fees due</b><small>${fees.length ? money0(toGet) + ' to collect' : 'no monthly fees set'}</small></div></div>`;
+  const set = (id, v) => { const e = document.getElementById(id); if (e) { e.textContent = v; e.hidden = !v } };
+  set('nStu', n || ''); set('nHw', open.length || ''); set('nFee', unpaid.length || ''); set('nAtt', '');
+  const b = [...new Set(students.map(s => s.batch).filter(Boolean))].length;
+  const sub = $('#stuSub'); if (sub) sub.textContent = `${n} student${n === 1 ? '' : 's'} · ${[...new Set(students.map(s => curLevel(s.uid).lv))].length} level${[...new Set(students.map(s => curLevel(s.uid).lv))].length === 1 ? '' : 's'} · ${b} batch${b === 1 ? '' : 'es'}`;
+}
+function ago(ts) { if (!ts || !ts.toMillis) return 'Never'; const d = (Date.now() - ts.toMillis()) / 864e5; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago' }
+// the student's real place in the course (strict order): level of the first module not finished
+function curLevel(uid) {
+  const L = (progress[uid] || {}).lessons || {}, done = (k) => MODS[k].lessons.every(l => (L[l.id] || 0) >= PASS);
+  const ck = MODS.findIndex((m, k) => !done(k)), lv = ck < 0 ? PQ_MOD(MODS, MODS.length - 1).lv : PQ_MOD(MODS, ck).lv;
+  const idx = MODS.map((m, k) => k).filter(k => PQ_MOD(MODS, k).lv === lv);
+  return { lv, ck, idx, done, tot: idx.reduce((a, k) => a + MODS[k].lessons.length, 0), dn: idx.reduce((a, k) => a + MODS[k].lessons.filter(l => (L[l.id] || 0) >= PASS).length, 0) };
+}
+function feeRow(s) {
+  const fee = +s.monthlyFee || 0, i = monthInv[s.uid], m = shortMonth(ymNow());
+  if (!fee) return `<div class="cp-fee none"><span>Monthly fee not set</span><span class="cp-fset"><input class="mf" type="number" min="0" step="1" placeholder="LKR" aria-label="Monthly fee for ${esc(s.name)}"><button type="button" class="mini" data-a="savefee">Set</button></span></div>`;
+  if (!i) return `<div class="cp-fee"><span><b>${m} fee</b> · ${money0(fee)}</span><span class="muted small">starts next month</span></div>`;
+  const bal = Math.round((i.amount - (i.paid || 0)) * 100) / 100, last = (i.payments || [])[(i.payments || []).length - 1];
+  if (bal <= 0.001) return `<div class="cp-fee ok"><span><b>${m} fee</b> · ${money0(i.amount)}</span><span class="cp-got">✓ Received${last ? ' · ' + (last.method === 'bank' ? 'Bank' : last.method === 'cash' ? 'Cash' : 'Other') : ''}</span></div>`;
+  const late = i.due < today();
+  return `<div class="cp-fee${late ? ' late' : ''}"><span><b>${m} fee</b> · ${money0(bal)}${i.paid ? ' left' : ''}<small>${late ? 'overdue since ' : 'due '}${new Date(i.due + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</small></span>
+    <span class="cp-recv"><select class="fm" aria-label="Paid by"><option value="cash">Cash</option><option value="bank">Bank</option></select><button type="button" class="cp-tick" data-a="recv">Received</button></span></div>`;
+}
+function card(s) {
+  const c = curLevel(s.uid), a = attStat(sessions, s.uid), on = isOnline(s), i = monthInv[s.uid];
+  const feeLate = i && i.due < today() && (i.amount - (i.paid || 0)) > 0.001, warn = (a.pct != null && a.pct < 70) || feeLate;
+  return `<article class="cp-card${warn ? ' warn' : ''}" data-uid="${s.uid}">
+    <div class="top"><span class="sp-av">${s.photo ? `<img src="${esc(s.photo)}" alt="">` : ini(s.name)}${on ? '<i class="dot" title="Online now"></i>' : ''}</span>
+      <div class="who"><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button><small>${esc(s.sid)}${s.batch ? ' · ' + esc(s.batch) : ''}${s.mustChange ? ' · new password pending' : ''}</small></div><span class="lvp l${c.lv}">Level ${c.lv}</span></div>
+    <div class="cp-rank" title="Level ${c.lv} modules">${c.idx.map(k => `<i class="${c.done(k) ? 'd' : k === c.ck ? 'a' : ''}" title="${esc(PQ_MOD(MODS, k).label)}"></i>`).join('')}</div>
+    <div class="cp-kv"><div><b>${c.dn}/${c.tot}</b><small>lessons</small></div><div><b class="${a.pct != null && a.pct < 70 ? 'lo' : ''}">${a.pct == null ? '—' : a.pct + '%'}</b><small>attendance</small></div>
+      <div>${on ? `<b class="on">Online</b><small>${esc(s.onPage || 'now')}</small>` : `<b>${ago(s.lastSeen)}</b><small>last active</small>`}</div></div>
+    ${feeRow(s)}
+    <div class="cp-ft acts"><button type="button" class="sp-btn" data-a="report">Report</button><button type="button" class="sp-btn" data-a="hw">Give homework</button>
+      <details class="rowmenu cp-more"><summary class="mini" aria-label="More actions">•••</summary><div>
+        <label>Level<select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></label>
+        <label>Batch<input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></label>
+        <label>Monthly fee (LKR)<span class="cp-fset"><input class="mf" type="number" min="0" step="1" value="${+s.monthlyFee || ''}" aria-label="Monthly fee for ${esc(s.name)}"><button type="button" class="mini" data-a="savefee">Save</button></span></label>
+        <hr><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></div>
+  </article>`;
+}
 function paintTable() {
-  const f = ($('#filter').value || '').toLowerCase();
+  const box = $('#stuTable'); if (!box) return;
+  const f = ($('#filter') && $('#filter').value || '').toLowerCase();
+  const open = new Set([...box.querySelectorAll('details.cp-more[open]')].map(d => d.closest('[data-uid]').dataset.uid));
   const rows = students.filter(s => !f || [s.sid, s.name, s.batch].join(' ').toLowerCase().includes(f));
-  $('#stuTable tbody').innerHTML = rows.length ? rows.map(s => { const t = stat(s.uid); return `<tr data-uid="${s.uid}">
-    <td><b>${esc(s.sid)}</b></td><td class="nmc"><span class="ini" aria-hidden="true">${esc((s.name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}</span><button type="button" class="linkbtn nm" data-a="report">${esc(s.name)}</button>${s.mustChange ? ' <span class="tag">new password pending</span>' : ''}</td>
-    <td><select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></td>
-    <td><input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></td>
-    <td>${t.passed}/${LESSONS.length}</td><td>${(() => { const a = attStat(sessions, s.uid); return a.pct == null ? '—' : a.pct + '%' })()}</td><td>${ago(s.lastSeen)}</td>
-    <td class="acts"><button type="button" class="mini" data-a="report">Report</button><details class="rowmenu"><summary class="mini" aria-label="More actions">•••</summary><div><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></td></tr>` }).join('')
-    : `<tr><td colspan="8" class="muted">${students.length ? 'No match.' : 'No students yet. Press “Add a student” above.'}</td></tr>`;
+  box.innerHTML = rows.length ? rows.map(card).join('') : `<p class="cp-empty">${students.length ? 'No student matches the search.' : 'No students yet. Press “Add student” above.'}</p>`;
+  open.forEach(u => { const d = box.querySelector(`[data-uid="${u}"] details.cp-more`); if (d) d.open = true });
 }
 root.addEventListener('change', async (e) => {
-  const tr = e.target.closest('tr[data-uid]'); if (!tr) return;
+  const tr = e.target.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable')) return;
   const uid = tr.dataset.uid, field = e.target.classList.contains('lv') ? 'level' : e.target.classList.contains('bt') ? 'batch' : null; if (!field) return;
   const v = field === 'level' ? +e.target.value : e.target.value.trim();
   try { await F.updateDoc(F.doc(db, 'users', uid), { [field]: v }); const s = students.find(x => x.uid === uid); s[field] = v; if (field === 'batch') paintAtt(true); e.target.classList.add('saved'); setTimeout(() => e.target.classList.remove('saved'), 900) } catch { alertRow(tr, 'Could not save. Try again.') }
 });
 root.addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('tr'); if (!tr || !tr.dataset.uid) return; const s = students.find(x => x.uid === tr.dataset.uid);
+  const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable')) return; const s = students.find(x => x.uid === tr.dataset.uid);
   const a = b.dataset.a;
   if (a === 'report') return showDetail(s.uid);
+  if (a === 'hw') { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === s.uid }); paintLessons(); paintSum(); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+  if (a === 'savefee') {
+    const v = Math.max(0, Math.round(+b.parentElement.querySelector('.mf').value || 0)); b.disabled = true;
+    try { const up = { monthlyFee: v }; if (v && !s.feeFrom) up.feeFrom = ymNow(); await F.updateDoc(F.doc(db, 'users', s.uid), up); Object.assign(s, up); await ensureMonth(s); paintTable(); paintStats(); if (feesApi) feesApi.reload() } catch (err) { b.disabled = false; alertRow(tr, 'Could not save the fee.') } return;
+  }
+  if (a === 'recv') {
+    const i = monthInv[s.uid]; if (!i) return; b.disabled = true; b.textContent = 'Saving…';
+    const bal = Math.round((i.amount - (i.paid || 0)) * 100) / 100, method = (tr.querySelector('select.fm') || {}).value || 'cash';
+    const pay = { id: 'p' + Date.now().toString(36), amount: bal, method, ref: '', date: today(), by: coach.user.email };
+    const payments = (i.payments || []).concat(pay), paid = Math.round(payments.reduce((n, p) => n + p.amount, 0) * 100) / 100;
+    try { await F.updateDoc(F.doc(db, 'invoices', i.id), { payments, paid, open: false }); Object.assign(i, { payments, paid, open: false }); paintTable(); paintStats(); if (feesApi) feesApi.reload() } catch { b.disabled = false; b.textContent = 'Received'; alertRow(tr, 'Could not save. Try again.') } return;
+  }
   if (a === 'addparent') { b.disabled = true; b.textContent = 'Creating…'; try { const c = await createParent(s); paintTable(); showCreds(s.name, s.sid, null, c) } catch (err) { b.disabled = false; b.textContent = 'Add parent login'; alertRow(tr, 'Could not create: ' + (err.code || err.message)) } return }
   if (a === 'delete' && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to remove'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Remove' }, 4000); return }
+  if (!['reset', 'resetparent', 'delete'].includes(a)) return;
   try {
     const parent = a === 'resetparent';
     await F.addDoc(F.collection(db, 'adminQueue'), { type: parent ? 'reset' : a, uid: parent ? s.parentUid : s.uid, sid: parent ? s.sid + '-P' : s.sid, name: parent ? 'Parent of ' + s.name : s.name, status: 'pending', by: coach.user.email, createdAt: F.serverTimestamp() });
     b.textContent = 'Requested'; b.disabled = true;
   } catch { alertRow(tr, 'Could not send the request.') }
 });
-function alertRow(tr, t) { tr.querySelector('.acts').insertAdjacentHTML('beforeend', `<span class="tag err">${esc(t)}</span>`) }
+function alertRow(tr, t) { (tr.querySelector('.acts') || tr).insertAdjacentHTML('beforeend', `<span class="tag err">${esc(t)}</span>`) }
 function paintQueue() {
   $('#queue').innerHTML = queue.length ? queue.map(q => `<li class="${q.status}"><b>${q.type === 'reset' ? 'Password reset' : 'Remove'} · ${esc(q.sid)} ${esc(q.name || '')}</b>
     <span>${q.status === 'pending' ? 'Waiting…' : q.status === 'error' ? 'Failed: ' + esc(q.error) : q.type === 'reset' ? `New password: <code>${esc(q.tempPassword)}</code>` : 'Removed'}</span></li>`).join('') : '<li class="muted">No requests yet.</li>';
@@ -284,7 +372,7 @@ function showCreds(name, sid, pw, parent) {
 }
 async function addStudent(e) {
   e.preventDefault(); const m = $('#aMsg'); m.className = 'pmsg2'; m.textContent = 'Creating…';
-  const name = $('#aName').value.trim(), level = +$('#aLevel').value, batch = $('#aBatch').value.trim(), pPhone = $('#aPPhone').value.trim(), pEmail = $('#aPEmail').value.trim().toLowerCase(), wantParent = $('#aParent').checked;
+  const fee = Math.max(0, Math.round(+$('#aFee').value || 0)), name = $('#aName').value.trim(), level = +$('#aLevel').value, batch = $('#aBatch').value.trim(), pPhone = $('#aPPhone').value.trim(), pEmail = $('#aPEmail').value.trim().toLowerCase(), wantParent = $('#aParent').checked;
   if (!name) { m.className = 'pmsg2 err'; m.textContent = 'Enter the student’s name.'; return }
   let sid;
   try {
@@ -293,8 +381,8 @@ async function addStudent(e) {
   const pw = tempPw();
   try {
     const uid = await makeLogin(sid, pw);
-    await F.setDoc(F.doc(db, 'users', uid), { role: 'student', sid, name, level, batch, ...(pPhone ? { parentPhone: pPhone } : {}), ...(pEmail ? { parentEmail: pEmail } : {}), mustChange: true, createdAt: F.serverTimestamp(), createdBy: coach.user.email });
-    const s = { uid, role: 'student', sid, name, level, batch, parentPhone: pPhone, parentEmail: pEmail, mustChange: true }; students.push(s);
+    await F.setDoc(F.doc(db, 'users', uid), { role: 'student', sid, name, level, batch, ...(pPhone ? { parentPhone: pPhone } : {}), ...(pEmail ? { parentEmail: pEmail } : {}), ...(fee ? { monthlyFee: fee, feeFrom: ymNow() } : {}), mustChange: true, createdAt: F.serverTimestamp(), createdBy: coach.user.email });
+    const s = { uid, role: 'student', sid, name, level, batch, parentPhone: pPhone, parentEmail: pEmail, ...(fee ? { monthlyFee: fee, feeFrom: ymNow() } : {}), mustChange: true }; students.push(s); await ensureMonth(s);
     let parent = null, perr = '';
     if (wantParent) { try { parent = await createParent(s) } catch (err) { perr = ' The parent login failed (' + (err.code || err.message) + '); use “Add parent login” in the table.' } }
     paintTable(); paintStats(); paintAtt(true); paintWho(); if (feesApi) feesApi.refreshStudents(); showCreds(name, sid, pw, parent);
@@ -422,4 +510,44 @@ function exportCsv() {
     const late = assigns.filter(a => (a.uids || []).includes(s.uid) && assignStat(a, s.uid, progress[s.uid], statuses[a.id + '_' + s.uid], tm).late).length;
     return [s.sid, s.name, s.level, s.batch || '', t.passed, t.avg ?? '', t.xp, t.puzzles, Math.round((tm.total || 0) / 60), Math.round(secsInLastDays(tm, 7) / 60), late, attStat(sessions, s.uid).total, attStat(sessions, s.uid).pct ?? '', ...LESSONS.map(l => L[l.id] ?? '')] });
   download('purple-queen-students-' + today() + '.csv', toCsv([head, ...rows]));
+}
+
+/* ---------- coach avatar menu + my profile ---------- */
+const cName = () => cprof.display || (cprof.name || coach.profile.name || coach.user.email).split(' ')[0];
+const cAv = (big) => `<span class="sp-av c${big ? ' big' : ''}">${cprof.photo ? `<img src="${esc(cprof.photo)}" alt="">` : ini(cprof.name || coach.profile.name || coach.user.email)}</span>`;
+function mountCoachMenu() {
+  const box = $('#spUser'); if (!box) return;
+  box.innerHTML = `<button type="button" class="sp-ubtn" id="spUBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="spMenu"><span class="nm">${esc(cName())}</span>${cAv()}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="sp-menu" id="spMenu" role="menu"><div class="sp-mh">${cAv()}<div><b>${esc(cprof.name || coach.profile.name || cName())}</b><small>${esc(cprof.title || coach.user.email)}</small></div></div>
+      <a role="menuitem" href="#" data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c1.4-3.6 4.4-5.5 8-5.5s6.6 1.9 8 5.5"/></svg>My profile</a>
+      <a role="menuitem" href="index.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Open the public website</a>
+      <hr><button type="button" role="menuitem" class="out" id="cOut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3"/></svg>Sign out</button></div>`;
+  const b = $('#spUBtn'), m = $('#spMenu'), set = (v) => { m.classList.toggle('on', v); b.setAttribute('aria-expanded', String(v)) };
+  b.onclick = (e) => { e.stopPropagation(); set(!m.classList.contains('on')) };
+  if (!mountCoachMenu.done) { mountCoachMenu.done = true; document.addEventListener('click', (e) => { const mm = $('#spMenu'); if (mm && !$('#spUser').contains(e.target)) { mm.classList.remove('on'); $('#spUBtn').setAttribute('aria-expanded', 'false') } }); document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#spMenu')) $('#spMenu').classList.remove('on') }) }
+  m.querySelector('[data-go="profile"]').onclick = (e) => { e.preventDefault(); set(false); showTab('profile'); window.scrollTo(0, 0) };
+  $('#cOut').onclick = logout;
+}
+function paintProfile() {
+  const box = $('#cpProfile'); if (!box) return;
+  const v = (k) => esc(cprof[k] || (k === 'name' ? coach.profile.name || '' : ''));
+  box.innerHTML = `<div class="cp-prof"><div class="cp-id"><div class="cv"></div><div class="bd">${cAv(true)}<h2>${esc(cprof.name || coach.profile.name || cName())}</h2>${cprof.title ? `<span class="role">${esc(cprof.title)}</span>` : ''}<p class="muted">${esc(coach.user.email)}${cprof.phone ? ' · ' + esc(cprof.phone) : ''}</p>
+      <div class="ks"><div><b>${students.length}</b><small>students</small></div><div><b>${[...new Set(students.map(s => s.batch).filter(Boolean))].length}</b><small>batches</small></div><div><b>${esc(cprof.since || '—')}</b><small>coaching since</small></div></div>${cprof.bio ? `<p class="bio">${esc(cprof.bio)}</p>` : ''}</div></div>
+    <form class="acc-card cp-pf" id="cpForm"><div class="row2"><label for="cpName">Full name<input id="cpName" maxlength="80" value="${v('name')}"></label><label for="cpDisp">Display name<input id="cpDisp" maxlength="80" value="${v('display')}" placeholder="e.g. Washini"></label></div>
+      <div class="row2"><label for="cpTitle">Title / role (optional)<input id="cpTitle" maxlength="80" value="${v('title')}" placeholder="e.g. FIDE International Arbiter · Head coach"></label><label for="cpPhone">Phone / WhatsApp (optional)<input id="cpPhone" type="tel" maxlength="80" value="${v('phone')}"></label></div>
+      <div class="row2"><label for="cpSince">Coaching since (optional)<input id="cpSince" maxlength="80" value="${v('since')}" placeholder="e.g. 2019"></label><label>Sign-in email<input value="${esc(coach.user.email)}" disabled></label></div>
+      <label>Photo<span class="cp-photo">${cAv()}<button type="button" class="btn btn-ghost btn-sm" id="cpPhotoBtn">${cprof.photo ? 'Change photo' : 'Upload photo'}</button>${cprof.photo ? '<button type="button" class="btn btn-ghost btn-sm" id="cpPhotoDel">Remove</button>' : ''}<input type="file" id="cpPhoto" accept="image/*" hidden></span></label>
+      <label for="cpBio">Short bio (optional)<textarea id="cpBio" rows="3" maxlength="600">${v('bio')}</textarea></label>
+      <button class="btn btn-primary btn-sm" type="submit">Save profile</button><p class="pmsg2" id="cpMsg"></p></form></div>`;
+  const ref = F.doc(db, 'coachProfiles', coach.user.email.toLowerCase());
+  const save = async (extra) => { const data = { name: $('#cpName').value.trim(), display: $('#cpDisp').value.trim(), title: $('#cpTitle').value.trim(), phone: $('#cpPhone').value.trim(), since: $('#cpSince').value.trim(), bio: $('#cpBio').value.trim().slice(0, 600), photo: cprof.photo || '', ...extra, updatedAt: F.serverTimestamp() }; await F.setDoc(ref, data); cprof = { ...data }; mountCoachMenu(); paintProfile() };
+  $('#cpForm').onsubmit = async (e) => { e.preventDefault(); try { await save({}); $('#cpMsg').className = 'pmsg2 ok'; $('#cpMsg').textContent = 'Saved.' } catch (err) { $('#cpMsg').className = 'pmsg2 err'; $('#cpMsg').textContent = 'Could not save: ' + (err.code || err.message) } };
+  $('#cpPhotoBtn').onclick = () => $('#cpPhoto').click();
+  if ($('#cpPhotoDel')) $('#cpPhotoDel').onclick = () => save({ photo: '' }).catch(() => {});
+  $('#cpPhoto').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const img = await new Promise((ok, no) => { const i = new Image(), u = URL.createObjectURL(f); i.onload = () => { URL.revokeObjectURL(u); ok(i) }; i.onerror = no; i.src = u });
+      const c = document.createElement('canvas'); c.width = c.height = 200; const k = Math.min(img.width, img.height); c.getContext('2d').drawImage(img, (img.width - k) / 2, (img.height - k) / 2, k, k, 0, 0, 200, 200);
+      await save({ photo: c.toDataURL('image/jpeg', .82) }) } catch { alert('Could not save the photo. Try a smaller picture.') }
+  };
 }
