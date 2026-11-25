@@ -622,10 +622,10 @@ html:lang(si) .lp-panel .q { font:600 clamp(16px, 1.8vw, 20px)/1.55 'Noto Sans S
 .pz-main { scroll-margin-top:96px; display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, .85fr); gap:24px; align-items:start }
 .pz-boardwrap { padding:22px 14px 30px 30px; border-radius:22px; background:radial-gradient(120% 100% at 30% 0%, #3A1A5A, var(--night)) }
 .pz-board { max-width:min(600px, calc(100vh - 275px)); min-width:280px }
-.pz-hw .pz-board .lsq.l, .hwboard .lsq.l { background:#FFFFFF } .pz-hw .pz-board .lsq.d, .hwboard .lsq.d { background:#7B1E2B }
-.pz-hw .pz-board .lsq.tr2.l, .hwboard .lsq.tr2.l { background:#F3D5D9 } .pz-hw .pz-board .lsq.tr2.d, .hwboard .lsq.tr2.d { background:#A33543 }
-.pz-hw .pz-boardwrap, .hwboard.lp-boardwrap { background:radial-gradient(120% 100% at 30% 0%, #5E1B28, #2B0A12) }
-.pz-hw .pz-board, .hwboard .lb { box-shadow:0 0 0 3px rgba(123,30,43,.35), 0 30px 60px -30px rgba(80,10,20,.6) }
+.pz-hw .pz-board .lsq.l, .hwboard .lsq.l { background:#FAFEFB } .pz-hw .pz-board .lsq.d, .hwboard .lsq.d { background:#A6D8B5 }
+.pz-hw .pz-board .lsq.tr2.l, .hwboard .lsq.tr2.l { background:#F6F0B8 } .pz-hw .pz-board .lsq.tr2.d, .hwboard .lsq.tr2.d { background:#D9D77A }
+.pz-hw .pz-boardwrap, .hwboard.lp-boardwrap { background:radial-gradient(120% 100% at 30% 0%, #E6F5EA, #BFE3CB) }
+.pz-hw .pz-board, .hwboard .lb { box-shadow:0 0 0 3px rgba(70,150,100,.35), 0 24px 50px -30px rgba(30,90,55,.5) }
 .pz-board .lsq { cursor:pointer }
 .lsq.tr2.l { background:#F3E2A6 } .lsq.tr2.d { background:#D9BE6E }
 .lsq.chk { box-shadow:inset 0 0 0 3px #D6305C, inset 0 0 26px rgba(214,48,92,.75) }
@@ -912,3 +912,4 @@ tr.payrow td { background:var(--paper) } .payf { display:flex; gap:12px; flex-wr
 .noprint { text-align:center; margin-top:18px }
 @media print { #portalReceipt, #portalReceipt * { visibility:visible } #portalReceipt { position:absolute; left:0; top:0; width:100% } #portalReceipt .noprint { display:none } .receipt { box-shadow:none; border:0 } }
 @media (max-width:720px) { .receipt { padding:20px } .receipt dl { grid-template-columns:1fr } .ctabs button { padding:9px 12px } }
+.pz-hw .lb-files, .pz-hw .lb-ranks, .hwboard .lb-files, .hwboard .lb-ranks { color:#2F6B47 }
