@@ -66,7 +66,7 @@ function render() {
     <div class="tools"><button type="button" class="btn btn-ghost btn-sm" id="atAll">Mark everyone present</button><button class="btn btn-primary btn-sm" type="submit">Save attendance</button></div><p class="pmsg2" id="atMsg"></p><div id="atWa" class="tblist"></div></form>
   <form class="hwlay" id="hwForm" data-tab="homework">
     <div class="acc-card hwmain"><h3>Assign homework</h3>
-      <div class="hws"><span class="hwn">1</span><div class="hwb"><p class="hwt">Who gets it?</p>
+      <div class="hws"><span class="hwn">1</span><div class="hwb"><p class="hwt">Who gets it?</p><div class="hfocus" id="hFocus" hidden></div>
         <div class="chipseg" id="hWhoSeg">${[['all', 'All students'], ['level', 'One level'], ['batch', 'One batch'], ['pick', 'Choose students']].map(([v, x], i) => `<button type="button" data-w="${v}" aria-pressed="${i ? 'false' : 'true'}">${x}</button>`).join('')}</div>
         <select id="hWho" class="sr" tabindex="-1" aria-hidden="true"><option value="all">All students</option><option value="level">One level</option><option value="batch">One batch</option><option value="pick">Chosen students</option></select>
         <label for="hWhoVal" id="hWhoWrap" hidden><span id="hWhoLab" class="sr">Level</span><select id="hWhoVal"></select></label>
@@ -103,7 +103,7 @@ function render() {
       <label class="chk" for="aParent"><input type="checkbox" id="aParent" checked> Also create a parent login (read-only view of this student)</label>
       <button class="btn btn-primary btn-sm" type="submit">Create login</button>
       <div class="newacc" id="newAcc" hidden></div><p class="pmsg2" id="aMsg"></p></form></div></details>
-    <details class="reqline" id="reqDet"><summary><span class="dot"></span>Requests: password resets and removals</summary><div><p class="muted">Password resets and removals are done automatically within about 10–15 minutes.</p><ul class="queue" id="queue"><li class="muted">No requests yet.</li></ul></div></details>
+
   </div>
   <section class="acc-card" id="detail" data-tab="students" hidden></section>
   <div class="cp-grid" id="stuTable" data-tab="students"><p class="muted">Loading…</p></div>
@@ -140,34 +140,33 @@ function render() {
 const $$ = (s) => [...document.querySelectorAll(s)];
 const defTitle = () => 'Homework · ' + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const plusDays = (n) => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') };
-let PUZZLES = null, PUBPZ = null;
+let PUZZLES = null, PUBPZ = null, hwFocus = null;   // hwFocus = uid when the coach pressed Give homework on one student
 async function loadAllPuzzles() { if (!PUBPZ) { try { PUBPZ = (await (await fetch('assets/data/puzzles.json')).json()).puzzles } catch { PUBPZ = [] } } let hw = []; try { hw = await loadPuzzles() } catch {} return PUBPZ.concat(hw) }
 async function loadPuzzles() { if (!PUZZLES) { const r = await fetch('assets/data/hwpuzzles.json'); if (!r.ok) throw new Error('The homework puzzle pool is not built yet'); PUZZLES = (await r.json()).puzzles } return PUZZLES }
 // puzzle ids already given to a student in any homework, plus ones already solved
 const usedPuzzles = (uid) => { const u = new Set(Object.keys((((progress[uid] || {}).puzzles) || {}).solved || {})); assigns.forEach(a => (a.items || []).forEach(it => { if (it.t === 'puzzles' && it.sets && it.sets[uid]) it.sets[uid].forEach(id => u.add(id)) })); return u };
-// what a student did on each puzzle of a homework: solved / failed, retries, hints, wrong moves, and when it was submitted
-let PZINFO = null, PZLOAD = false;
-function pzLog(a, uid) {
-  if (!PZINFO && !PZLOAD) { PZLOAD = true; loadAllPuzzles().then(all => { PZINFO = Object.fromEntries(all.map(q => [q.id, q])); try { paintHw() } catch {} }) }
-  const st = statuses[a.id + '_' + uid] || {}, pz = st.pz || {}, sv = ((progress[uid] || {}).puzzles || {}).solved || {};
-  return (a.items || []).filter(it => it.t === 'puzzles').map(it => {
-    const ids = (it.sets && it.sets[uid]) || []; if (!ids.length) return '';
-    let ok = 0;
-    const chips = ids.map((id, i) => {
-      const r = pz[id], q = PZINFO && PZINFO[id], lab = (i + 1) + (q ? ' · ' + (PZ_LEVELS[q.l] || '') : '');
-      const x = []; if (r && r.r) x.push('retry ×' + r.r); if (r && r.h) x.push('hint ×' + r.h); if (r && r.w) x.push('wrong ×' + r.w);
-      let cls = 'nt', t = 'Not done';
-      if (r && r.s === 's' || !r && sv[id]) { cls = 'ok'; t = 'Solved'; ok++ }
-      else if (r && r.s === 'f') { cls = 'no'; t = r.k && !r.w ? 'Skipped' : 'Failed' }
-      else if (r && (r.r || r.w || r.h)) t = 'In progress';
-      return `<span class="${cls}" title="Puzzle ${i + 1}">${lab} — ${t}${x.length ? ' <i>' + x.join(' · ') + '</i>' : ''}</span>`;
-    }).join('');
-    const sub = st.sub ? `<p class="pzsub">Submitted ${new Date(st.sub).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${ok} of ${ids.length} solved</p>` : `<p class="pzsub no">Not submitted yet · ${ok} of ${ids.length} solved</p>`;
-    return `<div class="pzlog">${chips}</div>${sub}`;
-  }).join('');
+// homework review popup (assets/js/portal/review.js)
+let PZMAP = null;
+async function pzMap() { if (!PZMAP) { const all = await loadAllPuzzles(); PZMAP = Object.fromEntries(all.map(q => [q.id, q])) } return PZMAP }
+async function reviewHw(aid, uid) {
+  const a = assigns.find(x => x.id === aid), s = students.find(x => x.uid === uid); if (!a || !s) return;
+  const puzzles = (a.items || []).some(i => i.t === 'puzzles') ? await pzMap() : {};
+  const { openReview } = await import('./review.js' + new URL(import.meta.url).search);
+  openReview({ a, s, st: statuses[aid + '_' + uid], prog: progress[uid], tm: times[uid], puzzles, onNoteSaved: (n) => { statuses[aid + '_' + uid] = { ...(statuses[aid + '_' + uid] || { aid, uid }), notes: n } } });
 }
+const rvBtn = (aid, uid) => `<button type="button" class="mini rvbtn" data-rv="${aid}|${uid}">Review</button>`;
+document.addEventListener('click', (e) => { const b = e.target.closest('button[data-rv]'); if (!b) return; const [aid, uid] = b.dataset.rv.split('|'); b.disabled = true; reviewHw(aid, uid).finally(() => { b.disabled = false }) });
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a };
+function applyFocus() {
+  const s = hwFocus && students.find(x => x.uid === hwFocus), lab = $('#hFocus'); if (!lab) return;
+  const w = $('#hWho').value;
+  $('#hWhoSeg').hidden = !!s; $('#hWhoWrap').hidden = !!s || !(w === 'level' || w === 'batch'); $('#hPick').hidden = !!s || w !== 'pick';
+  lab.hidden = !s;
+  if (s) { lab.innerHTML = `<span class="who-one"><b>${esc(s.name)}</b><small>${esc(s.sid)}${s.batch ? ' · ' + esc(s.batch) : ''}</small></span><button type="button" class="linkbtn" id="hFocusOff">Give to other students instead</button>`; $('#hFocusOff').onclick = () => { hwFocus = null; applyFocus(); paintLessons(); paintSum() } }
+}
+function setFocus(uid) { hwFocus = uid; applyFocus() }
 function showTab(t) {
+  hwFocus = null; applyFocus();
   tab = t; try { sessionStorage.setItem('pq-ctab', t) } catch {}
   root.querySelectorAll('[data-tab]').forEach(e => e.classList.toggle('tab-off', e.dataset.tab !== t));
   document.querySelectorAll('#cTabs button[data-t]').forEach(b => b.setAttribute('aria-current', b.dataset.t === t ? 'page' : 'false'));
@@ -185,6 +184,7 @@ function whoList() {
   if (w === 'level') { const v = +$('#hWhoVal').value; list = students.filter(s => +s.level === v); label = LEVELS[v] }
   if (w === 'batch') { const v = $('#hWhoVal').value; list = students.filter(s => s.batch === v); label = 'Batch: ' + v }
   if (w === 'pick') { const ids = $$('#hPick input:checked').map(c => c.value); list = students.filter(s => ids.includes(s.uid)); label = list.length === 1 ? list[0].name : list.length + ' students' }
+  if (hwFocus) { const one = students.find(x => x.uid === hwFocus); if (one) { list = [one]; label = one.name } }
   return { list, label };
 }
 // the next 3 lessons each chosen student has not passed and has not already been given in homework
@@ -218,7 +218,7 @@ function paintWho() {
   if (w === 'level') { $('#hWhoLab').textContent = 'Level'; val.innerHTML = [1, 2, 3].map(l => `<option value="${l}">${LEVELS[l]}</option>`).join('') }
   if (w === 'batch') { $('#hWhoLab').textContent = 'Batch'; const b = [...new Set(students.map(s => s.batch).filter(Boolean))]; val.innerHTML = b.length ? b.map(x => `<option>${esc(x)}</option>`).join('') : '<option value="">No batches yet</option>' }
   if (w === 'pick') $('#hPick').innerHTML = students.map(s => `<label><input type="checkbox" value="${s.uid}"> ${esc(s.sid)} ${esc(s.name)}</label>`).join('') || '<p class="muted">No students yet.</p>';
-  paintLessons(); paintSum();
+  applyFocus(); paintLessons(); paintSum();
 }
 
 async function load() {
@@ -274,7 +274,6 @@ function paintStats() {
   const passedAll = students.reduce((a, s) => a + stat(s.uid).passed, 0), prog_pct = n && LESSONS.length ? Math.round(passedAll / (n * LESSONS.length) * 100) : 0;
   const toGet = unpaid.reduce((a, s) => a + (monthInv[s.uid].amount - (monthInv[s.uid].paid || 0)), 0);
   $('#cStats').innerHTML = `<div class="cp-st">${ring(n ? active / n * 100 : 0, n ? Math.round(active / n * 100) + '%' : '0')}<div><b>${active} / ${n}</b><small>studied this week</small></div></div>
-    <div class="cp-st">${ring(lp || 0, lp == null ? '—' : lp + '%')}<div><b>Attendance</b><small>${last ? 'last class, ' + new Date(last.date + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'no class marked yet'}</small></div></div>
     <div class="cp-st">${ring(given ? fin / given * 100 : 0, given ? fin + '/' + given : '0')}<div><b>${open.length} homework</b><small>open${late ? ' · ' + late + ' overdue' : ''}</small></div></div>
     <div class="cp-st">${ring(prog_pct, prog_pct + '%')}<div><b>Course progress</b><small>${passedAll} lessons passed in total</small></div></div>`;
   const set = (id, v) => { const e = document.getElementById(id); if (e) { e.textContent = v; e.hidden = !v } };
@@ -319,6 +318,7 @@ function card(s) {
         <label>Level<select class="lv" aria-label="Level for ${esc(s.name)}">${[1, 2, 3].map(l => `<option value="${l}" ${+s.level === l ? 'selected' : ''}>${LEVELS[l]}</option>`).join('')}</select></label>
         <label>Batch<input class="bt" value="${esc(s.batch || '')}" aria-label="Batch for ${esc(s.name)}"></label>
         <hr><button type="button" class="mini" data-a="reset">Reset password</button>${s.parentUid ? `<button type="button" class="mini" data-a="resetparent">Reset parent</button>` : `<button type="button" class="mini" data-a="addparent">Add parent login</button>`}<button type="button" class="mini danger" data-a="delete">Remove</button></div></details></div>
+  ${credBox(s)}
   </article>`;
 }
 function paintMonth() {
@@ -345,7 +345,7 @@ root.addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-a]'); if (!b) return; const tr = b.closest('[data-uid]'); if (!tr || !tr.closest('#stuTable, #monthBox')) return; const s = students.find(x => x.uid === tr.dataset.uid);
   const a = b.dataset.a;
   if (a === 'report') return showDetail(s.uid);
-  if (a === 'hw') { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === s.uid }); paintLessons(); paintSum(); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+  if (a === 'hw') { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === s.uid }); setFocus(s.uid); paintLessons(); paintSum(); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
   if (a === 'savefee') {
     const v = Math.max(0, Math.round(+b.parentElement.querySelector('.mf').value || 0)); b.disabled = true;
     try { const up = { monthlyFee: v }; if (v && !s.feeFrom) up.feeFrom = ymNow(); await F.updateDoc(F.doc(db, 'users', s.uid), up); Object.assign(s, up); await ensureMonth(s); paintTable(); paintStats(); if (feesApi) feesApi.reload() } catch (err) { b.disabled = false; alertRow(tr, 'Could not save the fee.') } return;
@@ -367,10 +367,27 @@ root.addEventListener('click', async (e) => {
   } catch { alertRow(tr, 'Could not send the request.') }
 });
 function alertRow(tr, t) { (tr.querySelector('.acts') || tr).insertAdjacentHTML('beforeend', `<span class="tag err">${esc(t)}</span>`) }
+// password resets and removals show inside that student's card and report (no separate list)
+const dismissed = () => { try { return new Set(JSON.parse(localStorage.getItem('pq-pwhide') || '[]')) } catch { return new Set() } };
+function credBox(s) {
+  const hide = dismissed(), out = [];
+  const mine = queue.filter(q => (q.uid === s.uid || (s.parentUid && q.uid === s.parentUid)) && !hide.has(q.id));
+  const seen = new Set();
+  mine.forEach(q => { const k = q.type + (q.uid === s.uid ? 's' : 'p'); if (seen.has(k)) return; seen.add(k); out.push(q) });
+  return out.map(q => {
+    const who = q.type === 'delete' ? 'Removal' : q.uid === s.uid ? 'Student password' : 'Parent password';
+    const body = q.status === 'pending' ? '<span class="cred-w">Requested. Done within about 10–15 minutes.</span>' : q.status === 'error' ? `<span class="cred-e">Failed: ${esc(q.error || '')}</span>` : q.type === 'reset' ? `<code class="pw" data-pw="${esc(q.tempPassword || '')}">••••••••</code><button type="button" class="mini" data-a="pwshow">Show</button><button type="button" class="mini" data-a="pwcopy">Copy</button>` : '<span class="cred-w">Removed.</span>';
+    return `<div class="cp-cred ${q.status}" data-q="${q.id}"><b>${who}</b>${body}${q.status === 'pending' ? '' : `<button type="button" class="mini" data-a="pwhide" aria-label="Hide">Hide</button>`}</div>`;
+  }).join('');
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('.cp-cred button[data-a]'); if (!b) return; const box = b.closest('.cp-cred'), a = b.dataset.a, code = box.querySelector('code.pw');
+  if (a === 'pwshow') { const on = code.textContent !== code.dataset.pw; code.textContent = on ? code.dataset.pw : '••••••••'; b.textContent = on ? 'Hide password' : 'Show' }
+  if (a === 'pwcopy') { try { await navigator.clipboard.writeText(code.dataset.pw); b.textContent = 'Copied' } catch { code.textContent = code.dataset.pw; b.textContent = 'Select and copy' } setTimeout(() => { b.textContent = 'Copy' }, 1800) }
+  if (a === 'pwhide') { const h = dismissed(); h.add(box.dataset.q); try { localStorage.setItem('pq-pwhide', JSON.stringify([...h].slice(-60))) } catch {} document.querySelectorAll(`.cp-cred[data-q="${box.dataset.q}"]`).forEach(x => x.remove()) }
+});
 function paintQueue() {
-  $('#queue').innerHTML = queue.length ? queue.map(q => `<li class="${q.status}"><b>${q.type === 'reset' ? 'Password reset' : 'Remove'} · ${esc(q.sid)} ${esc(q.name || '')}</b>
-    <span>${q.status === 'pending' ? 'Waiting…' : q.status === 'error' ? 'Failed: ' + esc(q.error) : q.type === 'reset' ? `New password: <code>${esc(q.tempPassword)}</code>` : 'Removed'}</span></li>`).join('') : '<li class="muted">No requests yet.</li>';
-  if (queue.length && $('#reqDet')) $('#reqDet').open = true;
+  if (students.length) { paintTable(); if (openUid && $('#detail') && !$('#detail').hidden) showDetail(openUid) }
   if (queue.some(q => q.status === 'done' && q.type === 'delete')) { const gone = new Set(queue.filter(q => q.status === 'done' && q.type === 'delete').map(q => q.uid)); students = students.filter(s => !gone.has(s.uid)); paintTable(); paintStats() }
 }
 
@@ -476,7 +493,7 @@ async function addHomework(e) {
     let mails = 0;
     if ($('#hMail').checked) for (const s of list) if (s.parentEmail) { try { await queueEmail({ to: s.parentEmail, subject: `New homework: ${title}`, text: `Hello,\n\nNew homework for ${s.name}: ${title}. Due ${due}.${note ? '\n' + note : ''}\nThe student can open it after signing in on the academy website.\n\nPurple Queen Chess Academy`, kind: 'homework' }); mails++ } catch {} }
     $('#hSend').innerHTML = list.map(s => { const txt = `Hello, this is Purple Queen Chess Academy. New homework for ${s.name}: ${title}. Due ${due}.${note ? ' ' + note : ''} The student can open it after signing in on the academy website. Thank you.`, w = waLink(s.parentPhone, txt), ml = mailLink(s.parentEmail, `New homework: ${title}`, txt); return (w ? `<a class="chip" target="_blank" rel="noopener" href="${w}">WhatsApp: parent of ${esc(s.name)}</a>` : '') + (ml ? `<a class="chip" target="_blank" rel="noopener" href="${ml}">Email: parent of ${esc(s.name)}</a>` : '') }).join('');
-    e.target.reset(); $('#hTitle').value = defTitle(); $('#hPzTot').textContent = '0 puzzles in total'; $('#hMore').open = false; setMode('lessons'); paintSum(); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
+    hwFocus = null; applyFocus(); e.target.reset(); $('#hTitle').value = defTitle(); $('#hPzTot').textContent = '0 puzzles in total'; $('#hMore').open = false; setMode('lessons'); paintSum(); custom = []; paintCustom(); $('#hDue').min = today(); $('#hDue').value = plusDays(7); paintWho(); paintHw(); paintStats(); if (openUid) showDetail(openUid);
     m.className = 'pmsg2 ok'; m.textContent = `Homework given to ${list.length} student${list.length > 1 ? 's' : ''}.` + (short.length ? ' Not enough new puzzles: ' + short.join('; ') + '.' : '') + (mails ? ` ${mails} email${mails > 1 ? 's' : ''} queued.` : '');
   } catch (err) { m.className = 'pmsg2 err'; m.textContent = 'Could not save the homework: ' + (err.code || err.message) }
 }
@@ -488,7 +505,7 @@ function paintHw() {
     const done = rows.filter(r => r.st.complete).length, late = rows.filter(r => r.st.late).length;
     return `<details class="hw" data-id="${a.id}"><summary><b>${esc(a.title)}</b><span>Due ${dueText(a)} · ${esc(a.target || '')}</span><span class="pill ${late ? 'late' : done === rows.length && rows.length ? 'done' : 'open'}">${done}/${rows.length} done${late ? ' · ' + late + ' overdue' : ''}</span></summary>
       ${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<p class="small">${a.items.map(it => `<span class="chip">${esc(itemLabel(it))}</span>`).join(' ')}</p>
-      <div class="tw"><table class="stu mini-t"><thead><tr><th>Student</th><th>Done</th><th>Time on these lessons</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.st.done}/${r.st.total}</td><td>${r.st.secs ? fmtTime(r.st.secs) : '—'}</td><td>${statePill(r.st.state)}${r.st.state !== 'done' && waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`) ? ` <a class="mini" target="_blank" rel="noopener" href="${waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`)}">WhatsApp</a>` : ''}</td></tr>${pzLog(a, r.s.uid) ? `<tr class="pzr"><td colspan="4">${pzLog(a, r.s.uid)}</td></tr>` : ''}`).join('')}</tbody></table></div>
+      <div class="tw"><table class="stu mini-t"><thead><tr><th>Student</th><th>Done</th><th>Time on these lessons</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.st.done}/${r.st.total}</td><td>${r.st.secs ? fmtTime(r.st.secs) : '—'}</td><td>${statePill(r.st.state)} ${rvBtn(a.id, r.s.uid)}${r.st.state !== 'done' && waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`) ? ` <a class="mini" target="_blank" rel="noopener" href="${waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`)}">WhatsApp</a>` : ''}</td></tr>`).join('')}</tbody></table></div>
       <button type="button" class="mini danger" data-del="${a.id}">Delete homework</button></details>` }).join('');
 }
 root.addEventListener('click', async (e) => {
@@ -517,7 +534,7 @@ function showDetail(uid) {
   const firstOpen = (myMods.find(x => x.m.lessons.some(l => (L[l.id] || 0) < PASS)) || {}).k;
   d.innerHTML = `<div class="dhead"><div class="dwho">${s.photo ? `<img class="dav" src="${esc(s.photo)}" alt="">` : `<span class="ini dav">${ini}</span>`}<div><p class="eyebrow">Student report</p><h3 class="dname">${esc(s.name)}</h3><p class="dsub">${esc(s.sid)} · ${LEVELS[s.level] || ''}${s.batch ? ' · ' + esc(s.batch) : ''}</p></div></div>
       <div class="dact"><button type="button" class="btn btn-primary btn-sm" id="dAssign">Assign homework</button><button type="button" class="btn btn-ghost btn-sm" id="dClose">Close</button></div></div>
-    <div class="acc-stats dkpi"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
+    ${credBox(s)}<div class="acc-stats dkpi"><div><b>${fmtTime(tm.total || 0)}</b><span>Active time, all</span></div><div><b>${fmtTime(secsInLastDays(tm, 7))}</b><span>Last 7 days</span></div><div><b>${t.passed}/${LESSONS.length}</b><span>Lessons passed</span></div><div><b>${t.avg == null ? '—' : t.avg + '%'}</b><span>Average mark · ${tries} tries</span></div></div>
     <div class="dgrid"><div class="dcol">
       <section class="dbox dctl"><h4>Progress control <small>lessons for this student</small></h4><p class="muted small">Open any locked lesson or module, or reset marks. Open a module below to use its buttons. The student sees the change when the page is next opened.${UL.m.length || UL.l.length ? `<br><b>Opened by you:</b> ${[...UL.m.map(k => PQ_MOD(MODS, k).label), ...UL.l.map(x => { const [k, i] = x.split(':'); return PQ_MOD(MODS, +k).label + ' · lesson ' + (+i + 1) }) ].join(', ')}` : ''}</p>
         <div class="mctl"><button type="button" class="mini danger" data-pc="resetall">Reset all lessons to 0</button>${UL.m.length || UL.l.length ? '<button type="button" class="mini" data-pc="lockall">Lock everything again</button>' : ''}<span class="pmsg2" id="pcMsg"></span></div></section>
@@ -531,13 +548,13 @@ function showDetail(uid) {
       ${weak.length ? `<section class="dbox"><h4>Needs work</h4><div class="chips">${weak.map(w => `<span class="chip bad">${esc(w.l.title.en)} · ${w.v}%</span>`).join('')}</div></section>` : ''}
       <section class="dbox"><h4>Attendance</h4>${att.total ? `<div class="attsum"><b>${att.pct}%</b><span>${att.present} present · ${att.late} late · ${att.absent} absent<br><small>${att.total} classes</small></span></div><details class="more"><summary>Show classes</summary>${attTable(att, uid)}</details>` : '<p class="muted small">No classes marked yet.</p>'}</section>
       <section class="dbox"><h4>Puzzles</h4><p id="dPz" class="muted small">Loading…</p></section>
-      <section class="dbox"><h4>Homework</h4>${mine.length ? `<ul class="dhw">${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<li><span><b>${esc(a.title)}</b><small>Due ${dueText(a)}</small></span><em>${st.done}/${st.total}</em>${statePill(st.state)}${pzLog(a, uid) ? `<div class="pzl">${pzLog(a, uid)}</div>` : ''}</li>` }).join('')}</ul>` : '<p class="muted small">No homework yet.</p>'}</section>
+      <section class="dbox"><h4>Homework</h4>${mine.length ? `<ul class="dhw">${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<li><span><b>${esc(a.title)}</b><small>Due ${dueText(a)}</small></span><em>${st.done}/${st.total}</em>${statePill(st.state)}${rvBtn(a.id, uid)}</li>` }).join('')}</ul>` : '<p class="muted small">No homework yet.</p>'}</section>
       <section class="dbox"><h4>Student details <small>filled in by the student</small></h4>${(() => { const rows = [['Date of birth', s.dob], ['School', s.school], ['Grade', s.grade], ['Home town', s.city], ['Student phone', s.phone]].filter(r => r[1]); return rows.length ? `<dl class="ddet">${rows.map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>` : '<p class="muted small">Nothing filled in yet.</p>' })()}</section>
       <section class="dbox"><h4>Parent</h4><label for="dpPhone">WhatsApp number<input id="dpPhone" type="tel" value="${esc(s.parentPhone || '')}"></label><label for="dpEmail">Email<input id="dpEmail" type="email" value="${esc(s.parentEmail || '')}"></label>
         <div class="row"><button type="button" class="btn btn-ghost btn-sm" id="dpSave">Save contact</button> <span class="pmsg2" id="dpMsg"></span></div>
         <p class="muted small">Parent login: ${s.parentUid ? esc(s.sid) + '-P' : 'none yet (use ••• → Add parent login in the table)'}</p></section>
     </div></div>`;
-  $('#dAssign').onclick = () => { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === uid }); paintLessons(); paintSum(); $('#hwForm').scrollIntoView({ behavior: 'smooth', block: 'start' }) };
+  $('#dAssign').onclick = () => { showTab('homework'); $('#hWho').value = 'pick'; paintWho(); $$('#hPick input').forEach(c => { c.checked = c.value === uid }); setFocus(uid); paintLessons(); paintSum(); $('#hwForm').scrollIntoView({ behavior: 'smooth', block: 'start' }) };
   loadAllPuzzles().then(all => { const sv = (p.puzzles || {}).solved || {}, ids = Object.keys(sv), by = {}; ids.forEach(id => { const q = all.find(x => x.id === id); if (q) by[q.l] = (by[q.l] || 0) + 1 }); const el = $('#dPz'); if (el) el.textContent = ids.length ? `${ids.length} solved · ` + Object.entries(by).map(([l, n]) => `${PZ_LEVELS[l]} ${n}`).join(' · ') + ` · best streak ${(p.puzzles || {}).best || 0}` : 'No puzzles solved yet.' }).catch(() => { const el = $('#dPz'); if (el) el.textContent = '' });
   $('#dClose').onclick = () => { d.hidden = true; openUid = null };
   $('#dpSave').onclick = async () => { const ph = $('#dpPhone').value.trim(), em = $('#dpEmail').value.trim().toLowerCase(); try { await F.updateDoc(F.doc(db, 'users', uid), { parentPhone: ph, parentEmail: em }); s.parentPhone = ph; s.parentEmail = em; $('#dpMsg').className = 'pmsg2 ok'; $('#dpMsg').textContent = 'Saved.' } catch { $('#dpMsg').className = 'pmsg2 err'; $('#dpMsg').textContent = 'Could not save.' } };

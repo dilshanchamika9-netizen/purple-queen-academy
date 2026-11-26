@@ -43,7 +43,18 @@ const KIND = { lesson: 'Lesson', puzzles: 'Puzzles', task: 'Board task', text: '
           <span class="hic">${ICON[s.kind] || ICON.text}</span>
           <div class="ht"><small>${KIND[s.kind] || 'Task'}</small><b>${esc(s.title)}</b><span>${s.lock ? esc(s.lock) : esc(s.sub)}</span></div>
           <div class="ha">${s.kind === 'text' ? `<label class="tick"><input type="checkbox" data-i="${s.i}" ${s.done ? 'checked' : ''}> Done</label>`
-            : s.lock ? '<span class="lockt">Locked</span>' : s.href ? `<a class="btn ${s.done ? 'btn-ghost' : 'btn-primary'} btn-sm" href="${s.href}">${s.done ? 'Review' : s.kind === 'lesson' && s.r.mark != null ? 'Continue' : 'Start'}</a>` : ''}</div></li>`).join('')}</ol></section>`;
+            : s.lock ? '<span class="lockt">Locked</span>' : s.href ? `<a class="btn ${s.done ? 'btn-ghost' : 'btn-primary'} btn-sm" href="${s.href}">${s.done ? 'Review' : s.kind === 'lesson' && s.r.mark != null ? 'Continue' : 'Start'}</a>` : ''}</div></li>`).join('')}</ol></section>${resultCard(x)}${notesCard()}`;
+  }
+  function resultCard(x) {
+    const it = a.items.find(i => i.t === 'puzzles'), ids = (it && it.sets && it.sets[uid]) || [], pz = (st && st.pz) || {}; if (!ids.length || !(st && st.sub)) return '';
+    const sol = ids.filter(id => pz[id] && pz[id].s === 's').length, cl = ids.filter(id => pz[id] && pz[id].s === 's' && !pz[id].r && !pz[id].h).length, hn = ids.reduce((n, id) => n + ((pz[id] && pz[id].h) || 0), 0), rt = ids.reduce((n, id) => n + ((pz[id] && pz[id].r) || 0), 0);
+    const bd = []; if (cl >= 3) bd.push('🎯 Sharp eye'); if (!hn) bd.push('🧠 No hints needed'); if (cl === ids.length) bd.push('💎 Flawless'); bd.push('🛡️ Submitted');
+    return `<section class="acc-card hwres"><h3>Your result</h3><div class="hwr-t"><div><b>${sol}/${ids.length}</b><small>puzzles solved</small></div><div><b>${cl}</b><small>first try</small></div><div><b>${hn}</b><small>hints</small></div><div><b>${rt}</b><small>retries</small></div></div><p class="hwr-b">${bd.map(x => `<span>${x}</span>`).join('')}</p></section>`;
+  }
+  function notesCard() {
+    const nt = (st && st.notes) || {}, it = a.items.find(i => i.t === 'puzzles'), ids = (it && it.sets && it.sets[uid]) || [];
+    const rows = ids.map((id, k) => ({ k, t: (nt[id] || '').trim() })).filter(r => r.t); if (!rows.length) return '';
+    return `<section class="acc-card hwnotes"><h3>Notes from your coach</h3><ul>${rows.map(r => `<li><b>Puzzle ${r.k + 1}</b><span>${esc(r.t)}</span></li>`).join('')}</ul></section>`;
   }
   paint();
   root.addEventListener('change', async (e) => {

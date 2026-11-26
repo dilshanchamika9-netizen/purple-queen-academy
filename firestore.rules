@@ -54,14 +54,20 @@ service cloud.firestore {
     match /astatus/{id} {
       // a student may also read their own document before it exists (id ends with their uid): the puzzle page does this the first time it opens
       allow read: if isCoach() || (isStudent() && id.matches('.*_' + request.auth.uid)) || (signedIn() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
-      // pz = what the student did on each homework puzzle (result, retries, hints); sub = when the puzzles were submitted (locks the document)
-      allow create: if isStudent() && request.resource.data.uid == request.auth.uid
-        && id == request.resource.data.aid + '_' + request.auth.uid
-        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'updatedAt']);
-      allow update: if isStudent() && request.resource.data.uid == request.auth.uid
-        && id == request.resource.data.aid + '_' + request.auth.uid
-        && !('sub' in resource.data)
-        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'updatedAt']);
+      // pz = what the student did on each homework puzzle (result, retries, hints, wrong moves); sub = when the puzzles were submitted (locks the student's part);
+      // notes = the coach's teaching note per puzzle, written only by a coach
+      allow create: if (isStudent() && request.resource.data.uid == request.auth.uid
+          && id == request.resource.data.aid + '_' + request.auth.uid
+          && !('notes' in request.resource.data)
+          && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'updatedAt']))
+        || (isCoach() && id == request.resource.data.aid + '_' + request.resource.data.uid
+          && request.resource.data.keys().hasOnly(['aid', 'uid', 'notes', 'updatedAt']));
+      allow update: if (isStudent() && request.resource.data.uid == request.auth.uid
+          && id == request.resource.data.aid + '_' + request.auth.uid
+          && !('sub' in resource.data)
+          && request.resource.data.get('notes', null) == resource.data.get('notes', null)
+          && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'notes', 'updatedAt']))
+        || (isCoach() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes', 'updatedAt']));
       allow delete: if false;
     }
     // attendance: one document per class (date + batch); marks maps student uid to p (present), l (late) or a (absent)

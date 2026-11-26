@@ -16,8 +16,14 @@
     const b2 = b.cloneNode(true); b2.className = ''; b2.onclick = b.onclick; const paint2 = paint; 
     if (cta) { cta.appendChild(b); fab.classList.add('fab-m') }
     fab.appendChild(b2); document.body.appendChild(fab);
-    const sync = () => { b.innerHTML = b2.innerHTML = de.dataset.theme === 'dark' ? ICON.sun : ICON.moon };
-    b.onclick = b2.onclick = () => { de.dataset.theme = de.dataset.theme === 'dark' ? 'light' : 'dark'; ls.set('pq-theme', de.dataset.theme); sync() }; sync();
+    // portal and puzzle pages: the light / dark button always sits in the top right of the header
+    const tb = b.cloneNode(true), host = document.getElementById('spUser'), pl = document.querySelector('.pl-bar .pl-prog');
+    if (host) { tb.className = 'themebtn top-theme'; host.parentNode.insertBefore(tb, host); fab.style.display = 'none' }
+    else if (pl) { tb.className = 'themebtn top-theme'; pl.appendChild(tb); fab.style.display = 'none' }
+    const all = () => [b, b2].concat(host || pl ? [tb] : []);
+    const sync = () => { all().forEach(x => x.innerHTML = de.dataset.theme === 'dark' ? ICON.sun : ICON.moon) };
+    const flip = () => { de.dataset.theme = de.dataset.theme === 'dark' ? 'light' : 'dark'; ls.set('pq-theme', de.dataset.theme); sync() };
+    all().forEach(x => x.onclick = flip); sync();
     // ripple
     document.addEventListener('pointerdown', (e) => {
       const t = e.target.closest('.btn, .mission .go'); if (!t) return;

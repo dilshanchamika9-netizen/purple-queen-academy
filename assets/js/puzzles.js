@@ -31,7 +31,7 @@
   const FREE_PER_LEVEL = 10; const free = new Set(); let nextT = null, autoNext = store.get('auto', true);
   const qp = new URLSearchParams(location.search), hwId = qp.get('hw'), hwSet = hwId && qp.get('set') ? new Set(qp.get('set').split(',').filter(Boolean)) : null;
   const V = (document.currentScript && document.currentScript.src.split('?')[1]) || '';
-  let HW = null;   // homework mode (signed-in student): retries, hints and the result of every puzzle are saved for the coach
+  let HW = null, t0 = 0, hwWrong = null;   // homework mode (signed-in student): retries, hints and the result of every puzzle are saved for the coach
   let cur = null, game = null, moves = [], idx = 0, orient = 'w', sel = null, busy = false, mistakes = 0, lastMove = null, hinted = false;
 
   root.innerHTML = `
@@ -94,6 +94,7 @@
   const pool = () => hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : ALL.filter(p => p.l === level && (theme === 'all' || p.t.includes(theme)) && allowed(p));
   const rec = (id) => HW.pz[id] || (HW.pz[id] = {});
   const hwFinal = (id) => { const r = HW.pz[id]; return r ? (r.s === 's' || r.s === 'f') : !!solved[id] };
+  const addSec = (r) => { if (t0) { r.sec = Math.round(((r.sec || 0) + Math.min(600, (Date.now() - t0) / 1000)) * 10) / 10; t0 = Date.now() } };
   const hwSave = (id) => { const r = HW.pz[id]; r.t = Date.now(); return HW.save({ pz: { [id]: r } }) };
   const retriesLeft = () => cur && HW ? Math.max(0, 2 - (rec(cur.id).r || 0)) : 0;
   function hwBtns() {
@@ -122,7 +123,7 @@
     if (HW && p && !isRetry) { const r = rec(p.id); if (r.cw > 0 && r.s !== 's' && r.s !== 'f') { r.r = (r.r || 0) + 1; r.cw = 0; if (r.r > 2) r.s = 'f'; hwSave(p.id) } if (r.s === 's' || r.s === 'f') p = null }   // leaving after a wrong move uses up a retry
     if (!p) { cur = null; const hwDone = hwSet && access(); if (HW) { $('#pzSubmit').hidden = !!HW.sub; $('#pzNext').hidden = true; $('#pzRetry').hidden = true; $('#pzHint').hidden = true; const n = Object.keys(HW.pz).length; const tot = hwSet.size, got = [...hwSet].filter(id => HW.pz[id] ? HW.pz[id].s === 's' : !!solved[id]).length; hwBtns(); busy = true; paintSide(); return msg(HW.sub ? `Submitted. You solved ${got} of ${tot}. Your coach can see the result.` : `All puzzles are done: ${got} of ${tot} solved. Press Submit to send your homework. You cannot change anything after you submit.`, 'ok') }
       msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
-    cur = p; if (HW) { $('#pzNext').hidden = false; $('#pzRetry').hidden = false; $('#pzHint').hidden = false; $('#pzSubmit').hidden = true }
+    cur = p; t0 = Date.now(); if (HW) { $('#pzNext').hidden = false; $('#pzRetry').hidden = false; $('#pzHint').hidden = false; $('#pzSubmit').hidden = true }
     $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
     orient = game.turn() === 'w' ? 'b' : 'w';  // the solver plays the side that moves after the first move
@@ -198,14 +199,14 @@
   function sanOf(fen, u) { try { const g = new window.Chess(fen); return g.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san } catch { return u } }
   function reject(before, reply, myV, bestV) {
     mistakes++; streak = 0; store.set('streak', 0);
-    if (HW) { const r = rec(cur.id); r.w = (r.w || 0) + 1; r.cw = (r.cw || 0) + 1; if ((r.r || 0) >= 2) { r.s = 'f'; r.cw = 0 } hwSave(cur.id) }
+    if (HW) { const r = rec(cur.id), um = lastMove; r.w = (r.w || 0) + 1; r.cw = (r.cw || 0) + 1; addSec(r); r.mv = (r.mv || []).concat([{ f: before, m: um ? uci(um) : '', s: um ? um.san : '', x: um && um.captured ? 1 : 0, b: moves[idx] || '', n: (r.r || 0) + 1 }]).slice(-6); hwWrong = r.mv[r.mv.length - 1]; if ((r.r || 0) >= 2) { r.s = 'f'; r.cw = 0 } hwSave(cur.id) }
     else if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
     backFen = before; paintSide(); hwBtns();
     const done = () => { if (!HW) $('#pzBack').hidden = false; busy = true };
     const tail = HW ? (retriesLeft() > 0 ? ' Press Retry to try again.' : ' No retries left. Go to the next puzzle.') : ' Take the move back and find a stronger one.';
     if (reply && !game.game_over()) {
       setTimeout(() => {
-        const r = play(reply); lastMove = r; draw(r);
+        const r = play(reply); lastMove = r; draw(r); if (HW && hwWrong && cur) { hwWrong.o = r.san; hwSave(cur.id) }
         const why = myV == null ? '' : myV <= -90000 ? ' Now you get checkmated.' : myV < -150 ? ` Now ${oppName()} is better (${show(myV)}).` : myV < 150 ? ` The position is about equal now (${show(myV)}).` : ` You are still better (${show(myV)}), but the best move wins much more.`;
         msg(`${oppName()} answers ${r.san}.${why}${tail}`, 'err');
         bEl.classList.remove('shake'); void bEl.offsetWidth; bEl.classList.add('shake'); done();
@@ -218,7 +219,7 @@
   }
   function finish(alt) {
     const hr = HW ? rec(cur.id) : null, clean = HW ? !(hr.r || hr.h) : mistakes === 0 && !hinted;
-    if (HW) { hr.s = 's'; hr.cw = 0; hwSave(cur.id); solved[cur.id] = 1; store.set('solved', solved); if (clean) { streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) } }
+    if (HW) { hr.s = 's'; hr.cw = 0; addSec(hr); hwSave(cur.id); solved[cur.id] = 1; store.set('solved', solved); if (clean) { streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) } }
     else if (clean && !failed[cur.id]) { solved[cur.id] = 1; store.set('solved', solved); streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) }
     else if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
     if (!alt) msg(clean ? (game.in_checkmate() ? 'Checkmate! Puzzle solved.' : 'Puzzle solved!') : HW ? 'Solved. Well done! On to the next one.' : 'Solved, with help. Try the next one.', 'ok');
@@ -261,7 +262,7 @@
     const tb = e.target.closest('#pzThemes button'); if (tb) { theme = tb.dataset.t; load(pick()); return }
   });
   $('#pzNext').onclick = () => {
-    if (HW && cur && !hwFinal(cur.id)) { const r = rec(cur.id); r.s = 'f'; r.k = 1; r.cw = 0; hwSave(cur.id) }   // leaving a puzzle that is not solved ends it: it cannot be repeated
+    if (HW && cur && !hwFinal(cur.id)) { const r = rec(cur.id); addSec(r); r.s = 'f'; r.k = 1; r.cw = 0; hwSave(cur.id) }   // leaving a puzzle that is not solved ends it: it cannot be repeated
     load(pick());
   };
   $('#pzSubmit').onclick = async (e) => {

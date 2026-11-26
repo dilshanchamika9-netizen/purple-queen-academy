@@ -193,6 +193,18 @@ const pzSets = await coachPage.evaluate(async (uid) => {
 }, uid1);
 ok(pzSets.length === 2 && pzSets.every(a => a.length === 5), 'coach gave two puzzle sets of 5 to the student');
 ok(pzSets.length === 2 && !pzSets[0].some(id => pzSets[1].includes(id)), 'the second puzzle set repeats nothing from the first');
+// Give homework from a student's card: only that student, no other choices; the Homework tab itself is unchanged
+await tab('students');
+await coachPage.click(`#stuTable [data-uid="${uid1}"] button[data-a="hw"]`);
+ok(await coachPage.locator('#hFocus').isVisible() && !(await coachPage.locator('#hWhoSeg').isVisible()), 'Give homework on a student shows only that student');
+ok((await coachPage.textContent('#hFocus')).includes('PQ0001'), 'the one-student banner names the student');
+await tab('homework');
+ok(!(await coachPage.locator('#hFocus').isVisible()) && await coachPage.locator('#hWhoSeg').isVisible(), 'the Homework tab itself still offers all students');
+// review popup
+await coachPage.click('#hwList details.hw summary'); await coachPage.click('#hwList details.hw button[data-rv]');
+await coachPage.waitForSelector('.rv-ov .rv-tabs', { timeout: 10000 });
+ok((await coachPage.locator('.rv-tabs button').count()) === 3, 'review popup has Lessons, Puzzles and Skills tabs');
+await coachPage.keyboard.press('Escape'); ok((await coachPage.locator('.rv-ov').count()) === 0, 'Escape closes the review popup');
 await pg.goto(`${SITE}/account.html`); await pg.waitForSelector('#hwBox .sp-hwgrid', { timeout: 15000 });
 ok((await pg.textContent('#hwBox')).includes('5 puzzles') && !(await pg.textContent('#hwBox')).includes('Beginner'), 'student portal shows the puzzle homework as a short summary');
 const pzHw = await pg.getAttribute('#hwBox .sp-hw:has-text("Puzzles B") a.hwlink', 'href');
@@ -422,8 +434,10 @@ ok(/purple-queen-students-.*\.csv/.test(dl.suggestedFilename()), 'coach can down
 await coachPage.evaluate((u) => document.querySelector(`#stuTable [data-uid="${u}"] button[data-a="reset"]`).click(), uid1);
 await coachPage.waitForTimeout(1500);
 execSync('node tools/portal-admin.mjs', { stdio: 'inherit', env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', GCLOUD_PROJECT: P } });
-await coachPage.waitForSelector('#queue code', { timeout: 15000 });
-const newPw = (await coachPage.textContent('#queue code')).trim();
+await coachPage.waitForSelector(`#stuTable [data-uid="${uid1}"] .cp-cred code.pw`, { timeout: 15000 });
+ok((await coachPage.locator('#queue').count()) === 0, 'passwords are no longer a separate list');
+const newPw = (await coachPage.getAttribute(`#stuTable [data-uid="${uid1}"] .cp-cred code.pw`, 'data-pw')).trim();
+ok((await coachPage.textContent(`#stuTable [data-uid="${uid1}"] .cp-cred code.pw`)).includes('•'), 'the password is hidden until the coach presses Show');
 ok(/^[a-z]+-\d{4}$/.test(newPw), 'coach sees the new temporary password ' + newPw);
 pg = await page();
 await pg.goto(`${SITE}/login.html?emu=1`);
