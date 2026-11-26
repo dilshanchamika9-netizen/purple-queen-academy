@@ -988,3 +988,21 @@ html[data-theme="dark"] .lh-how > div { background:#150C28; border-color:rgba(18
 .lhm-ring { --p:0; width:150px; height:150px; border-radius:50%; background:conic-gradient(#E8C98B calc(var(--p)*1%), #ffffff24 0); display:grid; place-items:center } .lhm-ring i { width:118px; height:118px; border-radius:50%; background:#2A1240; display:grid; place-items:center; align-content:center; font-style:normal; text-align:center } .lhm-ring b { font:700 30px var(--display) } .lhm-ring small { font-size:11px; opacity:.75 }
 .jbar { position:relative; margin-top:14px; height:22px; border-radius:11px; background:#ffffff26; overflow:hidden } .jbar i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#E8C98B,#C9A65B) } .jbar span { position:relative; display:block; text-align:center; font:700 11.5px/22px var(--body, inherit); color:#fff; mix-blend-mode:normal; text-shadow:0 1px 2px #0006 }
 @media (max-width:700px) { .lhm { grid-template-columns:1fr } .lhm-ring { width:110px; height:110px } .lhm-ring i { width:86px; height:86px } }
+
+/* learn: guest layout per mock-up */
+.lwrap { display:flex; flex-direction:column }
+.lwrap > .lh-pathw { order:1 } .lwrap > .lh-try { order:2; margin-top:56px } .lwrap > #learnApp { order:3 }
+.lwrap > .jhead, .lwrap > .journey { order:4 }
+.pq-guest .jhead, .pq-guest .journey { display:none } .pq-member .jmem { order:4 }
+.lh-pathw { margin-top:26px } .lh-pathw h2 em, .lh-try h2 em { font-style:italic; color:var(--purple) }
+.lh-path { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; align-items:start }
+.lvl { background:#fff; border:1px solid var(--line); border-radius:22px; padding:18px } .lvl small { color:var(--muted); letter-spacing:.1em; text-transform:uppercase; font-size:11px } .lvl h3 { font-size:24px; margin:2px 0 }
+.mods { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:7px } .mods li { display:flex; gap:10px; align-items:center; padding:8px 11px; border-radius:12px; background:var(--mist); font-size:14px }
+.mods .n { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:var(--line); font-size:12px; flex:none } .mods .mt b { display:block; font-weight:600; line-height:1.25 } .mods .mt small { text-transform:none; letter-spacing:0; font-size:12px }
+.mods li.open { background:#EFE7FB; border:1px solid var(--purple) } .mods li.open .n { background:#1E9E66; color:#fff } .mods li.open b { color:var(--purple) }
+.mods li.lk { color:var(--muted) } .mods li.lk em { margin-left:auto; font-style:normal; font-size:11.5px; white-space:nowrap } .mods li .tagf { margin-left:auto }
+.lh-kp { display:grid !important; grid-template-columns:repeat(4,1fr); gap:12px } .lh-kp div { padding:8px 16px }
+.lhero { padding:26px 32px } .lhero p { max-width:80ch } .lh-row { margin-top:14px }
+.lh-ghost { background:transparent; color:#fff; border:1px solid #ffffff55 }
+html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255,.2) } html[data-theme="dark"] .lvl h3 { color:#F4ECFF } html[data-theme="dark"] .mods li { background:#1d1236 } html[data-theme="dark"] .mods li.open { background:#2A1A47 }
+@media (max-width:900px) { .lh-path { grid-template-columns:1fr } .lh-kp { grid-template-columns:repeat(2,1fr) } }
