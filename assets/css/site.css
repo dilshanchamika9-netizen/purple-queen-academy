@@ -1087,3 +1087,13 @@ html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255
 .lh-mbody .lp-boardwrap { padding:12px 12px 30px 34px !important; box-sizing:border-box }
 .lh-mbody .lb { width:100% !important; height:auto }
 .lh-jh, .lh-jh p, .lh-jh h3 { color:#fff !important } .lh-jh small { color:#E8C98B !important }
+
+/* lesson player: no step arrows, no extra Start practice button (header has Watch / Practice) */
+#panel .ctrl .ic, #panel .go-prac { display:none !important }
+#panel .ctrl { justify-content:stretch } #panel .ctrl .pl { flex:1 }
+/* theatre panel v4: compact card centred beside the board */
+.lh-mbody #learnApp { grid-template-rows:auto minmax(0,1fr) minmax(0,1fr) auto !important }
+.lh-mbody .lp-panel { align-self:start !important; overflow:visible !important; padding:20px 24px 22px !important; border-radius:22px !important; box-shadow:0 24px 50px -34px #2A1240; min-height:0 !important; height:auto !important }
+.lh-mbody .lp-panel .cap, .lh-mbody .lp-panel .q { font-size:clamp(20px,1.9vw,26px) !important; line-height:1.4 !important; min-height:0 !important; margin:12px 0 18px !important }
+.lh-mbody .lp-panel .ctrl { margin:0 }
+.lh-mbody .lp-top { padding-bottom:14px !important }
