@@ -375,8 +375,8 @@ await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .s
 ok(await pg.locator('#portalCourse .sp-mod[data-k="2"].act').count() === 1, 'the student now starts at that module');
 await coachPage.click('details.mrow[data-k="2"] > summary', { force: true }).catch(() => {});
 await coachPage.click('button[data-pc="resetall"]'); await coachPage.click('button[data-pc="resetall"]');
-await coachPage.waitForFunction(() => document.querySelector('#pcMsg') && document.querySelector('#pcMsg').textContent.startsWith('Saved'), null, { timeout: 10000 });
 pv = await fsDoc('progress/' + uid1);
+for (let i = 0; i < 40 && Object.keys(pv.fields.lessons.mapValue.fields || {}).length; i++) { await new Promise(r => setTimeout(r, 250)); pv = await fsDoc('progress/' + uid1) }   // the earlier “Saved” message is still on screen, so poll the data itself
 ok(!Object.keys(pv.fields.lessons.mapValue.fields || {}).length && +pv.fields.epoch.integerValue > 1, 'coach resets all lessons to 0 (epoch raised so the student’s device wipes old marks)');
 await pg.goto(`${SITE}/course.html`); await pg.waitForSelector('#portalCourse .sp-mod', { timeout: 15000 });
 ok((await pg.textContent('#portalCourse .sp-mod.act')).includes('0/'), 'after the reset the student is back at the first module');
