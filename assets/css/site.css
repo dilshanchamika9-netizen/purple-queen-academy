@@ -1097,3 +1097,14 @@ html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255
 .lh-mbody .lp-panel .cap, .lh-mbody .lp-panel .q { font-size:clamp(20px,1.9vw,26px) !important; line-height:1.4 !important; min-height:0 !important; margin:12px 0 18px !important }
 .lh-mbody .lp-panel .ctrl { margin:0 }
 .lh-mbody .lp-top { padding-bottom:14px !important }
+
+/* theatre: practice mode fits inside the card, never overlaps the lesson chips */
+.lh-mbody #learnApp.practicing { grid-template-rows:auto auto minmax(0,1fr) auto !important }
+.lh-mbody #learnApp.practicing .lp-top { align-self:end !important; padding-bottom:10px !important }
+.lh-mbody .lp-panel { max-height:100%; overflow:auto !important; scrollbar-width:thin }
+.lh-mbody .lp-panel .pbar { margin-bottom:10px !important }
+.lh-mbody .lp-panel .q { font-size:clamp(18px,1.7vw,23px) !important; margin:8px 0 10px !important }
+.lh-mbody .lp-panel .opts { gap:8px; margin-top:6px } .lh-mbody .lp-panel .opts button { padding:9px 12px !important; font-size:14.5px !important }
+.lh-mbody .lp-panel .hint, .lh-mbody .lp-panel .fb { margin:6px 0 !important }
+.lh-mbody .lp-panel .res { padding:0 !important } .lh-mbody .lp-panel .gauge { transform:scale(.8); margin:-8px auto -6px }
+.lh-mbody .lp-panel .nx { margin-top:8px }
