@@ -50,6 +50,6 @@ const KIND = { lesson: 'Lesson', puzzles: 'Puzzles', task: 'Board task', text: '
     const c = e.target.closest('input[data-i]'); if (!c) return;
     const key = aid + '_' + uid, checks = { ...((st && st.checks) || {}) }; if (c.checked) checks[c.dataset.i] = true; else delete checks[c.dataset.i];
     const next = { aid, uid, checks };
-    try { await F.setDoc(F.doc(db, 'astatus', key), { ...next, updatedAt: F.serverTimestamp() }); st = next; paint() } catch { c.checked = !c.checked }
+    try { await F.setDoc(F.doc(db, 'astatus', key), { ...next, updatedAt: F.serverTimestamp() }, { merge: true }); st = { ...(st || {}), ...next }; paint() } catch { c.checked = !c.checked }
   });
 })();

@@ -30,6 +30,8 @@
   const access = () => { if (PUBLIC) return false; try { return localStorage.getItem('pq-auth') === '1' && localStorage.getItem('pq-access') !== '0' } catch { return false } };
   const FREE_PER_LEVEL = 10; const free = new Set(); let nextT = null, autoNext = store.get('auto', true);
   const qp = new URLSearchParams(location.search), hwId = qp.get('hw'), hwSet = hwId && qp.get('set') ? new Set(qp.get('set').split(',').filter(Boolean)) : null;
+  const V = (document.currentScript && document.currentScript.src.split('?')[1]) || '';
+  let HW = null;   // homework mode (signed-in student): retries, hints and the result of every puzzle are saved for the coach
   let cur = null, game = null, moves = [], idx = 0, orient = 'w', sel = null, busy = false, mistakes = 0, lastMove = null, hinted = false;
 
   root.innerHTML = `
@@ -47,13 +49,12 @@
           <button type="button" class="btn btn-primary btn-sm" id="pzBack" hidden>↶ Take back</button><button type="button" class="btn btn-ghost btn-sm" id="pzHint">Hint</button>
           <button type="button" class="btn btn-ghost btn-sm" id="pzRetry">Retry</button>
           <button type="button" class="btn btn-ghost btn-sm" id="pzShow">Show solution</button>
-          <button type="button" class="btn btn-primary btn-sm" id="pzNext">Next puzzle →</button>
+          <button type="button" class="btn btn-primary btn-sm" id="pzNext">Next puzzle →</button><button type="button" class="btn btn-primary btn-sm" id="pzSubmit" hidden>Submit homework</button>
         </div>
       </div>
       <div class="pz-gate" id="pzGate" hidden></div>
       <label class="pz-auto" for="pzAutoChk"><span><b>Auto next</b><small>Open the next puzzle after a correct answer</small></span><input type="checkbox" id="pzAutoChk" role="switch"></label>
       <div class="pz-prog"><div class="pz-prog-h"><span id="pzLvName"></span><span id="pzLvCount"></span></div><i><b id="pzLvBar"></b></i></div>
-      <p class="pz-src">Puzzles from the Lichess open puzzle database (public domain).</p>
     </div>
   </div>`;
 
@@ -91,11 +92,23 @@
   /* ---------- flow ---------- */
   const allowed = (p) => access() || free.has(p.id);
   const pool = () => hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : ALL.filter(p => p.l === level && (theme === 'all' || p.t.includes(theme)) && allowed(p));
+  const rec = (id) => HW.pz[id] || (HW.pz[id] = {});
+  const hwFinal = (id) => { const r = HW.pz[id]; return r ? (r.s === 's' || r.s === 'f') : !!solved[id] };
+  const hwSave = (id) => { const r = HW.pz[id]; r.t = Date.now(); return HW.save({ pz: { [id]: r } }) };
+  const retriesLeft = () => cur && HW ? Math.max(0, 2 - (rec(cur.id).r || 0)) : 0;
+  function hwBtns() {
+    if (!HW) return;
+    const r = cur ? rec(cur.id) : {}, left = cur ? retriesLeft() : 0, fin = cur && hwFinal(cur.id);
+    const rb = $('#pzRetry'); rb.textContent = `Retry · ${left} left`; rb.disabled = !cur || HW.sub || left <= 0 || r.s === 's';
+    $('#pzHint').disabled = !cur || HW.sub || !!fin;
+    $('#pzNext').disabled = !cur || HW.sub;
+  }
   function pick() {
     const list = pool(); if (!list.length) return null;
-    let unsolved = list.filter(p => !solved[p.id]);
+    let unsolved = list.filter(p => HW ? !hwFinal(p.id) : !solved[p.id]);
     if (cur && unsolved.length > 1) unsolved = unsolved.filter(p => p.id !== cur.id);
     if (!unsolved.length) { if (hwSet || !access()) return null; unsolved = list }
+    if (HW && HW.sub) return null;
     return unsolved[Math.floor(Math.random() * unsolved.length)];
   }
   function keepInView() {
@@ -104,10 +117,12 @@
     if (window.__pzFirst !== false) { window.__pzFirst = false; return }
     if (r.top < top || r.bottom > innerHeight) { scrollBy({ top: r.top - top - 8, behavior: 'smooth' }) }
   }
-  function load(p) {
+  function load(p, isRetry) {
     clearTimeout(nextT);
-    if (!p) { cur = null; const hwDone = hwSet && access(); msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
-    cur = p;
+    if (HW && p && !isRetry) { const r = rec(p.id); if (r.cw > 0 && r.s !== 's' && r.s !== 'f') { r.r = (r.r || 0) + 1; r.cw = 0; if (r.r > 2) r.s = 'f'; hwSave(p.id) } if (r.s === 's' || r.s === 'f') p = null }   // leaving after a wrong move uses up a retry
+    if (!p) { cur = null; const hwDone = hwSet && access(); if (HW) { $('#pzSubmit').hidden = !!HW.sub; $('#pzNext').hidden = true; $('#pzRetry').hidden = true; $('#pzHint').hidden = true; const n = Object.keys(HW.pz).length; const tot = hwSet.size, got = [...hwSet].filter(id => HW.pz[id] ? HW.pz[id].s === 's' : !!solved[id]).length; hwBtns(); busy = true; paintSide(); return msg(HW.sub ? `Submitted. You solved ${got} of ${tot}. Your coach can see the result.` : `All puzzles are done: ${got} of ${tot} solved. Press Submit to send your homework. You cannot change anything after you submit.`, 'ok') }
+      msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
+    cur = p; if (HW) { $('#pzNext').hidden = false; $('#pzRetry').hidden = false; $('#pzHint').hidden = false; $('#pzSubmit').hidden = true }
     $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
     orient = game.turn() === 'w' ? 'b' : 'w';  // the solver plays the side that moves after the first move
@@ -117,7 +132,7 @@
     $('#pzMeta').innerHTML = hwSet && access() ? '' : `<span>Rating ${p.r}</span>${p.t.slice(0, 3).map(t => `<span>${TNAME[t] || t}</span>`).join('')}`;
     $('#pzMeta').classList.add('hidden-themes');
     setTimeout(() => { const m = play(moves[0]); lastMove = m; idx = 1; draw(m); busy = false; msg(`Find the best move for ${orient === 'w' ? 'White' : 'Black'}.`, '') }, 650);
-    paintSide();
+    paintSide(); hwBtns();
   }
   function msg(t, cls) { const e = $('#pzMsg'); e.className = 'pz-msg ' + (cls || ''); e.textContent = t }
   /* ---------- engine (Stockfish 19 lite, in a Web Worker) ---------- */
@@ -183,35 +198,38 @@
   function sanOf(fen, u) { try { const g = new window.Chess(fen); return g.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }).san } catch { return u } }
   function reject(before, reply, myV, bestV) {
     mistakes++; streak = 0; store.set('streak', 0);
-    if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
-    backFen = before; paintSide();
-    const done = () => { $('#pzBack').hidden = false; busy = true };
+    if (HW) { const r = rec(cur.id); r.w = (r.w || 0) + 1; r.cw = (r.cw || 0) + 1; if ((r.r || 0) >= 2) { r.s = 'f'; r.cw = 0 } hwSave(cur.id) }
+    else if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
+    backFen = before; paintSide(); hwBtns();
+    const done = () => { if (!HW) $('#pzBack').hidden = false; busy = true };
+    const tail = HW ? (retriesLeft() > 0 ? ' Press Retry to try again.' : ' No retries left. Go to the next puzzle.') : ' Take the move back and find a stronger one.';
     if (reply && !game.game_over()) {
       setTimeout(() => {
         const r = play(reply); lastMove = r; draw(r);
         const why = myV == null ? '' : myV <= -90000 ? ' Now you get checkmated.' : myV < -150 ? ` Now ${oppName()} is better (${show(myV)}).` : myV < 150 ? ` The position is about equal now (${show(myV)}).` : ` You are still better (${show(myV)}), but the best move wins much more.`;
-        msg(`${oppName()} answers ${r.san}.${why} Take the move back and find a stronger one.`, 'err');
+        msg(`${oppName()} answers ${r.san}.${why}${tail}`, 'err');
         bEl.classList.remove('shake'); void bEl.offsetWidth; bEl.classList.add('shake'); done();
       }, 450);
-    } else { msg('That move doesn’t work. Take it back and try again.', 'err'); done() }
+    } else { msg(HW ? 'That move doesn’t work.' + tail : 'That move doesn’t work. Take it back and try again.', 'err'); done() }
   }
   function takeBack() {
-    if (!backFen) return; game = new window.Chess(backFen); backFen = null; lastMove = null; sel = null; draw(); busy = false;
+    if (!backFen || HW) return; game = new window.Chess(backFen); backFen = null; lastMove = null; sel = null; draw(); busy = false;
     $('#pzBack').hidden = true; msg(`Your move: find the best move for ${side()}.`, '');
   }
   function finish(alt) {
-    const clean = mistakes === 0 && !hinted;
-    if (clean && !failed[cur.id]) { solved[cur.id] = 1; store.set('solved', solved); streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) }
+    const hr = HW ? rec(cur.id) : null, clean = HW ? !(hr.r || hr.h) : mistakes === 0 && !hinted;
+    if (HW) { hr.s = 's'; hr.cw = 0; hwSave(cur.id); solved[cur.id] = 1; store.set('solved', solved); if (clean) { streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) } }
+    else if (clean && !failed[cur.id]) { solved[cur.id] = 1; store.set('solved', solved); streak++; best = Math.max(best, streak); store.set('streak', streak); store.set('best', best) }
     else if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) }
-    if (!alt) msg(clean ? (game.in_checkmate() ? 'Checkmate! Puzzle solved.' : 'Puzzle solved!') : 'Solved, with help. Try the next one.', 'ok');
+    if (!alt) msg(clean ? (game.in_checkmate() ? 'Checkmate! Puzzle solved.' : 'Puzzle solved!') : HW ? 'Solved. Well done! On to the next one.' : 'Solved, with help. Try the next one.', 'ok');
     if (clean && window.PQ_CELEBRATE) PQ_CELEBRATE({ title: 'Congratulations!', sub: game.in_checkmate() ? `Checkmate! Streak ${streak}` : `Puzzle solved · streak ${streak}`, size: 'big' });
     $('#pzMeta').classList.remove('hidden-themes');
-    bEl.classList.remove('win'); void bEl.offsetWidth; bEl.classList.add('win'); busy = true; paintSide();
+    bEl.classList.remove('win'); void bEl.offsetWidth; bEl.classList.add('win'); busy = true; paintSide(); hwBtns();
     clearTimeout(nextT); const me = cur;
     if (autoNext) nextT = setTimeout(() => { if (cur === me) load(pick()) }, clean ? 2800 : 3600);
   }
   function showSolution() {
-    if (!cur) return; clearTimeout(nextT); if (backFen) { game = new window.Chess(backFen); backFen = null; $('#pzBack').hidden = true; draw() } busy = true; mistakes++;
+    if (!cur || HW) return; clearTimeout(nextT); if (backFen) { game = new window.Chess(backFen); backFen = null; $('#pzBack').hidden = true; draw() } busy = true; mistakes++;
     const step = () => { if (idx >= moves.length) { msg('Solution shown. Try the next puzzle.', ''); $('#pzMeta').classList.remove('hidden-themes'); if (!solved[cur.id]) { failed[cur.id] = 1; store.set('failed', failed) } streak = 0; store.set('streak', 0); paintSide(); return } const m = play(moves[idx]); lastMove = m; idx++; draw(m); setTimeout(step, 750) };
     step();
   }
@@ -225,7 +243,7 @@
 
   /* ---------- side panels ---------- */
   function paintSide() {
-    const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => solved[p.id]).length;
+    const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => HW ? (HW.pz[p.id] ? HW.pz[p.id].s === 's' : !!solved[p.id]) : solved[p.id]).length;
     const gate = $('#pzGate'); gate.hidden = access() && !hwSet;
     gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? (PUBLIC && signedIn() ? `<b>You are signed in.</b> Your full puzzle trainer is in your portal. <a href="${portalHref()}">Open it</a>` : `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. Academy students train with 5,000+ puzzles. <a href="#pzJoin">See how</a>`) : '';
     $('#pzAutoChk').checked = autoNext;
@@ -242,18 +260,34 @@
     const lb = e.target.closest('#pzLevels button'); if (lb) { level = +lb.dataset.l; store.set('level', level); theme = 'all'; load(pick()); return }
     const tb = e.target.closest('#pzThemes button'); if (tb) { theme = tb.dataset.t; load(pick()); return }
   });
-  $('#pzNext').onclick = () => load(pick());
+  $('#pzNext').onclick = () => {
+    if (HW && cur && !hwFinal(cur.id)) { const r = rec(cur.id); r.s = 'f'; r.k = 1; r.cw = 0; hwSave(cur.id) }   // leaving a puzzle that is not solved ends it: it cannot be repeated
+    load(pick());
+  };
+  $('#pzSubmit').onclick = async (e) => {
+    const b = e.currentTarget; if (!HW || HW.sub) return;
+    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Press again to submit'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Submit homework' }, 4000); return }
+    b.disabled = true; const t = Date.now();
+    if (await HW.save({ sub: t })) { HW.sub = t; load(null) } else { b.disabled = false; b.dataset.sure = ''; b.textContent = 'Submit homework'; msg('Could not submit. Check your internet and try again.', 'err') }
+  };
   $('#pzBack').onclick = takeBack;
-  $('#pzRetry').onclick = () => cur && load(cur);
+  $('#pzRetry').onclick = () => {
+    if (!cur) return;
+    if (HW) { if (HW.sub || retriesLeft() <= 0) return; const r = rec(cur.id); r.r = (r.r || 0) + 1; r.cw = 0; hwSave(cur.id); return load(cur, true) }
+    load(cur);
+  };
   $('#pzShow').onclick = showSolution;
-  $('#pzHint').onclick = () => { if (!cur || busy || idx >= moves.length) return; hinted = true; const f = moves[idx].slice(0, 2); sel = f; draw(); msg('Hint: move the highlighted piece.', '') };
+  $('#pzHint').onclick = () => { if (!cur || busy || idx >= moves.length) return; hinted = true; if (HW) { const r = rec(cur.id); r.h = (r.h || 0) + 1; hwSave(cur.id) } const f = moves[idx].slice(0, 2); sel = f; draw(); msg('Hint: move the highlighted piece.', '') };
 
   const getJ = (u) => fetch(u).then(r => { if (!r.ok) throw 0; return r.json() });
-  Promise.all([getJ('assets/data/puzzles.json'), hwSet ? getJ('assets/data/hwpuzzles.json').catch(() => ({ puzzles: [] })) : Promise.resolve({ puzzles: [] })]).then(([d, hw]) => {
+  Promise.all([getJ('assets/data/puzzles.json'), hwSet ? getJ('assets/data/hwpuzzles.json').catch(() => ({ puzzles: [] })) : Promise.resolve({ puzzles: [] })]).then(async ([d, hw]) => {
     ALL = d.puzzles; const c = document.getElementById('pzCount'); if (c && !PUBLIC) c.textContent = ALL.length.toLocaleString('en');
     LEVELS.forEach(l => ALL.filter(p => p.l === l.id).slice(0, FREE_PER_LEVEL).forEach(p => free.add(p.id)));
     ALL = ALL.concat(hw.puzzles);
     if (hwSet && access()) root.classList.add('pz-hw');
+    if (hwSet && access()) {
+      try { HW = await (await import('./portal/hwpz.js' + (V ? '?' + V : ''))).openHw(hwId) } catch (e) { return msg('Could not open your homework. Refresh the page and try again.', 'err') }
+    }
     const q = new URLSearchParams(location.search).get('id'); const want = ALL.find(p => p.id === q); if (want && allowed(want)) level = want.l; load(want && allowed(want) ? want : pick());
   }).catch(() => { msg('Puzzles could not be loaded. Refresh the page to try again.', 'err') });
   window.addEventListener('pq-auth', () => { if (!ALL.length) return; root.classList.toggle('pz-hw', !!(hwSet && access())); if (cur && !allowed(cur)) load(pick()); else paintSide() });

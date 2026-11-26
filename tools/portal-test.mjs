@@ -150,6 +150,22 @@ const sden = await pg.evaluate(async ([uid2, aid]) => {
 ok(sden.makeHomework === 'permission-denied', 'student cannot create homework');
 ok(sden.tickForOther === 'permission-denied', 'student cannot tick another student’s homework');
 ok(sden.otherTime === 'permission-denied', 'student cannot read another student’s study time');
+// homework puzzle log: the student saves results per puzzle, and after Submit the document is locked
+const pzr = await pg.evaluate(async ([uid1]) => {
+  const m = await import('./assets/js/portal/fb.js'), r = {}, ref = m.F.doc(m.db, 'astatus', 'zz_' + uid1);
+  const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
+  await t('logPuzzle', () => m.F.setDoc(ref, { aid: 'zz', uid: uid1, pz: { p1: { s: 's', r: 1, h: 0, w: 1 } }, updatedAt: m.F.serverTimestamp() }, { merge: true }));
+  await t('logMore', () => m.F.setDoc(ref, { aid: 'zz', uid: uid1, pz: { p2: { s: 'f', r: 2, h: 1, w: 3 } }, updatedAt: m.F.serverTimestamp() }, { merge: true }));
+  await t('submit', () => m.F.setDoc(ref, { aid: 'zz', uid: uid1, sub: Date.now(), updatedAt: m.F.serverTimestamp() }, { merge: true }));
+  await t('editAfterSubmit', () => m.F.setDoc(ref, { aid: 'zz', uid: uid1, pz: { p3: { s: 's', r: 0, h: 0, w: 0 } }, updatedAt: m.F.serverTimestamp() }, { merge: true }));
+  await t('changeSubmitted', () => m.F.setDoc(ref, { aid: 'zz', uid: uid1, pz: { p1: { s: 'f' } }, updatedAt: m.F.serverTimestamp() }, { merge: true }));
+  return r;
+}, [uid1]);
+ok(pzr.logPuzzle === 'allowed' && pzr.logMore === 'allowed', 'student saves retries and hints per homework puzzle');
+ok(pzr.submit === 'allowed', 'student can submit the puzzles');
+ok(pzr.editAfterSubmit === 'permission-denied' && pzr.changeSubmitted === 'permission-denied', 'after Submit the puzzle results cannot be changed');
+const pzdoc = await fsDoc(`astatus/zz_${uid1}`);
+ok(!!(pzdoc.fields && pzdoc.fields.pz && pzdoc.fields.sub), 'puzzle log and submit time are stored for the coach');
 
 // puzzle homework by number: two rounds to the same student must never repeat a puzzle
 await tab('homework');

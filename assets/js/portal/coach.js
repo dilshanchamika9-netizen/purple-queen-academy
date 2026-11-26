@@ -145,6 +145,27 @@ async function loadAllPuzzles() { if (!PUBPZ) { try { PUBPZ = (await (await fetc
 async function loadPuzzles() { if (!PUZZLES) { const r = await fetch('assets/data/hwpuzzles.json'); if (!r.ok) throw new Error('The homework puzzle pool is not built yet'); PUZZLES = (await r.json()).puzzles } return PUZZLES }
 // puzzle ids already given to a student in any homework, plus ones already solved
 const usedPuzzles = (uid) => { const u = new Set(Object.keys((((progress[uid] || {}).puzzles) || {}).solved || {})); assigns.forEach(a => (a.items || []).forEach(it => { if (it.t === 'puzzles' && it.sets && it.sets[uid]) it.sets[uid].forEach(id => u.add(id)) })); return u };
+// what a student did on each puzzle of a homework: solved / failed, retries, hints, wrong moves, and when it was submitted
+let PZINFO = null, PZLOAD = false;
+function pzLog(a, uid) {
+  if (!PZINFO && !PZLOAD) { PZLOAD = true; loadAllPuzzles().then(all => { PZINFO = Object.fromEntries(all.map(q => [q.id, q])); try { paintHw() } catch {} }) }
+  const st = statuses[a.id + '_' + uid] || {}, pz = st.pz || {}, sv = ((progress[uid] || {}).puzzles || {}).solved || {};
+  return (a.items || []).filter(it => it.t === 'puzzles').map(it => {
+    const ids = (it.sets && it.sets[uid]) || []; if (!ids.length) return '';
+    let ok = 0;
+    const chips = ids.map((id, i) => {
+      const r = pz[id], q = PZINFO && PZINFO[id], lab = (i + 1) + (q ? ' · ' + (PZ_LEVELS[q.l] || '') : '');
+      const x = []; if (r && r.r) x.push('retry ×' + r.r); if (r && r.h) x.push('hint ×' + r.h); if (r && r.w) x.push('wrong ×' + r.w);
+      let cls = 'nt', t = 'Not done';
+      if (r && r.s === 's' || !r && sv[id]) { cls = 'ok'; t = 'Solved'; ok++ }
+      else if (r && r.s === 'f') { cls = 'no'; t = r.k && !r.w ? 'Skipped' : 'Failed' }
+      else if (r && (r.r || r.w || r.h)) t = 'In progress';
+      return `<span class="${cls}" title="Puzzle ${i + 1}">${lab} — ${t}${x.length ? ' <i>' + x.join(' · ') + '</i>' : ''}</span>`;
+    }).join('');
+    const sub = st.sub ? `<p class="pzsub">Submitted ${new Date(st.sub).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${ok} of ${ids.length} solved</p>` : `<p class="pzsub no">Not submitted yet · ${ok} of ${ids.length} solved</p>`;
+    return `<div class="pzlog">${chips}</div>${sub}`;
+  }).join('');
+}
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a };
 function showTab(t) {
   tab = t; try { sessionStorage.setItem('pq-ctab', t) } catch {}
@@ -467,7 +488,7 @@ function paintHw() {
     const done = rows.filter(r => r.st.complete).length, late = rows.filter(r => r.st.late).length;
     return `<details class="hw" data-id="${a.id}"><summary><b>${esc(a.title)}</b><span>Due ${dueText(a)} · ${esc(a.target || '')}</span><span class="pill ${late ? 'late' : done === rows.length && rows.length ? 'done' : 'open'}">${done}/${rows.length} done${late ? ' · ' + late + ' overdue' : ''}</span></summary>
       ${a.note ? `<p class="muted">${esc(a.note)}</p>` : ''}<p class="small">${a.items.map(it => `<span class="chip">${esc(itemLabel(it))}</span>`).join(' ')}</p>
-      <div class="tw"><table class="stu mini-t"><thead><tr><th>Student</th><th>Done</th><th>Time on these lessons</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.st.done}/${r.st.total}</td><td>${r.st.secs ? fmtTime(r.st.secs) : '—'}</td><td>${statePill(r.st.state)}${r.st.state !== 'done' && waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`) ? ` <a class="mini" target="_blank" rel="noopener" href="${waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`)}">WhatsApp</a>` : ''}</td></tr>`).join('')}</tbody></table></div>
+      <div class="tw"><table class="stu mini-t"><thead><tr><th>Student</th><th>Done</th><th>Time on these lessons</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.s.name)}</td><td>${r.st.done}/${r.st.total}</td><td>${r.st.secs ? fmtTime(r.st.secs) : '—'}</td><td>${statePill(r.st.state)}${r.st.state !== 'done' && waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`) ? ` <a class="mini" target="_blank" rel="noopener" href="${waLink(r.s.parentPhone, `Hello, this is Purple Queen Chess Academy. The homework “${a.title}” for ${r.s.name} is ${r.st.late ? 'overdue (was due ' : 'due on '}${a.due}${r.st.late ? ')' : ''}. Please remind them to finish it. Thank you.`)}">WhatsApp</a>` : ''}</td></tr>${pzLog(a, r.s.uid) ? `<tr class="pzr"><td colspan="4">${pzLog(a, r.s.uid)}</td></tr>` : ''}`).join('')}</tbody></table></div>
       <button type="button" class="mini danger" data-del="${a.id}">Delete homework</button></details>` }).join('');
 }
 root.addEventListener('click', async (e) => {
@@ -510,7 +531,7 @@ function showDetail(uid) {
       ${weak.length ? `<section class="dbox"><h4>Needs work</h4><div class="chips">${weak.map(w => `<span class="chip bad">${esc(w.l.title.en)} · ${w.v}%</span>`).join('')}</div></section>` : ''}
       <section class="dbox"><h4>Attendance</h4>${att.total ? `<div class="attsum"><b>${att.pct}%</b><span>${att.present} present · ${att.late} late · ${att.absent} absent<br><small>${att.total} classes</small></span></div><details class="more"><summary>Show classes</summary>${attTable(att, uid)}</details>` : '<p class="muted small">No classes marked yet.</p>'}</section>
       <section class="dbox"><h4>Puzzles</h4><p id="dPz" class="muted small">Loading…</p></section>
-      <section class="dbox"><h4>Homework</h4>${mine.length ? `<ul class="dhw">${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<li><span><b>${esc(a.title)}</b><small>Due ${dueText(a)}</small></span><em>${st.done}/${st.total}</em>${statePill(st.state)}</li>` }).join('')}</ul>` : '<p class="muted small">No homework yet.</p>'}</section>
+      <section class="dbox"><h4>Homework</h4>${mine.length ? `<ul class="dhw">${mine.map(a => { const st = assignStat(a, uid, p, statuses[a.id + '_' + uid], tm); return `<li><span><b>${esc(a.title)}</b><small>Due ${dueText(a)}</small></span><em>${st.done}/${st.total}</em>${statePill(st.state)}${pzLog(a, uid) ? `<div class="pzl">${pzLog(a, uid)}</div>` : ''}</li>` }).join('')}</ul>` : '<p class="muted small">No homework yet.</p>'}</section>
       <section class="dbox"><h4>Student details <small>filled in by the student</small></h4>${(() => { const rows = [['Date of birth', s.dob], ['School', s.school], ['Grade', s.grade], ['Home town', s.city], ['Student phone', s.phone]].filter(r => r[1]); return rows.length ? `<dl class="ddet">${rows.map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>` : '<p class="muted small">Nothing filled in yet.</p>' })()}</section>
       <section class="dbox"><h4>Parent</h4><label for="dpPhone">WhatsApp number<input id="dpPhone" type="tel" value="${esc(s.parentPhone || '')}"></label><label for="dpEmail">Email<input id="dpEmail" type="email" value="${esc(s.parentEmail || '')}"></label>
         <div class="row"><button type="button" class="btn btn-ghost btn-sm" id="dpSave">Save contact</button> <span class="pmsg2" id="dpMsg"></span></div>

@@ -21,7 +21,7 @@ const root = $('#portalTask');
   if (done) { fb.className = 'fb ok'; fb.textContent = 'You already solved this one. You can try again for practice.' }
   const win = async () => {
     over = true; fb.className = 'fb ok'; fb.textContent = 'Right! Well done.';
-    if (!done) { const checks = { ...(cur.checks || {}), [idx]: true }; try { await F.setDoc(F.doc(db, 'astatus', key), { aid, uid: me.user.uid, checks, updatedAt: F.serverTimestamp() }); done = true; cur.checks = checks } catch { fb.className = 'fb err'; fb.textContent = 'Right! But it could not be saved. Check your internet and try again.' } }
+    if (!done) { const checks = { ...(cur.checks || {}), [idx]: true }; try { await F.setDoc(F.doc(db, 'astatus', key), { aid, uid: me.user.uid, checks, updatedAt: F.serverTimestamp() }, { merge: true }); done = true; cur.checks = checks } catch { fb.className = 'fb err'; fb.textContent = 'Right! But it could not be saved. Check your internet and try again.' } }
   };
   board.click = (s) => {
     if (over) return;

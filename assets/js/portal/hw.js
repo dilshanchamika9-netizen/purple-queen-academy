@@ -43,8 +43,8 @@ export function hwSteps(a, x, L) {
       else s.href = lessonHref(r.it.id, a.id);
       if (!r.done && !blockBy) blockBy = s.title;
     } else if (r.it.t === 'puzzles') {
-      s.title = itemLabel(r.it, true); s.sub = r.total ? `${r.n} of ${r.total} solved` : 'No new puzzles were left to give';
-      if (r.total) s.href = `practice.html?hw=${a.id}&set=${r.ids.join(',')}`;
+      s.title = itemLabel(r.it, true); s.sub = r.total ? (r.sub ? `Submitted · ${r.n} of ${r.total} solved` : r.fin >= r.total ? `${r.n} of ${r.total} solved · open to submit` : `${r.n} of ${r.total} solved`) : 'No new puzzles were left to give';
+      if (r.total && !r.sub) s.href = `practice.html?hw=${a.id}&set=${r.ids.join(',')}`;
     } else if (r.it.t === 'task') {
       s.title = 'Board task: ' + (r.it.q || ''); s.sub = r.done ? 'Solved' : 'Find the right move on the board';
       s.href = `task.html?a=${a.id}&i=${i}`;

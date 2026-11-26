@@ -432,3 +432,18 @@ html[data-theme="dark"] .hwring { background:radial-gradient(closest-side, var(-
 html[data-theme="dark"] .hst .hn, html[data-theme="dark"] .stepper button { background:var(--surf) }
 @media (max-width:640px) { .hst.lk .ha { display:none } }
 .ddet { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:0; font-size:14px } .ddet dt { color:var(--muted); font-weight:600 } .ddet dd { margin:0; font-weight:700 }
+/* homework puzzles: no solution, no take-back; locked buttons */
+.pz-hw #pzShow, .pz-hw #pzBack { display:none !important }
+.pz-btns .btn:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; transform:none }
+/* coach: what the student did on each homework puzzle */
+.pzlog { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px }
+.pzlog span { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font:600 12px/1.4 var(--body); background:#F1EEF8; color:#4B3A73; border:1px solid #E3DDF1 }
+.pzlog span.ok { background:#E4F5EA; color:#1E6B3F; border-color:#BFE3CB }
+.pzlog span.no { background:#FBE7EA; color:#A42339; border-color:#F1C2CA }
+.pzlog span.nt { background:#F6F5F8; color:#7A7690; border-color:#E6E3EE }
+.pzlog span i { font-style:normal; opacity:.75; font-weight:500 }
+.pzsub { font:600 12px var(--body); color:#1E6B3F; margin:4px 0 0 }
+.pzsub.no { color:#A42339 }
+@media (prefers-color-scheme: dark) { html:not([data-theme=light]) .pzlog span { background:#2A2540; color:#D9D0F2; border-color:#3C3560 } html:not([data-theme=light]) .pzlog span.ok { background:#16372A; color:#9FE0BC; border-color:#24553D } html:not([data-theme=light]) .pzlog span.no { background:#3C1F27; color:#F2A8B6; border-color:#5B2B37 } }
+html[data-theme=dark] .pzlog span { background:#2A2540; color:#D9D0F2; border-color:#3C3560 } html[data-theme=dark] .pzlog span.ok { background:#16372A; color:#9FE0BC; border-color:#24553D } html[data-theme=dark] .pzlog span.no { background:#3C1F27; color:#F2A8B6; border-color:#5B2B37 }
+.dhw li .pzl { grid-column:1 / -1 } .stu .pzr td { padding-top:0; border-top:0 }

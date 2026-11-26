@@ -52,9 +52,14 @@ service cloud.firestore {
     // a student's ticks on the manual items of one assignment; document id = assignmentId_studentUid
     match /astatus/{id} {
       allow read: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
-      allow create, update: if isStudent() && request.resource.data.uid == request.auth.uid
+      // pz = what the student did on each homework puzzle (result, retries, hints); sub = when the puzzles were submitted (locks the document)
+      allow create: if isStudent() && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.aid + '_' + request.auth.uid
-        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'updatedAt']);
+        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'updatedAt']);
+      allow update: if isStudent() && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.aid + '_' + request.auth.uid
+        && !('sub' in resource.data)
+        && request.resource.data.keys().hasOnly(['aid', 'uid', 'checks', 'pz', 'sub', 'updatedAt']);
       allow delete: if false;
     }
     // attendance: one document per class (date + batch); marks maps student uid to p (present), l (late) or a (absent)

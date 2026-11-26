@@ -11,7 +11,13 @@ export const PASS = 70;
 export const PZ_LEVELS = { 1: 'Beginner', 2: 'Improver', 3: 'Club player', 4: 'Advanced', 5: 'Expert' };
 export function itemState(a, i, prog, st, uid) {
   const it = a.items[i];
-  if (it.t === 'puzzles') { const ids = (it.sets && it.sets[uid]) || [], sv = ((prog || {}).puzzles || {}).solved || {}, n = ids.filter(x => sv[x]).length; return { done: ids.length > 0 && n === ids.length, mark: null, n, total: ids.length, ids } }
+  if (it.t === 'puzzles') {
+    const ids = (it.sets && it.sets[uid]) || [], sv = ((prog || {}).puzzles || {}).solved || {}, pz = (st && st.pz) || {}, sub = !!(st && st.sub), neu = !!(st && (st.pz || st.sub));
+    const ok = (x) => pz[x] ? pz[x].s === 's' : !!sv[x], fin = (x) => pz[x] ? (pz[x].s === 's' || pz[x].s === 'f') : !!sv[x];
+    const n = ids.filter(ok).length;
+    // new homework: it is finished when the student submits; older homework: when every puzzle is solved
+    return { done: ids.length > 0 && (neu ? sub : n === ids.length), mark: null, n, total: ids.length, ids, fin: ids.filter(fin).length, sub, pz }
+  }
   if (it.t === 'lesson') { const m = ((prog || {}).lessons || {})[it.id]; return { done: (m || 0) >= PASS, mark: m == null ? null : m } }
   return { done: !!(st && st.checks && st.checks[i]), mark: null };
 }

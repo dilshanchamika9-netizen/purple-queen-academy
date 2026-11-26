@@ -69,7 +69,7 @@ export const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: '
   function hwCard({ a, x }) {
     const hv = hwView(a, x), du = dueLabel(a), steps = hwSteps(a, x, L), nx = hwNext(steps);
     let lt = 0, ld = 0, pt = 0, pd = 0, tt = 0, td = 0;
-    x.items.forEach(r => { if (r.it.t === 'lesson') { lt++; if (r.done) ld++ } else if (r.it.t === 'puzzles') { pt += r.total || 0; pd += r.n || 0 } else { tt++; if (r.done) td++ } });
+    x.items.forEach(r => { if (r.it.t === 'lesson') { lt++; if (r.done) ld++ } else if (r.it.t === 'puzzles') { pt += r.total || 0; pd += r.done ? (r.total || 0) : (r.n || 0) } else { tt++; if (r.done) td++ } });
     const all = lt + pt + tt, dn = ld + pd + td, pc = all ? Math.round(dn / all * 100) : 0;
     const chip = (cls, ico, left, tot, one, many) => tot ? `<div class="sp-pc ${cls}${left ? '' : ' ok'}"><i>${left ? ico : SVG.check}</i><div><strong>${left}</strong> <span>${left === 1 ? one : many} ${left ? 'pending' : 'done'}</span></div></div>` : '';
     const dueC = x.state === 'late' ? 'late' : !a.due ? 'none' : du.c === 'soon' ? 'soon' : '';
