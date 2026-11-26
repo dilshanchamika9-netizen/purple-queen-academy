@@ -122,7 +122,7 @@
     clearTimeout(nextT);
     if (HW && p && !isRetry) { const r = rec(p.id); if (r.cw > 0 && r.s !== 's' && r.s !== 'f') { r.r = (r.r || 0) + 1; r.cw = 0; if (r.r > 2) r.s = 'f'; hwSave(p.id) } if (r.s === 's' || r.s === 'f') p = null }   // leaving after a wrong move uses up a retry
     if (!p) { cur = null; const hwDone = hwSet && access(); if (HW) { $('#pzSubmit').hidden = !!HW.sub; $('#pzNext').hidden = true; $('#pzRetry').hidden = true; $('#pzHint').hidden = true; const n = Object.keys(HW.pz).length; const tot = hwSet.size, got = [...hwSet].filter(id => HW.pz[id] ? HW.pz[id].s === 's' : !!solved[id]).length; hwBtns(); busy = true; paintSide(); return msg(HW.sub ? `Submitted. You solved ${got} of ${tot}. Your coach can see the result.` : `All puzzles are done: ${got} of ${tot} solved. Press Submit to send your homework. You cannot change anything after you submit.`, 'ok') }
-      msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'You have finished the free puzzles for this level. Sign in to unlock them all.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
+      msg(hwDone ? 'Homework complete. Well done!' : !access() ? 'Free puzzles finished. Register for a class to unlock the rest.' : 'No puzzles for this theme at this level. Choose another theme.', hwDone ? 'ok' : ''); busy = true; paintSide(); return }
     cur = p; t0 = Date.now(); if (HW) { $('#pzNext').hidden = false; $('#pzRetry').hidden = false; $('#pzHint').hidden = false; $('#pzSubmit').hidden = true }
     $('#pzBack').hidden = true; backFen = null;
     game = new window.Chess(p.fen); moves = p.m.split(' '); idx = 0; sel = null; mistakes = 0; hinted = false; lastMove = null; busy = true;
@@ -130,7 +130,7 @@
     buildGrid(); draw(); keepInView();
     $('#pzTurn').innerHTML = `<span class="dotc ${orient}"></span>${orient === 'w' ? 'White' : 'Black'} to move`;
     msg('Watch the opponent’s move…', '');
-    $('#pzMeta').innerHTML = hwSet && access() ? '' : `<span>Rating ${p.r}</span>${p.t.slice(0, 3).map(t => `<span>${TNAME[t] || t}</span>`).join('')}`;
+    $('#pzMeta').innerHTML = hwSet && access() ? '' : `${p.t.slice(0, 3).map(t => `<span>${TNAME[t] || t}</span>`).join('')}`;
     $('#pzMeta').classList.add('hidden-themes');
     setTimeout(() => { const m = play(moves[0]); lastMove = m; idx = 1; draw(m); busy = false; msg(`Find the best move for ${orient === 'w' ? 'White' : 'Black'}.`, '') }, 650);
     paintSide(); hwBtns();
@@ -243,21 +243,31 @@
   });
 
   /* ---------- side panels ---------- */
+  const WAHREF = (m) => 'https://wa.me/94771691435?text=' + encodeURIComponent(m);
+  function gateFree(list, lv) {
+    const left = list.filter(p => !solved[p.id]).length, tot = ALL.filter(p => p.l === lv.id).length, nxt = LEVELS.find(l => l.id > lv.id && ALL.filter(p => p.l === l.id).slice(0, FREE_PER_LEVEL).some(p => !solved[p.id]));
+    const book = WAHREF('Hello Purple Queen Chess Academy! I would like to book a class.');
+    if (list.length && !left && performance.now() > 5000 && !window.__pzScrolled) { window.__pzScrolled = true; setTimeout(() => { const g = document.getElementById('pzGate'); g && g.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 400) }
+    if (list.length && !left) return `<div class="pz-done"><div class="pz-ring" style="--p:100"><i>${list.length}/${list.length}</i></div><p class="pz-k">Level ${lv.id} · ${lv.name}</p><h3>You finished all ${list.length} free puzzles</h3><p>${tot - list.length} more Level ${lv.id} puzzles, with themes, hints, saved progress and homework from your coach, are waiting inside the academy. Register for a class to carry on.</p><div class="pz-row"><a class="btn btn-primary" target="_blank" rel="noopener" href="${book}">Register for a class</a>${nxt ? `<button type="button" class="btn btn-ghost" data-golv="${nxt.id}">Try Level ${nxt.id} free</button>` : ''}<a class="btn btn-ghost" href="login.html">Sign in</a></div></div>`;
+    return `<div class="pz-free"><span><b>Free preview</b> · ${left} of ${list.length} free puzzles left in this level · ${tot - list.length} more with a class</span><a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="${book}">Book a class</a></div>`;
+  }
   function paintSide() {
     const lv = LEVELS[level - 1], inLv = (id) => ALL.filter(p => p.l === id && allowed(p)), list = hwSet && access() ? ALL.filter(p => hwSet.has(p.id)) : inLv(level), done = list.filter(p => HW ? (HW.pz[p.id] ? HW.pz[p.id].s === 's' : !!solved[p.id]) : solved[p.id]).length;
     const gate = $('#pzGate'); gate.hidden = access() && !hwSet;
-    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? (PUBLIC && signedIn() ? `<b>You are signed in.</b> Your full puzzle trainer is in your portal. <a href="${portalHref()}">Open it</a>` : `<b>Free practice</b> · ${FREE_PER_LEVEL} puzzles in each level. Academy students train with 5,000+ puzzles. <a href="#pzJoin">See how</a>`) : '';
+    gate.innerHTML = hwSet && access() ? `<b>Homework</b> · ${done} of ${list.length} solved. <a href="homework.html?a=${encodeURIComponent(hwId)}">Back to my homework</a>` : !access() ? (PUBLIC && signedIn() ? `<b>You are signed in.</b> Your full puzzle trainer is in your portal. <a href="${portalHref()}">Open it</a>` : gateFree(inLv(level), lv)) : '';
     $('#pzAutoChk').checked = autoNext;
     $('#pzStreak').textContent = streak; $('#pzBest').textContent = best; $('#pzSolved').textContent = Object.keys(solved).length;
     $('#pzLvName').textContent = hwSet && access() ? 'Homework puzzles' : `Level ${lv.id} · ${lv.name}`; $('#pzLvCount').textContent = `${done} / ${list.length} solved`;
     $('#pzLvBar').style.width = (list.length ? done / list.length * 100 : 0) + '%';
-    $('#pzLevels').innerHTML = LEVELS.map(l => { const n = inLv(l.id).length, d = inLv(l.id).filter(p => solved[p.id]).length;
-      return `<button type="button" data-l="${l.id}" aria-pressed="${l.id === level}"><span class="pc">${l.piece}&#xFE0E;</span><b>Level ${l.id} · ${l.name}</b><small>Rating ${l.range}</small><em>${l.tip}</em><i><u style="width:${n ? d / n * 100 : 0}%"></u></i><span class="ct">${d}/${n}</span></button>` }).join('');
+    $('#pzLevels').innerHTML = LEVELS.map(l => { const n = inLv(l.id).length, d = inLv(l.id).filter(p => solved[p.id]).length, tot = ALL.filter(p => p.l === l.id).length;
+      if (!access() && !hwSet) { const pct = tot ? Math.round(FREE_PER_LEVEL / tot * 100) : 0; return `<button type="button" data-l="${l.id}" aria-pressed="${l.id === level}"><span class="pc">${l.piece}&#xFE0E;</span><b>Level ${l.id} · ${l.name}</b><span class="big">${tot}<em>puzzles</em></span><i class="pz-fm"><u style="width:${pct}%"></u><s></s></i><span class="fr"><strong>${d}/${n} free done</strong><span>🔒 ${tot - n} with class</span></span></button>` }
+      return `<button type="button" data-l="${l.id}" aria-pressed="${l.id === level}"><span class="pc">${l.piece}&#xFE0E;</span><b>Level ${l.id} · ${l.name}</b><em>${l.tip}</em><i><u style="width:${n ? d / n * 100 : 0}%"></u></i><span class="ct">${d}/${n}</span></button>` }).join('');
     $('#pzThemes').innerHTML = THEMES.map(([k, n]) => { const c = k === 'all' ? inLv(level).length : inLv(level).filter(p => p.t.includes(k)).length;
       return c ? `<button type="button" data-t="${k}" aria-pressed="${k === theme}">${n} <small>${c}</small></button>` : '' }).join('');
   }
   $('#pzAutoChk').onchange = (e) => { autoNext = e.target.checked; store.set('auto', autoNext); if (!autoNext) clearTimeout(nextT) };
   root.addEventListener('click', e => {
+    const gl = e.target.closest('button[data-golv]'); if (gl) { level = +gl.dataset.golv; store.set('level', level); theme = 'all'; load(pick()); return }
     const lb = e.target.closest('#pzLevels button'); if (lb) { level = +lb.dataset.l; store.set('level', level); theme = 'all'; load(pick()); return }
     const tb = e.target.closest('#pzThemes button'); if (tb) { theme = tb.dataset.t; load(pick()); return }
   });

@@ -955,3 +955,32 @@ html[data-theme="dark"] .logmenu { background:#150C28; border-color:rgba(181,140
 .pzj-lv em { font:800 13px var(--body); font-style:normal; color:#5B2C91; background:#EFE7FB; padding:5px 10px; border-radius:999px }
 @media (max-width:900px) { .pzj { grid-template-columns:1fr; padding:26px } .pzj-lv li { margin-left:0 !important } .pzj-f { grid-template-columns:1fr 1fr } }
 @media (max-width:520px) { .pzj-f { grid-template-columns:1fr } }
+
+/* free preview: puzzles */
+.pz-levels .big { font:700 30px/1 var(--display); color:inherit } .pz-levels .big em { font:600 12.5px var(--body, inherit); color:var(--muted); margin-left:5px }
+.pz-levels .pz-fm { display:grid; grid-template-columns:auto 1fr; gap:3px; height:10px; background:none; overflow:visible; margin-top:10px } .pz-levels .pz-fm u { display:block; min-width:14px; height:100%; border-radius:5px; background:var(--gold) } .pz-levels .pz-fm s { border-radius:5px; border:1px solid var(--line); background:repeating-linear-gradient(135deg, var(--line) 0 5px, transparent 5px 10px) }
+.pz-levels [aria-pressed="true"] .pz-fm s { border-color:#ffffff30; background:repeating-linear-gradient(135deg, #ffffff30 0 5px, transparent 5px 10px) }
+.pz-levels .fr { display:flex; justify-content:space-between; gap:6px; flex-wrap:wrap; font-size:12px; margin-top:6px } .pz-levels .fr strong { color:var(--ok) } .pz-levels .fr span { color:var(--muted) }
+.pz-levels [aria-pressed="true"] .fr strong { color:#7FE9B5 } .pz-levels [aria-pressed="true"] .fr span, .pz-levels [aria-pressed="true"] .big em { color:#D6C8EA }
+.pz-free { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; font-size:13.5px } .pz-free .btn { white-space:nowrap }
+.pz-done { position:relative; overflow:hidden; padding:6px 4px; color:#fff; border-radius:16px; margin:-12px -14px; padding:22px 22px 20px; background:radial-gradient(circle at 85% 0, #7A3FD0 0, #2A1240 58%) }
+.pz-done h3 { color:#fff; font-size:26px; margin:2px 0 6px } .pz-done p { margin:0 0 6px; opacity:.88; max-width:56ch } .pz-done .pz-k { font:600 11px var(--caps, inherit); letter-spacing:.16em; text-transform:uppercase; opacity:.8 }
+.pz-done .pz-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px } .pz-done .btn-ghost { color:#fff; border-color:#ffffff44 } .pz-done a { color:inherit }
+.pz-ring { float:right; width:78px; height:78px; border-radius:50%; margin-left:14px; background:conic-gradient(#5BE0A6 calc(var(--p)*1%), #ffffff24 0); display:grid; place-items:center } .pz-ring i { width:60px; height:60px; border-radius:50%; background:#2A1240; display:grid; place-items:center; font:700 16px var(--display); font-style:normal }
+.pz-stick { position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:30; display:flex; gap:12px; align-items:center; background:#2A1240; color:#fff; border:1px solid #ffffff2a; border-radius:999px; padding:7px 8px 7px 18px; box-shadow:0 20px 50px -18px #000; max-width:94vw; font-size:13.5px } .pz-stick .btn { background:linear-gradient(135deg,#E8C98B,#C9A65B); color:#2A1240; border:0; white-space:nowrap }
+html[data-theme="dark"] .pz-levels .fr strong { color:#5BE0A6 }
+@media (max-width:900px) { .pz-levels { grid-template-columns:repeat(2,1fr) } }
+
+/* learn page: free preview */
+.pq-member .lh-guest, .pq-guest .lh-member { display:none !important }
+.lhero { position:relative; overflow:hidden; border-radius:28px; padding:36px; color:#fff; background:radial-gradient(circle at 85% 8%, #8B5CF6 0, #2A1240 50%, #150C28) }
+.lhero h1 { color:#fff !important; font-size:clamp(34px,5vw,54px); line-height:1.02 } .lhero h1 em { color:#E8C98B !important; -webkit-text-fill-color:#E8C98B; background:none } .lhero p { max-width:58ch; opacity:.9 } .lhero .lh-k { font:600 11.5px var(--caps); letter-spacing:.18em; text-transform:uppercase; opacity:.8; margin:0 0 8px }
+.lh-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px } .lh-gold { background:linear-gradient(135deg,#E8C98B,#C9A65B); color:#2A1240; border:0 } .lh-white { background:#fff; color:#2A1240; border:0 }
+.lh-kp { display:flex; gap:10px; flex-wrap:wrap; margin-top:22px } .lh-kp div { background:#ffffff14; border:1px solid #ffffff22; border-radius:14px; padding:10px 16px } .lh-kp b { display:block; font:700 24px var(--display) } .lh-kp small { opacity:.75 }
+.pq-guest .jl li { opacity:.62 } .pq-guest .jl li:not(.fr)::marker { content:"🔒 " } .jl li.fr { opacity:1; font-weight:700; color:#fff } .tagf { margin-left:8px; font:700 10.5px var(--caps); letter-spacing:.08em; background:#1E9E66; color:#fff; border-radius:999px; padding:2px 8px }
+.lh-how { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:26px } .lh-how > div { background:#fff; border:1px solid var(--line); border-radius:20px; padding:18px } .lh-how b { font:700 38px var(--display); color:var(--purple) } .lh-how h3 { font-size:20px } .lh-how p { color:var(--muted); margin:4px 0 0 }
+.lh-cta { margin-top:22px; border-radius:26px; padding:30px; text-align:center; color:#fff; background:linear-gradient(120deg,#2A1240,#5B2AA5) } .lh-cta h2 { color:#fff; font-size:34px } .lh-cta p { opacity:.88 }
+html[data-theme="dark"] .lh-how > div { background:#150C28; border-color:rgba(181,140,255,.2) } html[data-theme="dark"] .lh-how h3 { color:#F4ECFF }
+@media (max-width:900px) { .lh-how { grid-template-columns:1fr } .lhero { padding:24px } }
+.journey .jl.jl1 { background:linear-gradient(160deg,#B48BDB,#7A4DB0) !important } .journey .jl.jl2 { background:linear-gradient(160deg,#6E43A6,#3A1A5A) !important } .journey .jl.jl3 { background:linear-gradient(160deg,#3A1A5A,#170A27) !important }
+.journey .jl b { color:#fff } .journey .jl li { color:#EDE3F8 }
