@@ -14,9 +14,9 @@
 <meta property="og:image" content="assets/logo/pq-logo-primary-wood-1024.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=1795726470">
-<link rel="stylesheet" href="assets/css/portal.css?v=1795726470">
-<script src="assets/js/portal/ui.js?v=1795726470"></script>
+<link rel="stylesheet" href="assets/css/site.css?v=1795726823">
+<link rel="stylesheet" href="assets/css/portal.css?v=1795726823">
+<script src="assets/js/portal/ui.js?v=1795726823"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -49,9 +49,12 @@
   </div>
 </header>
 <main id="top">
-<section class="page-top lh-member" style="padding-bottom:30px"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Learn</span></nav>
-  <div class="sec-head" style="margin-bottom:10px"><div><p class="eyebrow">Student portal</p><h1>Learn chess <em>step by step</em></h1></div>
-  <p class="lead">Watch each animated lesson, then practise on the board and get your marks. Score 70% to open the next lesson.</p></div></div></section>
+<section class="page-top lh-member" style="padding-bottom:10px"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Learn</span></nav>
+  <div class="lhero lhm"><div class="lhm-l"><p class="lh-k">Welcome back</p><h1>Keep going. <em id="lhmNext">Your next lesson is ready.</em></h1>
+  <p>Watch each animated lesson, practise on the board and score 70% to open the next one. Every module ends with a certificate.</p>
+  <div class="lh-row"><a class="btn lh-gold" href="#learnApp" id="lhmGo">Continue learning</a></div>
+  <div class="lh-kp"><div><b id="lhmL">0</b><small>lessons passed</small></div><div><b id="lhmM">0</b><small>modules done</small></div><div><b id="lhmX">0</b><small>XP earned</small></div></div></div>
+  <div class="lhm-ring" id="lhmRing" style="--p:0"><i><b id="lhmP">0%</b><small>of the course</small></i></div></div></div></section>
 <section class="page-top lh-guest" style="padding-bottom:10px"><div class="wrap"><nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span>/</span><span>Learn</span></nav>
   <div class="lhero"><p class="lh-k">Free preview · Level 1 · Module 1</p><h1>Try the first step. <em>The whole path is inside.</em></h1>
   <p>Animated lessons, board practice, marks, a certificate for every module, and a coach who reviews your work. Module 1 is free below. Register for a class to open every module.</p>
@@ -76,6 +79,11 @@
 </div></dialog>
 <div class="pz-stick lh-guest" role="region" aria-label="Book a class"><span>🔒 Free preview · book a class to unlock everything</span><a class="btn btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a class." target="_blank" rel="noopener">Book a class</a></div>
 <script>(function(){var g=true;try{g=!(localStorage.getItem('pq-auth')==='1'&&localStorage.getItem('pq-access')!=='0')}catch(e){}document.documentElement.classList.add(g?'pq-guest':'pq-member');window.addEventListener('load',function(){var n=(window.PQ_MODULES||[]).length;if(n){var e=document.getElementById('lhMods');if(e)e.textContent=n}})})()</script>
+<script>window.addEventListener('load',function(){try{var M=window.PQ_MODULES||[],P=JSON.parse(localStorage.getItem('pq-progress')||'{}'),X=+JSON.parse(localStorage.getItem('pq-xp')||'0')||0;if(!M.length)return;var all=[],lv={};M.forEach(function(m,k){var l=+((/Level\s*(\d)/.exec(m.level&&m.level.en)||[,1])[1]);m.lessons.forEach(function(x){all.push(x);(lv[l]=lv[l]||[]).push(x)})});
+var pass=all.filter(function(x){return (P[x.id]||0)>=70}).length,md=M.filter(function(m){return m.lessons.every(function(x){return (P[x.id]||0)>=70})}).length,pct=Math.round(pass/all.length*100);
+var q=function(i){return document.getElementById(i)};if(q('lhmL')){q('lhmL').textContent=pass+'/'+all.length;q('lhmM').textContent=md+'/'+M.length;q('lhmX').textContent=X;q('lhmP').textContent=pct+'%';q('lhmRing').style.setProperty('--p',pct);
+var nx=all.find(function(x){return (P[x.id]||0)<70});if(nx&&nx.title)q('lhmNext').textContent='Next: '+(nx.title.en||nx.title);else if(!nx)q('lhmNext').textContent='Course complete. Well done!'}
+document.querySelectorAll('.jl').forEach(function(e,i){var a=lv[i+1]||[],d=a.filter(function(x){return (P[x.id]||0)>=70}).length,p=a.length?Math.round(d/a.length*100):0;if(document.documentElement.classList.contains('pq-member')){var s=document.createElement('div');s.className='jbar';s.innerHTML='<i style="width:'+p+'%"></i><span>'+d+'/'+a.length+' lessons · '+p+'%</span>';e.appendChild(s)}})}catch(e){}})</script>
 </main>
 <footer>
   <div class="wrap">
@@ -95,34 +103,34 @@
     <a class="btn btn-primary" href="#" data-wa="Hello! I am a Purple Queen student and need my lesson material." target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>Message the academy</a>
   </div>
 </dialog>
-<script src="assets/js/site.js?v=1795726470"></script><script src="assets/js/fx.js?v=1795726470" defer></script>
-<script src="assets/js/celebrate.js?v=1795726470"></script>
-<script src="assets/js/lessons.js?v=1795726470"></script>
-<script src="assets/js/lessons2.js?v=1795726470"></script>
-<script src="assets/js/lessons3.js?v=1795726470"></script>
-<script src="assets/js/lessons4.js?v=1795726470"></script>
-<script src="assets/js/lessons5.js?v=1795726470"></script>
-<script src="assets/js/lessons6.js?v=1795726470"></script>
-<script src="assets/js/lessons7.js?v=1795726470"></script>
-<script src="assets/js/lessons8.js?v=1795726470"></script>
-<script src="assets/js/lessons9.js?v=1795726470"></script>
-<script src="assets/js/lessons10.js?v=1795726470"></script>
-<script src="assets/js/lessons11.js?v=1795726470"></script>
-<script src="assets/js/lessons12.js?v=1795726470"></script>
-<script src="assets/js/lessons13.js?v=1795726470"></script>
-<script src="assets/js/lessons22.js?v=1795726470"></script>
-<script src="assets/js/lessons14.js?v=1795726470"></script>
-<script src="assets/js/lessons15.js?v=1795726470"></script>
-<script src="assets/js/lessons16.js?v=1795726470"></script>
-<script src="assets/js/lessons17.js?v=1795726470"></script>
-<script src="assets/js/lessons18.js?v=1795726470"></script>
-<script src="assets/js/lessons19.js?v=1795726470"></script>
-<script src="assets/js/lessons20.js?v=1795726470"></script>
-<script src="assets/js/lessons21.js?v=1795726470"></script>
-<script src="assets/js/modlabel.js?v=1795726470"></script>
-<script src="assets/js/board.js?v=1795726470"></script>
-<script src="assets/js/learn.js?v=1795726470"></script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=1795726470")}catch(e){}</script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=1795726470")}catch(e){}</script>
+<script src="assets/js/site.js?v=1795726823"></script><script src="assets/js/fx.js?v=1795726823" defer></script>
+<script src="assets/js/celebrate.js?v=1795726823"></script>
+<script src="assets/js/lessons.js?v=1795726823"></script>
+<script src="assets/js/lessons2.js?v=1795726823"></script>
+<script src="assets/js/lessons3.js?v=1795726823"></script>
+<script src="assets/js/lessons4.js?v=1795726823"></script>
+<script src="assets/js/lessons5.js?v=1795726823"></script>
+<script src="assets/js/lessons6.js?v=1795726823"></script>
+<script src="assets/js/lessons7.js?v=1795726823"></script>
+<script src="assets/js/lessons8.js?v=1795726823"></script>
+<script src="assets/js/lessons9.js?v=1795726823"></script>
+<script src="assets/js/lessons10.js?v=1795726823"></script>
+<script src="assets/js/lessons11.js?v=1795726823"></script>
+<script src="assets/js/lessons12.js?v=1795726823"></script>
+<script src="assets/js/lessons13.js?v=1795726823"></script>
+<script src="assets/js/lessons22.js?v=1795726823"></script>
+<script src="assets/js/lessons14.js?v=1795726823"></script>
+<script src="assets/js/lessons15.js?v=1795726823"></script>
+<script src="assets/js/lessons16.js?v=1795726823"></script>
+<script src="assets/js/lessons17.js?v=1795726823"></script>
+<script src="assets/js/lessons18.js?v=1795726823"></script>
+<script src="assets/js/lessons19.js?v=1795726823"></script>
+<script src="assets/js/lessons20.js?v=1795726823"></script>
+<script src="assets/js/lessons21.js?v=1795726823"></script>
+<script src="assets/js/modlabel.js?v=1795726823"></script>
+<script src="assets/js/board.js?v=1795726823"></script>
+<script src="assets/js/learn.js?v=1795726823"></script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=1795726823")}catch(e){}</script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=1795726823")}catch(e){}</script>
 </body>
 </html>
