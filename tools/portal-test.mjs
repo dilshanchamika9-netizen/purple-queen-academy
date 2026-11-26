@@ -184,7 +184,7 @@ for (const name of ['Puzzles A', 'Puzzles B']) {
   await coachPage.click('#hWhoSeg button[data-w="pick"]'); await coachPage.check(`#hPick input[value="${uid1}"]`);
   await coachPage.click('#hMode button[data-mode="puzzles"]'); await coachPage.fill('#hPz input[data-pz="1"]', '5');
   await coachPage.click('#hwForm button[type=submit]');
-  await coachPage.waitForFunction((n) => [...document.querySelectorAll('#hwList summary b')].some(b => b.textContent === n), name, { timeout: 20000 });
+  await coachPage.waitForFunction((n) => [...document.querySelectorAll('#hwList .hr b')].some(b => b.textContent === n), name, { timeout: 20000 });
   await coachPage.waitForTimeout(500);
 }
 const pzSets = await coachPage.evaluate(async (uid) => {
@@ -201,7 +201,7 @@ ok((await coachPage.textContent('#hFocus')).includes('PQ0001'), 'the one-student
 await tab('homework');
 ok(!(await coachPage.locator('#hFocus').isVisible()) && await coachPage.locator('#hWhoSeg').isVisible(), 'the Homework tab itself still offers all students');
 // review popup
-await coachPage.click('#hwList details.hw summary'); await coachPage.click('#hwList details.hw button[data-rv]');
+ok(await coachPage.locator('#hwList .hwc2 .hr button[data-rv]').first().isVisible(), 'Review button is visible without expanding anything'); await coachPage.click('#hwList .hwc2 .hr button[data-rv]');
 await coachPage.waitForSelector('.rv-ov .rv-tabs', { timeout: 10000 });
 ok((await coachPage.locator('.rv-tabs button').count()) === 3, 'review popup has Lessons, Puzzles and Skills tabs');
 await coachPage.keyboard.press('Escape'); ok((await coachPage.locator('.rv-ov').count()) === 0, 'Escape closes the review popup');
