@@ -1063,3 +1063,26 @@ html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255
 .lh-mbody .lp-panel { grid-area:panel; align-self:start }
 .lh-mbody .lb { max-width:var(--bs) !important; min-width:0 !important; width:100% }
 @media (max-width:900px) { .lh-mbody #learnApp { grid-template-columns:minmax(0,1fr); grid-template-areas:"road" "mod" "top" "board" "panel" "dock"; --bs:min(92vw,520px) } }
+
+/* theatre v3: site light colours, board fills the height */
+.lh-modal { background:linear-gradient(160deg,#FBF8FE 0,#F1E9FB 100%) !important; color:#1E1030 !important }
+.lh-mbar { background:#fff; border-bottom:1px solid var(--line); padding:10px 22px } .lh-mbar b { color:var(--night) !important } .lh-mbar small { color:var(--muted) }
+.lh-mx { background:#fff !important; border-color:var(--line) !important; color:var(--night) !important }
+.lh-mcta { background:#fff !important; border-top:1px solid var(--line) !important; color:var(--ink) } .lh-mcta b { color:var(--purple) !important }
+.lh-mbody { overflow:hidden !important; padding:6px 22px 4px !important; display:flex; min-height:0 }
+.lh-mbody #learnApp { height:100%; max-width:1320px; grid-template-columns:auto minmax(0,1fr) !important; grid-template-rows:auto auto minmax(0,1fr) auto !important; grid-template-areas:"road road" "board top" "board panel" "dock dock" !important; gap:6px 30px !important; align-items:stretch !important }
+.lh-mbody .lp-mod { display:none !important }
+.lh-mbody .lp-mods { overflow-x:auto; scrollbar-width:none; padding:2px 4px 2px } .lh-mbody .lp-mods::-webkit-scrollbar { display:none }
+.lh-mbody .lp-mods button { color:var(--muted) !important } .lh-mbody .lp-mods button::before { background:#fff !important; border:1.5px solid var(--line) !important; width:40px !important; height:40px !important } .lh-mbody .lp-mods button svg { stroke:var(--purple) !important; top:12px !important }
+.lh-mbody .lp-mods button::after { top:19px !important; background:repeating-linear-gradient(90deg,#CDBDE3 0 6px,transparent 6px 12px) !important }
+.lh-mbody .lp-mods button.cur { color:var(--night) !important } .lh-mbody .lp-mods button.cur::before { background:linear-gradient(135deg,#E8C98B,#C9A65B) !important; box-shadow:0 0 0 5px #C9A65B33 !important }
+.lh-mbody .lp-top { align-self:end !important } .lh-mbody .lp-top h2, .lh-mbody .lp-num { color:var(--night) !important } .lh-mbody .lp-num { color:var(--purple) !important }
+.lh-mbody .lp-boardwrap { height:100%; width:auto; aspect-ratio:1/1; min-height:0; align-self:stretch !important; background:#2A1240 !important; border:0 !important; box-shadow:0 24px 50px -28px #2A1240 !important; display:grid; align-content:center }
+.lh-mbody .lb { max-width:none !important; width:100% !important }
+.lh-mbody .lp-panel { background:#fff !important; border:1px solid var(--line) !important; backdrop-filter:none; align-self:stretch !important; overflow:auto } .lh-mbody .lp-panel .cap, .lh-mbody .lp-panel .q { color:var(--ink) !important }
+.lh-mbody .lp-list { overflow-x:auto; scrollbar-width:thin; padding:2px 0 4px !important }
+.lh-mbody .lp-list button { background:#fff !important; border:1px solid var(--line) !important; color:var(--purple) !important } .lh-mbody .lp-list button.ok { background:#E5F6EE !important; border-color:#9FD9BD !important; color:#157A4E !important } .lh-mbody .lp-list button.cur { background:var(--purple) !important; color:#fff !important; border-color:var(--purple) !important }
+@media (max-width:900px) { .lh-mbody { overflow:auto !important; display:block } .lh-mbody #learnApp { height:auto; grid-template-columns:minmax(0,1fr) !important; grid-template-rows:none !important; grid-template-areas:"road" "top" "board" "panel" "dock" !important } .lh-mbody .lp-boardwrap { width:100%; height:auto } }
+.lh-jcard { background:#fff !important; color:var(--ink) !important; border-color:var(--line) !important } .lh-jb li { color:var(--ink) } .lh-ghost2 { background:#F4EEFB !important; color:var(--purple) !important; border:1px solid var(--line) !important } .lh-jlnk { color:var(--purple) !important }
+.lh-mbody .lp-boardwrap { padding:12px 12px 30px 34px !important; box-sizing:border-box }
+.lh-mbody .lb { width:100% !important; height:auto }
