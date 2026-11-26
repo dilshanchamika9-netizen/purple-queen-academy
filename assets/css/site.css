@@ -1007,13 +1007,47 @@ html[data-theme="dark"] .lh-how > div { background:#150C28; border-color:rgba(18
 html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255,.2) } html[data-theme="dark"] .lvl h3 { color:#F4ECFF } html[data-theme="dark"] .mods li { background:#1d1236 } html[data-theme="dark"] .mods li.open { background:#2A1A47 }
 @media (max-width:900px) { .lh-path { grid-template-columns:1fr } .lh-kp { grid-template-columns:repeat(2,1fr) } }
 
-/* learn: free preview as a popup (guests) */
-.lh-modal { position:fixed; inset:0; height:100dvh; grid-template-rows:minmax(0,1fr); z-index:200; background:rgba(21,12,40,.72); backdrop-filter:blur(6px); display:grid; place-items:center; padding:18px } .lh-modal[hidden] { display:none }
-.lh-mbox { width:min(1180px,100%); max-height:94vh; min-height:0; display:flex; flex-direction:column; border-radius:26px; overflow:hidden; background:var(--paper,#FBF8FE); box-shadow:0 40px 90px -30px #000; animation:lhpop .28s ease }
-@keyframes lhpop { from { transform:translateY(18px) scale(.97); opacity:0 } to { transform:none; opacity:1 } }
-.lh-mbar { display:flex; align-items:center; gap:12px; padding:12px 16px 12px 22px; color:#fff; background:linear-gradient(120deg,#2A1240,#5B2AA5) } .lh-mbar span { flex:1; font-size:14px } .lh-mbar .btn { border:0 }
-.lh-mx { width:36px; height:36px; border-radius:50%; border:1px solid #ffffff40; background:#ffffff14; color:#fff; font-size:15px; cursor:pointer }
-.lh-mbody { overflow:auto; padding:16px } .lh-mbody #learnApp { display:grid; margin:0 }
+/* learn: free preview as a full-screen lesson theatre (guests) */
+.lh-modal { position:fixed; inset:0; height:100dvh; z-index:200; display:block; background:radial-gradient(circle at 78% 30%,#5B2AA5 0,#2A1240 38%,#0D0719 75%); color:#F4ECFF } .lh-modal[hidden] { display:none }
+.lh-mbox { height:100%; display:grid; grid-template-rows:auto minmax(0,1fr) auto; animation:lhpop .3s ease }
+@keyframes lhpop { from { opacity:0; transform:scale(.985) } to { opacity:1; transform:none } }
+.lh-mbar { display:flex; align-items:center; gap:12px; padding:14px 26px } .lh-mbar span { flex:1 } .lh-mbar small { display:block; opacity:.7; letter-spacing:.14em; text-transform:uppercase; font-size:11px } .lh-mbar b { font:700 18px var(--display); color:#fff }
+.lh-mbar .btn, .lh-mcta .btn { border:0; border-radius:999px; font-weight:700 } .lh-gold { background:linear-gradient(135deg,#E8C98B,#C9A65B) !important; color:#2A1240 !important }
+.lh-mx { width:38px; height:38px; border-radius:50%; border:1px solid #ffffff40; background:#ffffff14; color:#fff; font-size:15px; cursor:pointer }
+.lh-mbody { overflow:auto; padding:0 26px 10px; min-height:0 } .lh-mcta { display:flex; align-items:center; gap:14px; padding:12px 26px; border-top:1px solid #ffffff1c; background:#0D0719cc } .lh-mcta span { flex:1; font-size:14px } .lh-mcta b { color:#E8C98B }
 .lh-lock, .lh-lock body { overflow:hidden }
-.pq-guest .lh-pathw .mods li[data-try] { cursor:pointer } .pq-guest .lh-pathw .mods li[data-try]:hover { box-shadow:0 8px 22px -12px #7A3FD0 }
+.lh-mbody #learnApp { display:flex !important; flex-direction:column; gap:10px; max-width:1240px; margin:0 auto }
+.lh-mbody .lp-side { display:contents }
+.lh-mbody .lp-mods { order:1; display:flex !important; gap:0; overflow-x:auto; padding:8px 4px 4px; background:none; border:0 }
+.lh-mbody .lp-mods button { position:relative; flex:none; min-width:92px; display:grid; justify-items:center; gap:6px; background:none; border:0; color:#A99BC6; font:600 11px/1.2 var(--body); padding:0 14px 0 0; cursor:pointer }
+.lh-mbody .lp-mods button::before { content:''; width:46px; height:46px; border-radius:50%; background:#ffffff12; border:1.5px solid #ffffff2a; transition:.2s }
+.lh-mbody .lp-mods button svg { position:absolute; top:15px; left:calc(50% - 7px - 7px); width:16px; height:16px; stroke:#CDB8F5 }
+.lh-mbody .lp-mods button::after { content:''; position:absolute; top:22px; left:calc(50% + 28px); width:calc(100% - 56px); height:2px; background:repeating-linear-gradient(90deg,#ffffff33 0 6px,transparent 6px 12px) }
+.lh-mbody .lp-mods button:last-child::after { display:none }
+.lh-mbody .lp-mods button.cur { color:#fff } .lh-mbody .lp-mods button.cur::before { background:linear-gradient(135deg,#E8C98B,#C9A65B); border-color:transparent; box-shadow:0 0 0 6px #E8C98B22,0 0 30px #E8C98B66 }
+.lh-mbody .lp-mods button.lock:hover::before { border-color:#E8C98B; transform:scale(1.08) }
+.lh-mbody .lp-mod { order:2; display:flex; align-items:center; gap:12px; background:none; border:0; padding:0 4px; color:#fff } .lh-mbody .lp-mod > b { font:600 20px var(--display); color:#fff } .lh-mbody .lp-lv { color:#E8C98B } .lh-mbody .lp-ring, .lh-mbody .lp-xp { display:none }
+.lh-mbody .lp-main { order:3; background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; color:#fff }
+.lh-mbody .lp-top { border:0 !important; padding-bottom:6px !important; margin-bottom:6px !important } .lh-mbody .lp-top h2, .lh-mbody .lp-num { color:#fff !important }
+.lh-mbody .lp-stage { grid-template-columns:minmax(300px,520px) minmax(0,1fr) !important; gap:34px !important; align-items:center !important }
+.lh-mbody .lp-boardwrap { background:#1d0f36 !important; border:1px solid #ffffff22; border-radius:22px !important; box-shadow:0 40px 80px -30px #000,0 0 0 8px #ffffff08 }
+.lh-mbody .lp-panel { background:#ffffff0f !important; border:1px solid #ffffff22 !important; border-radius:24px !important; padding:24px !important; backdrop-filter:blur(10px) } .lh-mbody .lp-panel .cap, .lh-mbody .lp-panel .q { color:#E9DEFB !important }
+.lh-mbody .lp-list { order:4; display:flex !important; flex-direction:row; gap:8px; overflow-x:auto; max-height:none; padding:4px 2px 8px }
+.lh-mbody .lp-list li { flex:none } .lh-mbody .lp-list button { display:flex; gap:8px; align-items:center; padding:8px 14px !important; border-radius:999px !important; background:#ffffff0f; border:1px solid #ffffff22; color:#CDB8F5 !important; font-size:13px !important; white-space:nowrap; box-shadow:none !important }
+.lh-mbody .lp-list button.ok { background:#12382A; border-color:#1E9E66; color:#7FE0B0 !important } .lh-mbody .lp-list button.cur { background:#fff !important; color:#2A1240 !important; font-weight:700 } .lh-mbody .lp-list button.lock { opacity:.7 }
+.lh-mbody .lp-list .n { width:auto; height:auto; border:0 !important; background:none !important; color:inherit !important }
+.lh-mbody .lp-gate, .lh-mbody .lp-coach, .lh-mbody .lp-cert { display:none !important }
+.lh-join { position:fixed; inset:0; height:100dvh; z-index:210; display:grid; place-items:center; background:#0D0719bb; backdrop-filter:blur(8px); padding:16px } .lh-join[hidden] { display:none }
+.lh-jcard { width:min(460px,100%); border-radius:28px; overflow:hidden; background:#150C28; color:#F4ECFF; border:1px solid #ffffff2a; box-shadow:0 50px 100px -30px #000; animation:lhpop .3s ease }
+.lh-jh { padding:26px 26px 20px; text-align:center; background:radial-gradient(circle at 85% 0,#8B5CF6,#2A1240 60%) } .lh-jl { width:64px; height:64px; border-radius:50%; margin:0 auto 12px; display:grid; place-items:center; font-size:28px; background:#ffffff1a; border:1px solid #ffffff44; box-shadow:0 0 40px #E8C98B55 }
+.lh-jh small { letter-spacing:.14em; text-transform:uppercase; font-size:11px; color:#E8C98B } .lh-jh h3 { font:600 28px/1.15 var(--display); color:#fff; margin:6px 0 4px } .lh-jh p { margin:0; opacity:.85 }
+.lh-jb { padding:20px 26px 24px; display:grid; gap:8px } .lh-jb ul { list-style:none; margin:0 0 10px; padding:0; display:grid; gap:9px } .lh-jb li { display:flex; gap:10px; font-size:14px } .lh-jb li::before { content:'✓'; color:#5BE0A6; font-weight:700 }
+.lh-jb .btn { width:100%; justify-content:center; text-align:center; border:0 } .lh-ghost2 { background:#ffffff14; color:#fff; border:1px solid #ffffff33 !important } .lh-jlnk { text-align:center; color:#A99BC6; font-size:13px; margin-top:4px }
+.pq-guest .lh-pathw .mods li[data-try], .pq-guest .lh-pathw .mods li[data-join] { cursor:pointer } .pq-guest .lh-pathw .mods li[data-join]:hover { box-shadow:0 8px 22px -12px #7A3FD0 }
 .lh-pathw { margin-top:20px }
+@media (max-width:860px) { .lh-mbody .lp-stage { grid-template-columns:1fr !important } .lh-mcta span { font-size:12.5px } }
+.lh-mbody .lb { max-width:min(430px,calc(100vh - 470px)) !important; min-width:230px !important }
+.lh-mbody .lp-boardwrap { padding:10px 8px 18px 18px !important }
+.lh-mbody .lp-stage { grid-template-columns:minmax(260px,470px) minmax(0,1fr) !important; justify-content:center }
+.lh-mbody .lp-mods button svg { top:15px; left:50%; margin-left:-8px; transform:none }
+.lh-mbody .lp-top { margin-top:0 !important } .lh-mbody .lp-mod { margin-top:-4px }

@@ -14,9 +14,9 @@
 <meta property="og:image" content="assets/logo/pq-logo-primary-wood-1024.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=1795727656">
-<link rel="stylesheet" href="assets/css/portal.css?v=1795727656">
-<script src="assets/js/portal/ui.js?v=1795727656"></script>
+<link rel="stylesheet" href="assets/css/site.css?v=1795728230">
+<link rel="stylesheet" href="assets/css/portal.css?v=1795728230">
+<script src="assets/js/portal/ui.js?v=1795728230"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -84,16 +84,26 @@ var nx=all.find(function(x){return (P[x.id]||0)<70});if(nx&&nx.title)q('lhmNext'
 document.querySelectorAll('.jl').forEach(function(e,i){var a=lv[i+1]||[],d=a.filter(function(x){return (P[x.id]||0)>=70}).length,p=a.length?Math.round(d/a.length*100):0;if(document.documentElement.classList.contains('pq-member')){var s=document.createElement('div');s.className='jbar';s.innerHTML='<i style="width:'+p+'%"></i><span>'+d+'/'+a.length+' lessons · '+p+'%</span>';e.appendChild(s)}})}catch(e){}})</script>
 <script>window.addEventListener('load',function(){try{var M=window.PQ_MODULES||[],box=document.getElementById('lhPath');if(!box||!M.length)return;var N={1:['Level 1','Foundations'],2:['Level 2','Tactics & endgames'],3:['Level 3','Tournament mastery']},g={1:[],2:[],3:[]},n=0;M.forEach(function(m,k){var l=+((/Level\s*(\d)/.exec(m.level&&m.level.en)||[,1])[1]);(g[l]=g[l]||[]).push(m)});
 var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')};
-box.innerHTML=[1,2,3].map(function(l){var a=g[l]||[];return '<div class="lvl"><small>'+N[l][0]+' · '+a.length+' modules</small><h3>'+N[l][1]+'</h3><ul class="mods">'+a.map(function(m,i){var f=(l===1&&i===0);return '<li class="'+(f?'open':'lk')+'"'+(f?' data-try="1" role="button" tabindex="0" title="Open the free preview"':'')+'><span class="n">'+(f?'✓':'🔒')+'</span><span class="mt"><b>'+esc((m.title&&m.title.en)||('Module '+(i+1)))+'</b><small>'+m.lessons.length+(m.lessons.length===1?' lesson':' lessons')+'</small></span>'+(f?'<span class="tagf">FREE</span>':'<em>With class</em>')+'</li>'}).join('')+'</ul></div>'}).join('')}catch(e){}})</script>
+box.innerHTML=[1,2,3].map(function(l){var a=g[l]||[];return '<div class="lvl"><small>'+N[l][0]+' · '+a.length+' modules</small><h3>'+N[l][1]+'</h3><ul class="mods">'+a.map(function(m,i){var f=(l===1&&i===0);return '<li class="'+(f?'open':'lk')+'"'+(f?' data-try="1" role="button" tabindex="0" title="Open the free preview"':' data-join="'+esc((m.title&&m.title.en)||'Module')+'|'+N[l][0]+' · Module '+(i+1)+'" role="button" tabindex="0"')+'><span class="n">'+(f?'✓':'🔒')+'</span><span class="mt"><b>'+esc((m.title&&m.title.en)||('Module '+(i+1)))+'</b><small>'+m.lessons.length+(m.lessons.length===1?' lesson':' lessons')+'</small></span>'+(f?'<span class="tagf">FREE</span>':'<em>With class</em>')+'</li>'}).join('')+'</ul></div>'}).join('')}catch(e){}})</script>
 <script>(function(){if(!document.documentElement.classList.contains('pq-guest'))return;var app=document.getElementById('learnApp');if(!app)return;
 var ov=document.createElement('div');ov.className='lh-modal';ov.hidden=true;ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Free preview: Level 1 Module 1');
-ov.innerHTML='<div class="lh-mbox"><div class="lh-mbar"><span><b>Free preview</b> · Level 1 · Module 1</span><a class="btn lh-gold btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a class." target="_blank" rel="noopener">Book a class</a><button type="button" class="lh-mx" aria-label="Close">✕</button></div><div class="lh-mbody"></div></div>';
+ov.innerHTML='<div class="lh-mbox"><div class="lh-mbar"><span><small>Free preview</small><b>Purple Queen · Lesson theatre</b></span><a class="btn lh-gold btn-sm" href="#" data-wa="Hello Purple Queen Chess Academy! I would like to book a class." target="_blank" rel="noopener">Book a class</a><button type="button" class="lh-mx" aria-label="Close">✕</button></div><div class="lh-mbody"></div><div class="lh-mcta"><span>You are on <b>Module 1</b>. <b id="lhMore">21 more modules</b>, 2,500 puzzles and a coach are waiting.</span><button type="button" class="btn lh-gold btn-sm" data-join="Join the academy|Free preview ends here">Unlock everything</button></div></div>';
 document.body.appendChild(ov);var body=ov.querySelector('.lh-mbody');body.appendChild(app);
 var wa=ov.querySelector('[data-wa]');wa.href='https://wa.me/94771691435?text='+encodeURIComponent(wa.dataset.wa);
+var jp=document.createElement('div');jp.className='lh-join';jp.hidden=true;jp.setAttribute('role','dialog');jp.setAttribute('aria-modal','true');
+jp.innerHTML='<div class="lh-jcard"><div class="lh-jh"><div class="lh-jl">🔒</div><small id="jpK"></small><h3 id="jpT"></h3><p>This is part of the class.</p></div><div class="lh-jb"><ul><li>Every module, lesson and practice unlocked</li><li>A coach reviews your mistakes</li><li>A certificate at the end of each module</li></ul><a class="btn lh-gold" id="jpWa" href="#" target="_blank" rel="noopener">Book a class on WhatsApp</a><button type="button" class="btn lh-ghost2" id="jpStay">Keep trying Module 1</button><a class="lh-jlnk" href="login.html?next=learn.html">Already a student? Sign in</a></div></div>';
+document.body.appendChild(jp);jp.querySelector('#jpWa').href='https://wa.me/94771691435?text='+encodeURIComponent('Hello Purple Queen Chess Academy! I would like to book a class.');
+function join(t,k){jp.querySelector('#jpT').textContent=t||'Join the academy';jp.querySelector('#jpK').textContent=k||'';jp.hidden=false}
 function open(){ov.hidden=false;document.documentElement.classList.add('lh-lock');var c=ov.querySelector('.lh-mx');c&&c.focus()}
-function close(){ov.hidden=true;document.documentElement.classList.remove('lh-lock')}
-document.addEventListener('click',function(e){var t=e.target.closest('[data-try]');if(t){e.preventDefault();open();return}if(e.target===ov||e.target.closest('.lh-mx'))close()});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-try]')){e.preventDefault();open()}});
+function close(){ov.hidden=true;jp.hidden=true;document.documentElement.classList.remove('lh-lock')}
+var mm=window.PQ_MODULES||[];var mc=document.getElementById('lhMore');if(mc&&mm.length)mc.textContent=(mm.length-1)+' more modules';
+document.addEventListener('click',function(e){
+ var j=e.target.closest('[data-join]');if(j){e.preventDefault();var p=j.dataset.join.split('|');join(p[0],p[1]);return}
+ var lk=e.target.closest('.lh-modal #modTabs button.lock');if(lk){e.preventDefault();e.stopImmediatePropagation();join(lk.title||lk.textContent.trim(),lk.textContent.trim());return}
+ var t=e.target.closest('[data-try]');if(t){e.preventDefault();open();return}
+ if(e.target===jp||e.target.id==='jpStay'){jp.hidden=true;return}
+ if(e.target===ov||e.target.closest('.lh-mx'))close()},true);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(!jp.hidden)jp.hidden=true;else if(!ov.hidden)close()}if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-try],[data-join]')){e.preventDefault();e.target.click()}});
 if(location.hash==='#try')open()})()</script>
 </main>
 <footer>
@@ -114,34 +124,34 @@ if(location.hash==='#try')open()})()</script>
     <a class="btn btn-primary" href="#" data-wa="Hello! I am a Purple Queen student and need my lesson material." target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>Message the academy</a>
   </div>
 </dialog>
-<script src="assets/js/site.js?v=1795727656"></script><script src="assets/js/fx.js?v=1795727656" defer></script>
-<script src="assets/js/celebrate.js?v=1795727656"></script>
-<script src="assets/js/lessons.js?v=1795727656"></script>
-<script src="assets/js/lessons2.js?v=1795727656"></script>
-<script src="assets/js/lessons3.js?v=1795727656"></script>
-<script src="assets/js/lessons4.js?v=1795727656"></script>
-<script src="assets/js/lessons5.js?v=1795727656"></script>
-<script src="assets/js/lessons6.js?v=1795727656"></script>
-<script src="assets/js/lessons7.js?v=1795727656"></script>
-<script src="assets/js/lessons8.js?v=1795727656"></script>
-<script src="assets/js/lessons9.js?v=1795727656"></script>
-<script src="assets/js/lessons10.js?v=1795727656"></script>
-<script src="assets/js/lessons11.js?v=1795727656"></script>
-<script src="assets/js/lessons12.js?v=1795727656"></script>
-<script src="assets/js/lessons13.js?v=1795727656"></script>
-<script src="assets/js/lessons22.js?v=1795727656"></script>
-<script src="assets/js/lessons14.js?v=1795727656"></script>
-<script src="assets/js/lessons15.js?v=1795727656"></script>
-<script src="assets/js/lessons16.js?v=1795727656"></script>
-<script src="assets/js/lessons17.js?v=1795727656"></script>
-<script src="assets/js/lessons18.js?v=1795727656"></script>
-<script src="assets/js/lessons19.js?v=1795727656"></script>
-<script src="assets/js/lessons20.js?v=1795727656"></script>
-<script src="assets/js/lessons21.js?v=1795727656"></script>
-<script src="assets/js/modlabel.js?v=1795727656"></script>
-<script src="assets/js/board.js?v=1795727656"></script>
-<script src="assets/js/learn.js?v=1795727656"></script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=1795727656")}catch(e){}</script>
-<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=1795727656")}catch(e){}</script>
+<script src="assets/js/site.js?v=1795728230"></script><script src="assets/js/fx.js?v=1795728230" defer></script>
+<script src="assets/js/celebrate.js?v=1795728230"></script>
+<script src="assets/js/lessons.js?v=1795728230"></script>
+<script src="assets/js/lessons2.js?v=1795728230"></script>
+<script src="assets/js/lessons3.js?v=1795728230"></script>
+<script src="assets/js/lessons4.js?v=1795728230"></script>
+<script src="assets/js/lessons5.js?v=1795728230"></script>
+<script src="assets/js/lessons6.js?v=1795728230"></script>
+<script src="assets/js/lessons7.js?v=1795728230"></script>
+<script src="assets/js/lessons8.js?v=1795728230"></script>
+<script src="assets/js/lessons9.js?v=1795728230"></script>
+<script src="assets/js/lessons10.js?v=1795728230"></script>
+<script src="assets/js/lessons11.js?v=1795728230"></script>
+<script src="assets/js/lessons12.js?v=1795728230"></script>
+<script src="assets/js/lessons13.js?v=1795728230"></script>
+<script src="assets/js/lessons22.js?v=1795728230"></script>
+<script src="assets/js/lessons14.js?v=1795728230"></script>
+<script src="assets/js/lessons15.js?v=1795728230"></script>
+<script src="assets/js/lessons16.js?v=1795728230"></script>
+<script src="assets/js/lessons17.js?v=1795728230"></script>
+<script src="assets/js/lessons18.js?v=1795728230"></script>
+<script src="assets/js/lessons19.js?v=1795728230"></script>
+<script src="assets/js/lessons20.js?v=1795728230"></script>
+<script src="assets/js/lessons21.js?v=1795728230"></script>
+<script src="assets/js/modlabel.js?v=1795728230"></script>
+<script src="assets/js/board.js?v=1795728230"></script>
+<script src="assets/js/learn.js?v=1795728230"></script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/sync.js?v=1795728230")}catch(e){}</script>
+<script type="module">try{if(localStorage.getItem("pq-auth")==="1")import("./assets/js/portal/track.js?v=1795728230")}catch(e){}</script>
 </body>
 </html>
