@@ -127,3 +127,13 @@ html[data-theme="dark"] .cp-kv div { background:#1C1233 } html[data-theme="dark"
 #detail .mls li { grid-template-columns:minmax(0, 1fr) 54px 120px 92px }
 @media (max-width:560px) { #detail .mls li { grid-template-columns:minmax(0, 1fr) 48px 88px } #detail .mls li small { display:none } }
 html[data-theme="dark"] #detail .mini.on { background:#12301F; border-color:#245A3A; color:#9BE0B8 }
+
+/* compact student blocks; password messages as one slim line */
+.cp-grid { align-items:start } .cp-card { align-content:start; gap:10px; padding:14px 16px; border-radius:18px }
+.cp-card .top .sp-av { width:42px; height:42px; font-size:14px } .cp-rank i { height:14px; border-radius:5px }
+.cp-kv { gap:6px } .cp-kv div { padding:6px 9px; border-radius:10px } .cp-kv b { font-size:15px } .cp-kv small { font-size:11px }
+.cp-ft .sp-btn { padding:8px 12px; font-size:13.5px }
+.cp-creds { display:flex; flex-wrap:wrap; gap:6px; grid-column:1 / -1 }
+.cp-creds .cp-cred { margin:0; padding:5px 8px 5px 10px; gap:6px; font-size:12.5px; border-radius:10px; flex:0 1 auto }
+.cp-creds .cp-cred b { font-size:12px } .cp-creds .cp-cred code.pw { padding:1px 7px; font-size:13px } .cp-creds .cp-cred .mini { padding:2px 9px; font-size:12px; min-height:0 } .cp-creds .cp-cred .mini.x { padding:0 8px; font-size:15px; line-height:1.4 }
+.cp-grid.list .cp-creds { margin-top:-2px }

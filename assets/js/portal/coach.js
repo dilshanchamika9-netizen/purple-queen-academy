@@ -374,12 +374,16 @@ function credBox(s) {
   const mine = queue.filter(q => (q.uid === s.uid || (s.parentUid && q.uid === s.parentUid)) && !hide.has(q.id));
   const seen = new Set();
   mine.forEach(q => { const k = q.type + (q.uid === s.uid ? 's' : 'p'); if (seen.has(k)) return; seen.add(k); out.push(q) });
-  return out.map(q => {
+  const html = out.map(q => {
     const who = q.type === 'delete' ? 'Removal' : q.uid === s.uid ? 'Student password' : 'Parent password';
     const body = q.status === 'pending' ? '<span class="cred-w">Requested. Done within about 10–15 minutes.</span>' : q.status === 'error' ? `<span class="cred-e">Failed: ${esc(q.error || '')}</span>` : q.type === 'reset' ? `<code class="pw" data-pw="${esc(q.tempPassword || '')}">••••••••</code><button type="button" class="mini" data-a="pwshow">Show</button><button type="button" class="mini" data-a="pwcopy">Copy</button>` : '<span class="cred-w">Removed.</span>';
-    return `<div class="cp-cred ${q.status}" data-q="${q.id}"><b>${who}</b>${body}${q.status === 'pending' ? '' : `<button type="button" class="mini" data-a="pwhide" aria-label="Hide">Hide</button>`}</div>`;
+    return `<div class="cp-cred ${q.status}" data-q="${q.id}"><b>${who}</b>${body}${q.status === 'pending' ? '' : `<button type="button" class="mini x" data-a="pwhide" aria-label="Hide this message" title="Hide">×</button>`}</div>`;
   }).join('');
+  return html ? `<div class="cp-creds">${html}</div>` : '';
 }
+// the ••• menu closes when you click anywhere else, press Esc, or choose an action
+document.addEventListener('click', (e) => { document.querySelectorAll('details.rowmenu[open]').forEach(d => { if (!d.contains(e.target) || e.target.closest('button[data-a]')) d.open = false }) });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('details.rowmenu[open]').forEach(d => { d.open = false }) });
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('.cp-cred button[data-a]'); if (!b) return; const box = b.closest('.cp-cred'), a = b.dataset.a, code = box.querySelector('code.pw');
   if (a === 'pwshow') { const on = code.textContent !== code.dataset.pw; code.textContent = on ? code.dataset.pw : '••••••••'; b.textContent = on ? 'Hide password' : 'Show' }
