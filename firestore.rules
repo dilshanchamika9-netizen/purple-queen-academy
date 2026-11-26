@@ -34,7 +34,8 @@ service cloud.firestore {
     }
     match /progress/{uid} {
       allow read: if isCoach() || (signedIn() && request.auth.uid == uid) || (isParent() && myChild() == uid);
-      allow write: if (isStudent() && request.auth.uid == uid || isCoach())   // a coach resets or sets lesson marks (raising epoch)
+      // a coach resets or sets lesson marks (raising epoch); a student device that still holds older marks (lower epoch) is refused, so it cannot undo a reset
+      allow write: if (isStudent() && request.auth.uid == uid && (resource == null || !('epoch' in resource.data) || request.resource.data.get('epoch', 0) >= resource.data.epoch) || isCoach())
         && request.resource.data.keys().hasOnly(['lessons', 'xp', 'puzzles', 'updatedAt', 'epoch']);
     }
     // active study time and attempts per lesson (written by the student's own browser)
