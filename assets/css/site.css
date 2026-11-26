@@ -1051,3 +1051,15 @@ html[data-theme="dark"] .lvl { background:#150C28; border-color:rgba(181,140,255
 .lh-mbody .lp-stage { grid-template-columns:minmax(260px,470px) minmax(0,1fr) !important; justify-content:center }
 .lh-mbody .lp-mods button svg { top:15px; left:50%; margin-left:-8px; transform:none }
 .lh-mbody .lp-top { margin-top:0 !important } .lh-mbody .lp-mod { margin-top:-4px }
+
+/* theatre layout v2: big board left, lesson header + card right */
+.lh-mbody { overflow-x:hidden }
+.lh-mbody #learnApp { display:grid !important; --bs:clamp(250px, calc(100dvh - 355px), 660px); grid-template-columns:calc(var(--bs) + 36px) minmax(0,1fr); grid-template-areas:"road road" "mod mod" "board top" "board panel" "dock dock"; gap:6px 34px; width:100%; min-width:0; align-items:center; max-width:1240px }
+.lh-mbody .lp-mods { grid-area:road } .lh-mbody .lp-mod { grid-area:mod; margin:0 } .lh-mbody .lp-list { grid-area:dock; min-width:0 }
+.lh-mbody .lp-main, .lh-mbody .lp-stage { display:contents !important }
+.lh-mbody .lp-top { grid-area:top; align-self:end; display:grid !important; gap:8px; margin:0 !important; padding:0 !important }
+.lh-mbody .lp-top h2 { font-size:clamp(26px,3vw,40px) !important; line-height:1.05 }
+.lh-mbody .lp-boardwrap { grid-area:board; align-self:center; width:100%; justify-self:start }
+.lh-mbody .lp-panel { grid-area:panel; align-self:start }
+.lh-mbody .lb { max-width:var(--bs) !important; min-width:0 !important; width:100% }
+@media (max-width:900px) { .lh-mbody #learnApp { grid-template-columns:minmax(0,1fr); grid-template-areas:"road" "mod" "top" "board" "panel" "dock"; --bs:min(92vw,520px) } }
