@@ -52,7 +52,8 @@ service cloud.firestore {
     }
     // a student's ticks on the manual items of one assignment; document id = assignmentId_studentUid
     match /astatus/{id} {
-      allow read: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
+      // a student may also read their own document before it exists (id ends with their uid): the puzzle page does this the first time it opens
+      allow read: if isCoach() || (isStudent() && id.matches('.*_' + request.auth.uid)) || (signedIn() && resource.data.uid == request.auth.uid) || (isParent() && resource.data.uid == myChild());
       // pz = what the student did on each homework puzzle (result, retries, hints); sub = when the puzzles were submitted (locks the document)
       allow create: if isStudent() && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.aid + '_' + request.auth.uid

@@ -150,6 +150,16 @@ const sden = await pg.evaluate(async ([uid2, aid]) => {
 ok(sden.makeHomework === 'permission-denied', 'student cannot create homework');
 ok(sden.tickForOther === 'permission-denied', 'student cannot tick another student’s homework');
 ok(sden.otherTime === 'permission-denied', 'student cannot read another student’s study time');
+// the puzzle page reads its own astatus document before it exists: that must be allowed, another student's must not
+const rdr = await pg.evaluate(async ([uid1, uid2]) => {
+  const m = await import('./assets/js/portal/fb.js'), r = {};
+  const t = async (k, f) => { try { await f(); r[k] = 'allowed' } catch (e) { r[k] = e.code } };
+  await t('ownMissing', () => m.F.getDoc(m.F.doc(m.db, 'astatus', 'nothing_' + uid1)));
+  await t('otherMissing', () => m.F.getDoc(m.F.doc(m.db, 'astatus', 'nothing_' + uid2)));
+  return r;
+}, [uid1, uid2]);
+ok(rdr.ownMissing === 'allowed', 'student can open the puzzle page the first time (reads own missing astatus)');
+ok(rdr.otherMissing === 'permission-denied', 'student cannot read another student’s astatus id');
 // homework puzzle log: the student saves results per puzzle, and after Submit the document is locked
 const pzr = await pg.evaluate(async ([uid1]) => {
   const m = await import('./assets/js/portal/fb.js'), r = {}, ref = m.F.doc(m.db, 'astatus', 'zz_' + uid1);
