@@ -1,18 +1,19 @@
 // Live check of the real Realtime Database: two temporary students play a few moves, then everything is removed.
-import adminPkg from 'firebase-admin';
-const admin = adminPkg.default || adminPkg;
+import { initializeApp as adminInit, cert } from 'firebase-admin/app';
+import { getAuth as adminAuth } from 'firebase-admin/auth';
+import { getDatabase as adminDb } from 'firebase-admin/database';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getDatabase, ref, set, update, get, remove, serverTimestamp as ST } from 'firebase/database';
 const URL = 'https://purple-queen-38407-default-rtdb.asia-southeast1.firebasedatabase.app';
-admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)), databaseURL: URL });
+adminInit({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)), databaseURL: URL });
 const cfg = { apiKey: 'AIzaSyCqXiPLDV0T3ASvrQyRg-6f0taUpedwngg', authDomain: 'purple-queen-38407.firebaseapp.com', projectId: 'purple-queen-38407', databaseURL: URL };
 let n = 0, fails = 0; const ok = (c, m) => { n++; console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++ };
 const sids = ['pqsmoke1', 'pqsmoke2'], users = [];
 async function client(sid) {
   const email = `${sid}@pq-students.example.com`;
-  const u = await admin.auth().createUser({ email, password: 'Smoke-' + Math.random().toString(36).slice(2) + 'A1' }); users.push(u.uid);
-  const app = initializeApp(cfg, sid); await signInWithCustomToken(getAuth(app), await admin.auth().createCustomToken(u.uid));
+  const u = await adminAuth().createUser({ email, password: 'Smoke-' + Math.random().toString(36).slice(2) + 'A1' }); users.push(u.uid);
+  const app = initializeApp(cfg, sid); await signInWithCustomToken(getAuth(app), await adminAuth().createCustomToken(u.uid));
   return { uid: u.uid, sid, db: getDatabase(app) };
 }
 const BASE = 600000, INC = 5000;
@@ -38,9 +39,9 @@ try {
   await set(ref(A.db, `games/${g}/result`), { r: '0-1', why: 'resign', by: A.uid, t: ST() }); ok(true, 'white resigns, result stored');
   let twice = false; await set(ref(B.db, `games/${g}/result`), { r: '1-0', why: 'resign', by: B.uid, t: ST() }).catch(() => { twice = true }); ok(twice, 'result cannot be changed afterwards');
   await set(ref(A.db, `ug/${A.uid}/${g}`), { opp: B.uid, oppName: 'Smoke B.', col: 'w', r: '0-1', why: 'resign', tc: '10+5', rated: false, t: ST() }); ok(true, 'own game list entry saved');
-  const adb = admin.database();
+  const adb = adminDb();
   await adb.ref(`games/${g}`).remove(); await adb.ref(`ch/${B.uid}`).remove(); await adb.ref(`ug/${A.uid}`).remove(); await adb.ref(`pres/${g}`).remove();
   await adb.ref(`dir/${sids[0]}`).remove(); await adb.ref(`dir/${sids[1]}`).remove();
   ok(true, 'test data removed');
 } catch (e) { console.log('FAIL exception: ' + e.message); fails++ }
-finally { for (const u of users) await admin.auth().deleteUser(u).catch(() => {}); console.log(`\n${n - fails}/${n} PASS`); process.exit(fails ? 1 : 0) }
+finally { for (const u of users) await adminAuth().deleteUser(u).catch(() => {}); console.log(`\n${n - fails}/${n} PASS`); process.exit(fails ? 1 : 0) }
