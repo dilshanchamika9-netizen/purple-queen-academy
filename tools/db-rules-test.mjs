@@ -20,7 +20,7 @@ await admin(db => set(ref(db, 'staff/coach'), true));
 
 const BASE = 60000, INC = 5000, NS = 180000;
 const meta = (over = {}) => ({ w: 'uA', b: 'uB', wn: 'A', bn: 'B', base: BASE, inc: INC, ns: NS, rated: false, watch: false, startAt: ST(), by: 'uB', ...over });
-const fresh = (over = {}) => ({ meta: meta(over), n: 0, clk: { t: ST(), w: over.base || BASE, b: over.base || BASE } });
+const fresh = (over = {}) => ({ meta: meta(over), n: 0, clk: { t: Date.now() + 3000, w: over.base || BASE, b: over.base || BASE } });
 const mv = (db, g, i, s, clk) => update(ref(db, `games/${g}`), { n: i + 1, [`moves/${i}`]: { s, t: ST() }, clk: { t: ST(), ...clk } });
 
 // directory
@@ -41,7 +41,8 @@ await no('C cannot read B challenges', get(ref(C, 'ch/uB')));
 await no('C cannot create a game for A v B', set(ref(C, 'games/g0'), fresh({ by: 'uC' })));
 await no('A cannot create without a challenge from B', set(ref(A, 'games/g0'), fresh({ by: 'uA' })));
 await no('start time must be server time', set(ref(Bb, 'games/g0'), { ...fresh(), meta: meta({ startAt: Date.now() - 999999 }) }));
-await no('clock must equal base time', set(ref(Bb, 'games/g0'), { ...fresh(), clk: { t: ST(), w: 999999, b: BASE } }));
+await no('clock must equal base time', set(ref(Bb, 'games/g0'), { ...fresh(), clk: { t: Date.now() + 3000, w: 999999, b: BASE } }));
+await no('clock start must be about 3 s ahead', set(ref(Bb, 'games/g0'), { ...fresh(), clk: { t: Date.now() + 60000, w: BASE, b: BASE } }));
 await no('base time range checked', set(ref(Bb, 'games/g0'), fresh({ base: 10000 })));
 await ok('B accepts and creates game g1', set(ref(Bb, 'games/g1'), fresh()));
 await no('game cannot be created twice', set(ref(Bb, 'games/g1'), fresh()));
@@ -56,6 +57,7 @@ await ok('coach reads g1', get(ref(K, 'games/g1')));
 await no('black cannot move first', mv(Bb, 'g1', 0, 'e7e5', { w: BASE, b: BASE + INC }));
 await no('bad move text refused', mv(A, 'g1', 0, 'e4', { w: BASE + INC, b: BASE }));
 await no('white cannot give itself extra time', mv(A, 'g1', 0, 'e2e4', { w: BASE + INC + 5000, b: BASE }));
+await no('moving before the start gives no extra time', mv(A, 'g1', 0, 'e2e4', { w: BASE + INC + 3000, b: BASE }));
 await no('white cannot change black clock', mv(A, 'g1', 0, 'e2e4', { w: BASE + INC, b: BASE - 30000 }));
 await no('wrong move index refused', update(ref(A, 'games/g1'), { n: 1, 'moves/5': { s: 'e2e4', t: ST() }, clk: { t: ST(), w: BASE + INC, b: BASE } }));
 await no('two moves at once refused', update(ref(A, 'games/g1'), { n: 2, 'moves/0': { s: 'e2e4', t: ST() }, 'moves/1': { s: 'e7e5', t: ST() }, clk: { t: ST(), w: BASE + INC, b: BASE } }));
@@ -101,6 +103,16 @@ await ok('black claims white no-show after 3 min', set(ref(Bb, 'games/g6/result'
 await admin(db => set(ref(db, 'games/g7'), { meta: { ...meta(), base: 600000, startAt: past(30000) }, n: 0, clk: { t: past(30000), w: 600000, b: 600000 } }));
 await no('no-show refused before 3 min', set(ref(Bb, 'games/g7/result'), { r: '0-1', why: 'noshow', by: 'uB', t: ST() }));
 await ok('mated side (white to move) writes mate', set(ref(A, 'games/g7/result'), { r: '0-1', why: 'mate', by: 'uA', t: ST() }));
+
+// preset messages and own game list
+await ok('player sends a preset message', set(ref(A, 'games/g1/msg/uA'), { k: 2, t: ST() }));
+await no('message index out of range', set(ref(A, 'games/g1/msg/uA'), { k: 9, t: ST() }));
+await no('cannot send as the opponent', set(ref(A, 'games/g1/msg/uB'), { k: 1, t: ST() }));
+await no('non-player cannot send messages', set(ref(C, 'games/g1/msg/uC'), { k: 1, t: ST() }));
+await ok('player saves own game list entry', set(ref(A, 'ug/uA/g1'), { opp: 'uB', oppName: 'B', col: 'w', r: '1/2-1/2', why: 'agree', tc: '1+5', rated: false, t: ST() }));
+await no('cannot write another player game list', set(ref(A, 'ug/uB/g1'), { opp: 'uA', oppName: 'A', r: '1-0' }));
+await no('cannot read another player game list', get(ref(C, 'ug/uA')));
+await ok('coach reads a player game list', get(ref(K, 'ug/uA')));
 
 // presence
 await ok('player marks own presence', set(ref(A, 'pres/g1/uA'), true));

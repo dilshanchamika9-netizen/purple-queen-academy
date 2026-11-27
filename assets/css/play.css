@@ -1,0 +1,148 @@
+/* Purple Queen live play (play.html): lobby + live game. Uses the site colours (site.css tokens) and the lesson board look. */
+#playApp { max-width:1240px; margin:0 auto }
+#playApp .btn { padding:12px 18px; font-size:14.5px; justify-content:center }
+.pv-mut { color:#6B6080; font-size:13.5px }
+.pv-ok { background:var(--ok); color:#fff } .pv-ok:hover { background:#25744B }
+.pv-bad { background:#fff; color:var(--full); border-color:#E9C4CF } .pv-bad.arm { background:var(--full); color:#fff }
+.pv-gold { background:var(--gold); color:var(--night) }
+.dot { width:9px; height:9px; border-radius:50%; background:var(--ok); display:inline-block; flex:none }
+.dot.off { background:#B9B1C7 } .dot.busy { background:var(--gold) }
+.av { width:36px; height:36px; border-radius:50%; background:var(--lav-2); color:var(--purple); display:grid; place-items:center; font:800 13px var(--body); flex:none }
+.av.big { width:56px; height:56px; font-size:18px }
+.pulse { width:10px; height:10px; border-radius:50%; background:var(--gold); flex:none; animation:pvpl 1.4s infinite }
+@keyframes pvpl { 0% { box-shadow:0 0 0 0 rgba(201,164,92,.7) } 70% { box-shadow:0 0 0 10px rgba(201,164,92,0) } 100% { box-shadow:0 0 0 0 rgba(201,164,92,0) } }
+
+/* gate (signed out, coach) */
+.pv-gate { max-width:520px; margin:60px auto; text-align:center; background:#fff; border:1px solid #E7E2F0; border-radius:20px; padding:34px 26px }
+.pv-gate h2 { font:700 32px var(--display); color:var(--purple); margin:10px 0 6px } .pv-gate p { color:#6B6080; margin-bottom:18px }
+.pv-seal { width:64px; height:64px; border-radius:50%; margin:0 auto; display:grid; place-items:center; font-size:30px; color:#fff; background:linear-gradient(135deg, var(--purple), var(--wood)) }
+
+/* lobby */
+.pv-hero { border-radius:22px; padding:24px 26px; margin-bottom:18px; background:linear-gradient(120deg, var(--purple), var(--wood) 60%, var(--lav)); color:#fff; display:flex; gap:20px; align-items:center; flex-wrap:wrap }
+.pv-hero h1 { font:700 clamp(28px, 3.4vw, 36px)/1.05 var(--display); color:#fff; -webkit-text-fill-color:#fff }
+.pv-hero p { opacity:.92; margin-top:6px }
+.pv-kp { display:flex; gap:10px; margin-left:auto; flex-wrap:wrap }
+.pv-kp div { background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28); border-radius:14px; padding:10px 14px; min-width:104px }
+.pv-kp b { display:block; font:800 22px var(--body) } .pv-kp small { font-size:12px; opacity:.88 }
+.pv-grid { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:18px; align-items:start }
+.pv-col { display:grid; gap:18px }
+.pv-card { background:#fff; border:1px solid #E7E2F0; border-radius:18px; padding:20px }
+.pv-card h2 { font:700 23px var(--display); color:var(--purple); margin-bottom:12px }
+.pv-lbl { font:700 11.5px var(--body); letter-spacing:.08em; text-transform:uppercase; color:#8A7FA0; margin:16px 0 8px }
+.pv-in { width:100%; border:1px solid #E7E2F0; border-radius:12px; padding:12px 14px; font:500 15px var(--body); background:#FBF8FE; color:var(--ink) }
+.pv-in:focus { outline:2px solid var(--lav); border-color:var(--lav) }
+.pv-ppl { display:grid; gap:8px; max-height:300px; overflow:auto; padding:2px }
+.pv-pp { display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:1px solid #E7E2F0; background:#fff; border-radius:14px; padding:9px 12px; cursor:pointer; font:inherit; color:inherit }
+.pv-pp:hover { border-color:#CDBDE3 }
+.pv-pp.sel { border-color:var(--purple); box-shadow:0 0 0 3px var(--lav-2) }
+.pv-pp b { display:block; font-weight:700 } .pv-pp small { display:flex; align-items:center; gap:5px; color:#6B6080; font-size:12px; margin-top:2px }
+.pv-tcs { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:8px }
+.pv-tc { border:1px solid #E7E2F0; border-radius:12px; padding:10px 4px; text-align:center; cursor:pointer; background:#FBF8FE; font:inherit; color:inherit }
+.pv-tc b { display:block; font-size:17px } .pv-tc small { color:#6B6080; font-size:11px }
+.pv-tc.on { background:var(--purple); border-color:var(--purple); color:#fff } .pv-tc.on small { color:var(--lav-2) }
+.pv-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.pv-seg { display:flex; border:1px solid #E7E2F0; border-radius:12px; overflow:hidden }
+.pv-seg button { flex:1; border:0; background:#fff; padding:10px 4px; font:600 13px var(--body); color:var(--ink); cursor:pointer }
+.pv-seg button.on { background:var(--lav-2); color:var(--purple) }
+.pv-seg button:disabled { color:#A79EB8; cursor:not-allowed }
+.pv-wide { width:100%; margin-top:16px }
+.pv-sent { margin-top:12px; border:1px dashed var(--lav); border-radius:14px; padding:12px; display:flex; gap:10px; align-items:center }
+.pv-sent small { display:block; color:#6B6080; font-size:12px } .pv-sent .btn { margin-left:auto; padding:8px 14px !important }
+.pv-inc { border:2px solid var(--gold); border-radius:16px; padding:14px; display:grid; gap:10px; background:linear-gradient(180deg, #FFF9EC, #fff); margin-bottom:12px }
+.pv-inc:last-child { margin-bottom:0 }
+.pv-inc .h { display:flex; gap:10px; align-items:center } .pv-inc .h small { color:#6B6080; font-size:12px; display:block } .pv-inc .h > small { margin-left:auto }
+.pv-gm { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 0; border:0; border-bottom:1px solid #EFEBF5; background:none; cursor:pointer; font:inherit; color:inherit }
+.pv-gm:last-child { border-bottom:0 } .pv-gm b { display:block } .pv-gm small { color:#6B6080; font-size:12px }
+.pv-gm .go { margin-left:auto; color:var(--purple); font-weight:700; font-size:13px }
+.res { font:800 11px var(--body); border-radius:8px; padding:5px 8px; flex:none; min-width:58px; text-align:center }
+.res.w { background:#E3F3EA; color:var(--ok) } .res.l { background:#F7E3E8; color:var(--full) } .res.d { background:var(--mist); color:#6B6080 }
+.pv-tourn { border-radius:16px; padding:14px 16px; background:var(--night); color:#fff; display:flex; align-items:center; gap:12px }
+.pv-tourn span { font-size:26px } .pv-tourn small { display:block; opacity:.8; font-size:12.5px }
+
+/* game */
+.pv-game { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:20px; align-items:start }
+.pv-bwrap { width:100%; max-width:min(100%, calc(100vh - 120px)); margin:0 auto }
+.pv-bwrap .lb { max-width:none; box-shadow:0 0 0 3px rgba(194,163,230,.35), 0 24px 50px -20px rgba(42,18,64,.45) }
+.live-b { touch-action:none }
+.live-b .lsq { cursor:pointer }
+.live-b .lsq.lm.l { background:#F1DC9E } .live-b .lsq.lm.d { background:#D9B86E }
+.live-b .lsq.chk { box-shadow:inset 0 0 0 3px #D6305C, inset 0 0 22px rgba(214,48,92,.75) }
+.live-b .lsq .cf, .live-b .lsq .cr { position:absolute; font:700 clamp(8px, 1.1vw, 11px)/1 var(--body); pointer-events:none }
+.live-b .lsq .cf { right:4px; bottom:3px } .live-b .lsq .cr { left:4px; top:3px }
+.live-b .lsq.l .cf, .live-b .lsq.l .cr { color:var(--wood) } .live-b .lsq.d .cf, .live-b .lsq.d .cr { color:#fff }
+.live-b .lpc { transition:left .22s ease, top .22s ease; pointer-events:none }
+.live-b .lpc img { width:92%; height:92%; display:block; user-select:none }
+.live-b .lpc.drag { z-index:9; transition:none; transform:scale(1.12) }
+.pv-promo { position:absolute; inset:0; z-index:20; background:rgba(42,18,64,.45); display:grid; place-items:center; border-radius:6px }
+.pv-promo > div { background:#fff; border-radius:16px; padding:10px; display:flex; gap:6px; box-shadow:0 20px 50px rgba(0,0,0,.3) }
+.pv-promo button { width:clamp(48px, 9vw, 72px); height:clamp(48px, 9vw, 72px); border:1px solid #E7E2F0; border-radius:12px; background:#FBF8FE; cursor:pointer; padding:4px }
+.pv-promo button img { width:100%; height:100% } .pv-promo button.x { width:36px; font-size:16px; color:#6B6080 }
+.pv-side { display:grid; gap:12px }
+.pv-pl { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #E7E2F0; border-radius:16px; padding:10px 12px }
+.pv-pl b { display:block; font-weight:800 } .pv-pl small { display:block; color:#6B6080; font-size:12px }
+.pv-clk { margin-left:auto; font:800 28px/1 var(--body); font-variant-numeric:tabular-nums; padding:10px 14px; border-radius:12px; background:var(--mist); color:#6B6080; min-width:118px; text-align:right }
+.pv-clk.run { background:var(--purple); color:#fff; box-shadow:0 0 0 4px var(--lav-2) }
+.pv-clk.low { background:var(--full); color:#fff; animation:pvlow 1s infinite }
+@keyframes pvlow { 50% { opacity:.75 } }
+.pv-ml { background:#fff; border:1px solid #E7E2F0; border-radius:16px; padding:10px; max-height:220px; min-height:70px; overflow:auto; display:grid; grid-template-columns:34px 1fr 1fr; gap:2px 6px; align-content:start; font-size:14px }
+.pv-ml i { color:#8A7FA0; font-style:normal; padding:3px 0 } .pv-ml span { padding:3px 6px; border-radius:6px; cursor:default }
+.pv-ml span.cur { background:var(--lav-2); font-weight:800; color:var(--purple) }
+.pv-nav { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px }
+.pv-nav button { border:1px solid #E7E2F0; background:#fff; border-radius:12px; padding:9px; font-size:16px; cursor:pointer; color:var(--ink) }
+.pv-acts { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.pv-msgs { display:flex; gap:6px; flex-wrap:wrap }
+.pv-msgs button { border:1px solid #E7E2F0; border-radius:999px; padding:6px 10px; font:600 12px var(--body); cursor:pointer; background:#fff; color:var(--ink) }
+.pv-msgs button:hover { border-color:var(--lav) }
+.pv-stat { display:flex; gap:8px; align-items:center; font-size:12px; color:#6B6080 }
+.pv-ban { border-radius:14px; padding:12px 14px; display:flex; gap:10px; align-items:center; font-weight:600; flex-wrap:wrap }
+.pv-ban .sp { flex:1 } .pv-ban .btn { padding:8px 14px !important; font-size:13px !important }
+.pv-ban.draw { background:#FFF6E3; border:1px solid #EBD5A3; color:#6B4A0E }
+.pv-ban.disc { background:#F7E3E8; border:1px solid #E9C4CF; color:var(--full) }
+.pv-toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%, 30px); opacity:0; background:var(--night); color:#fff; padding:12px 18px; border-radius:999px; font-weight:600; z-index:90; transition:.3s; pointer-events:none; max-width:92vw; text-align:center }
+.pv-toast.on { opacity:1; transform:translate(-50%, 0) }
+
+/* overlays: start countdown, result */
+.pv-ov { position:fixed; inset:0; z-index:80; background:rgba(42,18,64,.42); backdrop-filter:blur(3px); display:grid; place-items:center; padding:16px }
+.pv-ov[hidden] { display:none }
+.pv-modal { width:min(460px, 100%); background:#fff; border-radius:24px; padding:26px; box-shadow:0 30px 80px rgba(42,18,64,.3); text-align:center }
+.pv-modal h3 { font:700 30px/1.1 var(--display); color:var(--purple); margin-bottom:4px }
+.pv-trophy { width:74px; height:74px; border-radius:50%; margin:0 auto 10px; display:grid; place-items:center; font-size:34px; background:linear-gradient(135deg, var(--gold), #F3DDA6) }
+.pv-vs { display:flex; justify-content:center; align-items:center; gap:16px; margin:16px 0 }
+.pv-vs > div:not(.sc) { display:grid; justify-items:center; gap:4px; min-width:96px } .pv-vs small { color:#6B6080 }
+.pv-vs .sc { font:800 26px var(--body) }
+.pv-count { font:800 96px/1 var(--body); color:var(--purple); margin:6px 0 }
+.pv-rules { text-align:left; background:var(--mist); border-radius:14px; padding:12px 14px; font-size:13px; color:#5D5170; display:grid; gap:6px; margin-top:10px }
+.pv-rules b { color:var(--ink) }
+.pv-mbtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px }
+
+@media (max-width:900px) {
+  .pv-grid, .pv-game { grid-template-columns:1fr }
+  .pv-kp { margin-left:0 }
+  .pv-game { gap:10px }
+  .pv-side { display:flex; flex-direction:column }
+  #plTop { order:-2 } .pv-game .pv-bwrap { order:-1 }
+}
+@media (max-width:900px) { .pv-game { display:flex; flex-direction:column } .pv-game .pv-side { display:contents } .pv-game > .pv-bwrap { order:2 } #plTop { order:1 } #plBot { order:3 } #pvBanner { order:4 } .pv-acts { order:5 } .pv-msgs { order:6 } .pv-ml { order:7; max-height:140px } .pv-nav { order:6 } .pv-stat { order:8 } .pv-side > p { order:9 } }
+@media (max-width:560px) {
+  .pv-tcs { grid-template-columns:repeat(3, minmax(0, 1fr)) }
+  .pv-row2 { grid-template-columns:1fr }
+  .pv-clk { font-size:24px; min-width:100px; padding:8px 10px }
+  .pv-pl { padding:8px 10px }
+  .pv-hero { padding:20px }
+}
+
+/* dark mode (same palette as the lesson player) */
+html[data-theme="dark"] .pv-card, html[data-theme="dark"] .pv-gate, html[data-theme="dark"] .pv-pl, html[data-theme="dark"] .pv-ml, html[data-theme="dark"] .pv-modal, html[data-theme="dark"] .pv-pp, html[data-theme="dark"] .pv-seg button, html[data-theme="dark"] .pv-nav button, html[data-theme="dark"] .pv-msgs button { background:#150C28; border-color:rgba(181,140,255,.15); color:#F4ECFF }
+html[data-theme="dark"] .pv-in, html[data-theme="dark"] .pv-tc { background:#1C1233; border-color:rgba(181,140,255,.18); color:#F4ECFF }
+html[data-theme="dark"] .pv-tc.on { background:var(--purple) }
+html[data-theme="dark"] .pv-seg button.on { background:rgba(181,140,255,.18); color:#E5D6F7 }
+html[data-theme="dark"] .pv-card h2, html[data-theme="dark"] .pv-gate h2, html[data-theme="dark"] .pv-modal h3 { color:#D9C2F5 }
+html[data-theme="dark"] .pv-mut, html[data-theme="dark"] .pv-pp small, html[data-theme="dark"] .pv-pl small, html[data-theme="dark"] .pv-gm small, html[data-theme="dark"] .pv-tc small, html[data-theme="dark"] .pv-vs small { color:#B9A8CF }
+html[data-theme="dark"] .pv-inc { background:#1C1233 } html[data-theme="dark"] .pv-gm { border-color:rgba(181,140,255,.12) }
+html[data-theme="dark"] .pv-clk { background:#1C1233; color:#B9A8CF } html[data-theme="dark"] .pv-clk.run { background:var(--purple); color:#fff; box-shadow:0 0 0 4px rgba(181,140,255,.25) }
+html[data-theme="dark"] .pv-clk.low { background:var(--full); color:#fff }
+html[data-theme="dark"] .pv-rules { background:#1C1233; color:#B9A8CF } html[data-theme="dark"] .pv-rules b { color:#F4ECFF }
+html[data-theme="dark"] .pv-ml span.cur { background:rgba(181,140,255,.2); color:#F4ECFF }
+html[data-theme="dark"] .av { background:rgba(181,140,255,.2); color:#E5D6F7 }
+html[data-theme="dark"] .pv-promo > div { background:#150C28 }
+html[data-theme="dark"] .pv-bad { background:transparent }

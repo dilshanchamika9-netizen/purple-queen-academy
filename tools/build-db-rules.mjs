@@ -15,6 +15,7 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 
 const TOL = 1000;                       // ms of lag allowed per move
+const DELAY = 3000;                     // the clocks start 3 s after the game is created (countdown on screen)
 const G = "root.child('games/' + $g)";
 const W = `${G}.child('meta/w').val()`, B = `${G}.child('meta/b').val()`;
 const N0 = `${G}.child('n').val()`;
@@ -39,7 +40,7 @@ const nWrite = and('auth != null', open, mover,
 const sideClock = (me, other) => and(
   `newData.child('${other}').val() == data.child('${other}').val()`,
   `now - data.child('t').val() <= data.child('${me}').val() + ${TOL}`,
-  `newData.child('${me}').isNumber() && newData.child('${me}').val() <= data.child('${me}').val() + ${INC} - (now - data.child('t').val()) + ${TOL}`,
+  `newData.child('${me}').isNumber() && newData.child('${me}').val() <= data.child('${me}').val() + ${INC} - (now > data.child('t').val() ? now - data.child('t').val() : 0) + ${TOL}`,
   `newData.child('${me}').val() >= 0 - ${TOL}`);
 const clkWrite = and('auth != null', open, mover,
   `newData.parent().child('n').val() == ${N0} + 1`,
@@ -64,7 +65,7 @@ const resultOk = and(
       `${G}.child('offer/by').val() != auth.uid`, `${G}.child('offer/n').val() >= ${N0} - 1`),
     and(`${WHY} == 'time'`, `${whiteToMove} ? (${flagged('w')} && (${R} == '0-1' || ${R} == '1/2-1/2')) : (${flagged('b')} && (${R} == '1-0' || ${R} == '1/2-1/2'))`),
     and(`${WHY} == 'noshow'`, or(
-      and(`${N0} == 0`, `auth.uid == ${B}`, `now - ${G}.child('meta/startAt').val() >= ${G}.child('meta/ns').val()`, `${R} == '0-1'`),
+      and(`${N0} == 0`, `auth.uid == ${B}`, `now - ${G}.child('meta/startAt').val() >= ${G}.child('meta/ns').val() + ${DELAY}`, `${R} == '0-1'`),
       and(`${N0} == 1`, `auth.uid == ${W}`, `now - ${CLK('t')} >= ${G}.child('meta/ns').val()`, `${R} == '1-0'`))),
     // checkmate is written by the player who is mated (the side to move), so it cannot be faked by the winner
     and(`${WHY} == 'mate'`, mover, `${R} == (${whiteToMove} ? '0-1' : '1-0')`),
@@ -80,7 +81,7 @@ const createGame = and('auth != null', '!data.exists()', `${M('by')} == auth.uid
   `${M('w')} != ${M('b')}`, `newData.child('meta/w').isString() && newData.child('meta/b').isString()`,
   or(staff, and(`auth.uid == ${M('w')} || auth.uid == ${M('b')}`, `root.child('ch/' + auth.uid + '/' + ${other}).exists()`)),
   `${M('startAt')} == now`, `newData.child('n').val() == 0`,
-  "newData.child('clk/t').val() == now",
+  `newData.child('clk/t').val() >= now + ${DELAY} - 2000 && newData.child('clk/t').val() <= now + ${DELAY} + 2000`,
   `newData.child('clk/w').val() == ${M('base')} && newData.child('clk/b').val() == ${M('base')}`,
   `${M('base')} >= 60000 && ${M('base')} <= 7200000`, `${M('inc')} >= 0 && ${M('inc')} <= 60000`,
   `${M('ns')} >= 60000 && ${M('ns')} <= 900000`,
@@ -119,12 +120,22 @@ const rules = {
           '.write': and('auth != null', open, player,
             `!newData.exists() || (newData.child('by').val() == auth.uid && newData.child('n').val() == ${N0})`),
         },
+        // preset messages only (no free text): k = index of the message, 0 to 5
+        msg: { $uid: {
+          '.write': and('auth != null', 'auth.uid == $uid', player),
+          '.validate': "newData.child('k').isNumber() && newData.child('k').val() >= 0 && newData.child('k').val() <= 5 && newData.child('t').val() == now",
+        } },
         result: {
           '.write': resultWrite,
           '.validate': "newData.child('r').val() == '1-0' || newData.child('r').val() == '0-1' || newData.child('r').val() == '1/2-1/2' || newData.child('r').val() == '*'",
         },
       },
     },
+    // each player's own game list: ug/{uid}/{g} = {opp, oppName, col, r, why, tc, rated, t}
+    ug: { $uid: { '.read': `auth != null && (auth.uid == $uid || ${staff})`, $g: {
+      '.write': 'auth != null && auth.uid == $uid',
+      '.validate': "newData.child('r').isString() && newData.child('oppName').isString() && newData.child('oppName').val().length <= 40",
+    } } },
     pres: { $g: { '.read': 'auth != null', $uid: { '.write': 'auth != null && auth.uid == $uid' } } },
   },
 };

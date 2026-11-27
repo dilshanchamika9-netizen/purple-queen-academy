@@ -9,6 +9,9 @@ on:
       - 'tools/db-rules-test.mjs'
       - 'tools/play-core-test.mjs'
       - 'assets/js/play/**'
+      - 'play.html'
+      - 'assets/css/play.css'
+      - 'tools/play-e2e.mjs'
       - '.github/workflows/play-test.yml'
 jobs:
   test:
@@ -26,8 +29,19 @@ jobs:
         run: node tools/build-db-rules.mjs --check
       - name: Chess core unit tests
         run: node tools/play-core-test.mjs
-      - run: npm i --no-save firebase-tools@15 @firebase/rules-unit-testing@4 firebase@11
+      - run: npm i --no-save firebase-tools@15 @firebase/rules-unit-testing@4 firebase@11 playwright@1
       - name: Database emulator + rules test
         run: |
           echo '{"emulators":{"database":{"port":9000},"ui":{"enabled":false}},"database":{"rules":"database.rules.json"}}' > firebase.json
           npx firebase emulators:exec --only database --project demo-pq "node tools/db-rules-test.mjs"
+      - run: npx playwright install --with-deps chromium
+      - name: Play page end to end (two students, emulators)
+        run: |
+          echo '{"emulators":{"auth":{"port":9099},"firestore":{"port":8085},"database":{"port":9000},"ui":{"enabled":false}},"firestore":{"rules":"firestore.rules"},"database":{"rules":"database.rules.json"}}' > firebase.json
+          python3 -m http.server 8080 --bind 127.0.0.1 >/dev/null 2>&1 &
+          npx firebase emulators:exec --only auth,firestore,database --project demo-pq "node tools/play-e2e.mjs"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: play-shots
+          path: play-shots

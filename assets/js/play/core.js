@@ -5,7 +5,7 @@
   const api = make();
   if (typeof module === 'object' && module.exports) module.exports = api; else root.PQ_PlayCore = api;
 })(typeof self !== 'undefined' ? self : this, function () {
-  const TOL = 1000;                                  // must match tools/build-db-rules.mjs
+  const TOL = 1000, DELAY = 3000;                    // must match tools/build-db-rules.mjs
   const toMove = (n) => (n % 2 === 0 ? 'w' : 'b');
   const other = (s) => (s === 'w' ? 'b' : 'w');
 
@@ -116,5 +116,5 @@
     return Object.entries(tags).map(([k, v]) => `[${k} "${String(v).replace(/"/g, "'")}"]`).join('\n') + '\n\n' + body + res + '\n';
   }
 
-  return { TOL, toMove, other, clocks, nextClk, flagged, uci, parseUci, replay, toList, boardEnd, canMate, timeResult, claimValid, moveClocks, hms, pgn };
+  return { TOL, DELAY, toMove, other, clocks, nextClk, flagged, uci, parseUci, replay, toList, boardEnd, canMate, timeResult, claimValid, moveClocks, hms, pgn };
 });
