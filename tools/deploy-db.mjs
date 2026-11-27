@@ -32,6 +32,9 @@ if (process.argv.includes('--rules')) {
     if (!mk.ok) {
       // the management API may be off even when the database exists (created in the console): try the database itself
       const probe = await api('GET', `${DB_URL}/.settings/rules.json`);
+      for (const u of [`https://${ID}.firebaseio.com`, `https://${ID}.europe-west1.firebasedatabase.app`]) {
+        const o = await api('GET', `${u}/.settings/rules.json`); console.log('probe', u, o.status);
+      }
       if (!probe.ok) { console.log('::warning::Realtime Database not reachable yet (create it once in the Firebase console):', probe.status, JSON.stringify(probe.j).slice(0, 200)); process.exit(0); }
       console.log('Database exists (found directly):', DB_URL);
     } else {
