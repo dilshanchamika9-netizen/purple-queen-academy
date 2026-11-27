@@ -19,10 +19,12 @@ async function student(sid, name) {
 }
 const uA = await student('pq0001', 'Kavindu Perera'), uB = await student('pq0002', 'Nethmi Silva');
 
-const b = await chromium.launch(); const errs = [];
+const b = await chromium.launch(); const errs = [], logs = [];
+process.on('uncaughtException', async (e) => { console.log('FAIL ' + e.message.split('\n')[0]); console.log('console:', logs.slice(-25).join('\n')); console.log('page errors:', errs); try { console.log('DB:', JSON.stringify(await fetch(`${DBH}/.json?ns=${NS}`, { headers: owner }).then(r => r.json())).slice(0, 1500)) } catch {} process.exit(1) });
 async function open(sid, vp = { width: 1360, height: 860 }) {
   const ctx = await b.newContext({ viewport: vp }); const pg = await ctx.newPage();
   pg.on('pageerror', e => errs.push(sid + ': ' + e)); pg.on('dialog', d => d.accept());
+  pg.on('console', m => { if (['warning', 'error'].includes(m.type())) logs.push(sid + ' ' + m.type() + ': ' + m.text().slice(0, 300)) });
   await pg.route('**/fonts.googleapis.com/**', r => r.abort());
   await pg.goto(`${SITE}/login.html?emu=1`);
   await pg.fill('#sId', sid); await pg.fill('#sPw', 'pass1234'); await pg.click('#stuForm button[type=submit]');
