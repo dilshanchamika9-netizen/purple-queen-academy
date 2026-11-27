@@ -216,7 +216,7 @@ async function openGame(g) {
       <div class="pv-ml" id="pvMl"></div>
       <div class="pv-nav" id="pvNav" hidden><button type="button" data-nav="0" aria-label="First move">⏮</button><button type="button" data-nav="-1" aria-label="Previous move">‹</button><button type="button" data-nav="1" aria-label="Next move">›</button><button type="button" data-nav="9" aria-label="Last move">⏭</button></div>
       <div class="pv-acts" id="pvActs">
-        ${myCol ? `<button type="button" class="btn btn-ghost" id="bDraw">½ Offer draw</button><button type="button" class="btn pv-bad" id="bResign">⚑ Resign</button>` : ''}
+        ${myCol ? `<button type="button" class="btn btn-ghost" id="bDraw" data-mode="abort">✕ Abort game</button><button type="button" class="btn pv-bad" id="bResign">⚑ Resign</button>` : ''}
         <button type="button" class="btn btn-ghost" id="bFlip">⇅ Flip board</button><button type="button" class="btn btn-ghost" id="bSnd"></button>
       </div>
       ${myCol ? `<div class="pv-msgs">${MSGS.map((m, i) => `<button type="button" data-msg="${i}">${m}</button>`).join('')}</div>` : '<p class="pv-mut">You are watching this game.</p>'}

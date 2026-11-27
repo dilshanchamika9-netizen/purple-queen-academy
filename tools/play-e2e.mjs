@@ -102,7 +102,7 @@ ok((await A.textContent('#pvRem')).includes('wants a rematch'), 'rematch request
 await A.click('#pvRemAcc');
 await Promise.all([A.waitForSelector('#bDraw', { timeout: 15000 }), B.waitForSelector('#bDraw', { timeout: 15000 })]);
 await A.waitForSelector('#pvOv', { state: 'hidden', timeout: 8000 });
-ok((await A.textContent('#bDraw')).includes('Abort'), 'before move 2 the button is Abort');
+ok(await A.waitForFunction(() => document.querySelector('#bDraw').textContent.includes('Abort'), null, { timeout: 4000 }).then(() => true).catch(() => false), 'before move 2 the button is Abort');
 await A.click('#bDraw');
 await B.waitForSelector('.pv-modal h3', { timeout: 10000 });
 ok((await B.textContent('.pv-modal h3')) === 'Game aborted', 'abort reaches the opponent');
