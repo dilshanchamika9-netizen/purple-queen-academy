@@ -52,9 +52,10 @@ const ovB = await B.evaluate(() => document.documentElement.scrollWidth - innerW
 await B.click('[data-acc]');
 await Promise.all([A.waitForSelector('#pvBoard .lsq', { timeout: 15000 }), B.waitForSelector('#pvBoard .lsq', { timeout: 15000 })]);
 ok(true, 'both reach the game board');
-ok(await A.isVisible('#pvCount'), 'start countdown is shown');
+ok(await A.waitForSelector('#pvCount', { timeout: 4000 }).then(() => true).catch(() => false), 'start countdown is shown');
 await A.screenshot({ path: 'play-shots/a-countdown.png' });
 await A.waitForSelector('#pvOv', { state: 'hidden', timeout: 8000 });
+await A.waitForFunction(() => /\d:\d\d/.test(document.querySelector('#clkBot').textContent), null, { timeout: 5000 });
 ok(/^(10|9):\d\d$/.test((await A.textContent('#clkBot')).trim()), 'white clock shows about 10:00 (' + (await A.textContent('#clkBot')).trim() + ')');
 ok(await B.evaluate(() => document.querySelector('#pvBoard .lsq').dataset.sq === 'h1'), 'board is flipped for Black (h1 top-left)');
 ok(await A.evaluate(() => document.querySelector('#pvBoard .lsq').dataset.sq === 'a8'), 'board is normal for White (a8 top-left)');
@@ -68,7 +69,7 @@ await sq(A, 'e2'); ok(await A.evaluate(() => document.querySelectorAll('#pvBoard
 await sq(A, 'e4');
 await B.waitForFunction(() => document.querySelector('#pvMl [data-i="0"]') && document.querySelector('#pvMl [data-i="0"]').textContent === 'e4', null, { timeout: 10000 });
 ok(true, 'B receives 1.e4');
-ok(await B.evaluate(() => document.querySelector('#clkTop').classList.contains('run') === false && document.querySelector('#clkBot').classList.contains('run')), 'after 1.e4 Black clock runs on B screen');
+ok(await B.waitForFunction(() => !document.querySelector('#clkTop').classList.contains('run') && document.querySelector('#clkBot').classList.contains('run'), null, { timeout: 3000 }).then(() => true).catch(() => false), 'after 1.e4 Black clock runs on B screen');
 const plies = [[B, 'e7', 'e5'], [A, 'f1', 'c4'], [B, 'b8', 'c6'], [A, 'd1', 'h5'], [B, 'g8', 'f6'], [A, 'h5', 'f7']];
 for (let i = 0; i < plies.length; i++) {
   const [pg, f, t] = plies[i], other = pg === A ? B : A, idx = i + 1;
@@ -111,7 +112,7 @@ await B.click('#rBack'); await A.click('#rBack');
 await B.waitForSelector('[data-sid="pq0001"]', { timeout: 10000 }); await B.click('[data-sid="pq0001"]'); await B.click('[data-col="w"]'); await B.click('[data-tc="0"]'); await B.click('#pvSend');
 await A.waitForSelector('[data-acc]', { timeout: 15000 }); await A.click('[data-acc]');
 await Promise.all([A.waitForSelector('#pvBoard .lsq', { timeout: 15000 }), B.waitForSelector('#pvBoard .lsq', { timeout: 15000 })]);
-await B.waitForSelector('#pvOv', { state: 'hidden', timeout: 8000 });
+await B.waitForFunction(() => /^[23]:\d\d$/.test(document.querySelector('#clkBot').textContent.trim()), null, { timeout: 8000 }).catch(() => {});
 ok(/^[23]:\d\d$/.test((await B.textContent('#clkBot')).trim()), '3+2 game: clock about 3:00');
 await sq(B, 'd2'); await sq(B, 'd4');
 await A.waitForFunction(() => { const e = document.querySelector('#pvMl [data-i="0"]'); return e && e.textContent === 'd4' }, null, { timeout: 10000 });

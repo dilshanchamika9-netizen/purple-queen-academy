@@ -287,7 +287,7 @@ function afterMove(r, anim) {
 const kingSq = (c) => { const b = game.ch.board(); for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) { const p = b[r][f]; if (p && p.type === 'k' && p.color === c) return 'abcdefgh'[f] + (8 - r) } return null };
 
 async function playMove(from, to, promo) {
-  if (!game || game.result || P.toMove(game.n) !== game.myCol || game.list.length !== game.n) return;
+  if (!game || !game.clk || game.result || P.toMove(game.n) !== game.myCol || game.list.length !== game.n) return;
   const r = game.ch.move({ from, to, promotion: promo || 'q' }); if (!r) return;
   const nc = P.nextClk({ meta: game.meta, n: game.n, clk: game.clk }, now());
   if (nc.flagged) { game.ch.undo(); claimTime(); return }
@@ -408,7 +408,8 @@ function paintBanner() {
     }
     return;
   }
-  if (game.oppGone && game.myCol && now() > game.clk.t) {
+  // shown only after 5 s away (the opponent may still be opening the game)
+  if (game.oppGone && game.myCol && game.clk && now() > game.clk.t && now() - game.oppGone > 5000) {
     box.dataset.k = 'gone';
     box.innerHTML = `<div class="pv-ban disc">⚠ ${esc(game.myCol === 'w' ? game.meta.bn : game.meta.wn)} disconnected ${P.hms(now() - game.oppGone).slice(2)} ago. Their clock keeps running.</div>`;
     return;
