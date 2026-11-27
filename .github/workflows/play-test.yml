@@ -16,6 +16,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,3 +47,10 @@ jobs:
         with:
           name: play-shots
           path: play-shots
+      - name: Screenshots to branch ci-shots (for review)
+        if: always()
+        run: |
+          [ -d play-shots ] || exit 0
+          cd play-shots && git init -q && git checkout -q -b ci-shots
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add . && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "play screenshots $GITHUB_RUN_ID"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
