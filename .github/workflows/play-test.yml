@@ -1,0 +1,33 @@
+name: Play test (database rules + chess core)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'database.rules.json'
+      - 'tools/build-db-rules.mjs'
+      - 'tools/db-rules-test.mjs'
+      - 'tools/play-core-test.mjs'
+      - 'assets/js/play/**'
+      - '.github/workflows/play-test.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Rules file is up to date
+        run: node tools/build-db-rules.mjs --check
+      - name: Chess core unit tests
+        run: node tools/play-core-test.mjs
+      - run: npm i --no-save firebase-tools@15 @firebase/rules-unit-testing@4 firebase@11
+      - name: Database emulator + rules test
+        run: |
+          echo '{"emulators":{"database":{"port":9000},"ui":{"enabled":false}},"database":{"rules":"database.rules.json"}}' > firebase.json
+          npx firebase emulators:exec --only database --project demo-pq "node tools/db-rules-test.mjs"

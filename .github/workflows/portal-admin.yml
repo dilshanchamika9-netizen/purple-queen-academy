@@ -9,6 +9,8 @@ on:
       - 'firestore.rules'
       - 'tools/portal-admin.mjs'
       - 'tools/deploy-rules.mjs'
+      - 'database.rules.json'
+      - 'tools/deploy-db.mjs'
       - '.github/workflows/portal-admin.yml'
 concurrency: portal-admin
 jobs:
@@ -53,3 +55,8 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: node tools/portal-admin.mjs
+      - name: Realtime Database for live games (create, rules, staff)
+        if: steps.s.outputs.ok == '1'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/deploy-db.mjs ${{ github.event_name != 'schedule' && '--rules' || '' }}
