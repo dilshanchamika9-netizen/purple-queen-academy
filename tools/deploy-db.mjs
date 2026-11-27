@@ -29,7 +29,7 @@ if (process.argv.includes('--rules')) {
   if (got.ok) console.log('Database exists:', got.j.databaseUrl || DB_URL, got.j.state || '');
   else {
     const mk = await api('POST', `${base}/${LOC}/instances?databaseId=${ID}`, { type: 'DEFAULT_DATABASE' });
-    if (!mk.ok) { console.log('::error::Could not create the Realtime Database:', mk.status, JSON.stringify(mk.j).slice(0, 500)); process.exit(1); }
+    if (!mk.ok) { console.log('::warning::Realtime Database not created yet (create it once in the Firebase console):', mk.status, JSON.stringify(mk.j).slice(0, 300)); process.exit(0); }
     console.log('Database created:', mk.j.databaseUrl || DB_URL);
     await new Promise(r => setTimeout(r, 10000));
   }
@@ -47,6 +47,8 @@ for (const email of coaches) {
   try { const u = await admin.auth().getUserByEmail(email); if (u.emailVerified || (u.providerData || []).some(p => p.providerId === 'google.com')) staff[u.uid] = true }
   catch { /* not signed in yet */ }
 }
-await admin.database().ref('staff').set(staff);
-console.log(`staff: ${Object.keys(staff).length} of ${coaches.length} coaches`);
+try {
+  await Promise.race([admin.database().ref('staff').set(staff), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 20000))]);
+  console.log(`staff: ${Object.keys(staff).length} of ${coaches.length} coaches`);
+} catch (e) { console.log('::warning::staff not synced (database not ready?):', e.message) }
 process.exit(0);
