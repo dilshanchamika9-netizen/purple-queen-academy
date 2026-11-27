@@ -55,6 +55,7 @@ export const LEVEL = { 1: 'Level 1 · Basic', 2: 'Level 2 · Intermediate', 3: '
         <div class="sp-segs" id="pzSegs" aria-hidden="true">${'<i><b style="width:0"></b></i>'.repeat(5)}</div>
         <a class="sp-go" href="practice.html"><div><span>Up next</span><b id="pzNext">Level ${pzLv} · ${PZ_LEVELS[pzLv]}</b></div><span class="circ">${SVG.arrow}</span></a></section>
     </div>
+    <a class="sp-play" href="play.html"><img src="assets/pieces/wQ.svg" alt=""><div><small>New · Live chess</small><b>Play a classmate</b><span>Real clocks, real opponents. Challenge a friend from your class.</span></div><span class="circ">${SVG.arrow}</span></a>
     <section class="sp-hwsec" id="hwBox"></section>`;
   paintHw();
   // puzzles per level (same file the puzzle page uses, so it is usually cached)

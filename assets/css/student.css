@@ -185,3 +185,16 @@ html[data-theme="dark"] .sp-pc, html[data-theme="dark"] .sp-photo, html[data-the
 .sp-hwsec { padding:0 }
 .sp-form label em { font-style:normal }
 @media (max-width:640px) { .sp-hwf .sp-btn { margin-left:auto } }
+
+/* Play banner under the two doors */
+.sp-play { display:flex; align-items:center; gap:18px; margin:-14px 0 36px; padding:18px 24px; border-radius:20px; background:#fff; border:1px solid #E7E2F0; text-decoration:none; color:var(--ink); transition:transform .25s, box-shadow .25s }
+.sp-play:hover { transform:translateY(-2px); box-shadow:0 24px 50px -28px rgba(42,18,64,.5) }
+.sp-play img { width:54px; height:54px; padding:8px; border-radius:50%; background:linear-gradient(135deg, var(--purple), var(--wood)); filter:none; flex:none }
+.sp-play small { display:block; font:600 11.5px var(--caps); letter-spacing:.2em; text-transform:uppercase; color:#8A6A1E }
+.sp-play b { display:block; font:700 24px/1.1 var(--display); color:var(--purple) }
+.sp-play span:not(.circ) { color:#6B6080; font-size:14px }
+.sp-play .circ { margin-left:auto; width:42px; height:42px; border-radius:50%; background:var(--purple); color:#fff; display:grid; place-items:center; flex:none }
+.sp-play .circ svg { width:18px; height:18px }
+html[data-theme="dark"] .sp-play { background:#150C28; border-color:rgba(181,140,255,.15); color:#F4ECFF }
+html[data-theme="dark"] .sp-play b { color:#D9C2F5 } html[data-theme="dark"] .sp-play span:not(.circ) { color:#B9A8CF }
+@media (max-width:760px) { .sp-play { margin-top:0; padding:14px 16px } .sp-play span:not(.circ) { display:none } .sp-play b { font-size:21px } }
