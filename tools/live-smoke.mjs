@@ -1,5 +1,6 @@
 // Live check of the real Realtime Database: two temporary students play a few moves, then everything is removed.
-import admin from 'firebase-admin';
+import adminPkg from 'firebase-admin';
+const admin = adminPkg.default || adminPkg;
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getDatabase, ref, set, update, get, remove, serverTimestamp as ST } from 'firebase/database';
