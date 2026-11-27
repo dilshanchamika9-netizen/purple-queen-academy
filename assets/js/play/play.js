@@ -42,7 +42,8 @@ F.onAuthStateChanged(auth, async (u) => {
   const dref = R('dir/' + me.sid);
   F.onValue(R('.info/connected'), async s => {
     if (s.val() !== true) return;
-    try { await F.onDisconnect(dref).update({ on: false, at: F.dbNow() }); await F.dbSet(dref, { uid: me.uid, name: me.short, lvl: String(me.lvl || ''), on: true, st: 'lobby', at: F.dbNow() }) } catch (e) { console.warn('directory', e) }
+    // write the entry first: the database checks the offline update against the existing entry
+    try { await F.dbSet(dref, { uid: me.uid, name: me.short, lvl: String(me.lvl || ''), on: true, st: (game && game.myCol && !game.result) ? 'game' : 'lobby', at: F.dbNow() }); await F.onDisconnect(dref).update({ on: false, at: F.dbNow() }) } catch (e) { console.warn('directory', e) }
   });
   listenIncoming();
   if (gid) openGame(gid); else hub();
