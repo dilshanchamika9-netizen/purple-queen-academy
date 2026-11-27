@@ -122,6 +122,9 @@ await B.waitForFunction(() => document.querySelector('#bDraw').textContent.inclu
 await B.click('#bDraw');
 await A.waitForSelector('.pv-ban.draw', { timeout: 10000 }); ok(true, 'draw offer banner reaches A');
 await A.screenshot({ path: 'play-shots/a-draw-offer.png' });
+await B.screenshot({ path: 'play-shots/b-game-phone.png' });
+ok(await B.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0, 'phone game screen has no sideways scroll');
+ok(await B.evaluate(() => { const r = document.querySelector('#pvBoard').getBoundingClientRect(); return r.width > 330 && r.left >= 0 && r.right <= innerWidth }), 'phone board uses the full width');
 await A.click('#dDec');
 await A.waitForSelector('.pv-ban.draw', { state: 'detached', timeout: 10000 }); ok(true, 'declined offer disappears');
 await A.click('[data-msg="1"]');

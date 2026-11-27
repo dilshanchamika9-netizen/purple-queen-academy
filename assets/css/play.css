@@ -79,7 +79,8 @@
 .pv-promo button img { width:100%; height:100% } .pv-promo button.x { width:36px; font-size:16px; color:#6B6080 }
 .pv-side { display:grid; gap:12px }
 .pv-pl { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #E7E2F0; border-radius:16px; padding:10px 12px }
-.pv-pl b { display:block; font-weight:800 } .pv-pl small { display:block; color:#6B6080; font-size:12px }
+.pv-pl > div { min-width:0 } .pv-pl b { display:block; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.pv-pl b em { font-style:normal; font:700 11px var(--body); color:var(--purple); background:var(--lav-2); border-radius:6px; padding:2px 6px; margin-left:6px; vertical-align:2px } .pv-pl small { display:block; color:#6B6080; font-size:12px }
 .pv-clk { margin-left:auto; font:800 28px/1 var(--body); font-variant-numeric:tabular-nums; padding:10px 14px; border-radius:12px; background:var(--mist); color:#6B6080; min-width:118px; text-align:right }
 .pv-clk.run { background:var(--purple); color:#fff; box-shadow:0 0 0 4px var(--lav-2) }
 .pv-clk.low { background:var(--full); color:#fff; animation:pvlow 1s infinite }
@@ -123,7 +124,9 @@
   #plTop { order:-2 } .pv-game .pv-bwrap { order:-1 }
 }
 @media (max-width:900px) { .pv-game { display:flex; flex-direction:column } .pv-game .pv-side { display:contents } .pv-game > .pv-bwrap { order:2 } #plTop { order:1 } #plBot { order:3 } #pvBanner { order:4 } .pv-acts { order:5 } .pv-msgs { order:6 } .pv-ml { order:7; max-height:140px } .pv-nav { order:6 } .pv-stat { order:8 } .pv-side > p { order:9 } }
+@media (max-width:900px) { .pv-grid { display:flex; flex-direction:column } .pv-grid > .pv-card { order:2 } .pv-col { display:contents } #pvInc { order:1 } #pvInc:empty { display:none } .pv-col > .pv-card { order:3 } .pv-tourn { order:4 } }
 @media (max-width:560px) {
+  .pv-kp { display:grid; grid-template-columns:repeat(3, 1fr); width:100% } .pv-kp div { min-width:0; padding:9px 10px } .pv-kp b { font-size:19px } .pv-kp small { font-size:11px }
   .pv-tcs { grid-template-columns:repeat(3, minmax(0, 1fr)) }
   .pv-row2 { grid-template-columns:1fr }
   .pv-clk { font-size:24px; min-width:100px; padding:8px 10px }

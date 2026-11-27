@@ -211,7 +211,7 @@ async function openGame(g) {
   <div class="pv-game">
     <div class="pv-bwrap"><div id="pvBoard"></div></div>
     <div class="pv-side">
-      <div class="pv-pl" id="plTop"><span class="av">${esc(initials(nm(top)))}</span><div><b>${esc(nm(top))}${top === myCol ? ' (you)' : ''}</b><small id="stTop">${top === 'w' ? 'White' : 'Black'}</small></div><div class="pv-clk" id="clkTop">--:--</div></div>
+      <div class="pv-pl" id="plTop"><span class="av">${esc(initials(nm(top)))}</span><div><b>${esc(nm(top))}${top === myCol ? '<em>you</em>' : ''}</b><small id="stTop">${top === 'w' ? 'White' : 'Black'}</small></div><div class="pv-clk" id="clkTop">--:--</div></div>
       <div id="pvBanner"></div>
       <div class="pv-ml" id="pvMl"></div>
       <div class="pv-nav" id="pvNav" hidden><button type="button" data-nav="0" aria-label="First move">⏮</button><button type="button" data-nav="-1" aria-label="Previous move">‹</button><button type="button" data-nav="1" aria-label="Next move">›</button><button type="button" data-nav="9" aria-label="Last move">⏭</button></div>
@@ -220,7 +220,7 @@ async function openGame(g) {
         <button type="button" class="btn btn-ghost" id="bFlip">⇅ Flip board</button><button type="button" class="btn btn-ghost" id="bSnd"></button>
       </div>
       ${myCol ? `<div class="pv-msgs">${MSGS.map((m, i) => `<button type="button" data-msg="${i}">${m}</button>`).join('')}</div>` : '<p class="pv-mut">You are watching this game.</p>'}
-      <div class="pv-pl" id="plBot"><span class="av">${esc(initials(nm(bot)))}</span><div><b>${esc(nm(bot))}${bot === myCol ? ' (you)' : ''}</b><small id="stBot">${bot === 'w' ? 'White' : 'Black'}</small></div><div class="pv-clk" id="clkBot">--:--</div></div>
+      <div class="pv-pl" id="plBot"><span class="av">${esc(initials(nm(bot)))}</span><div><b>${esc(nm(bot))}${bot === myCol ? '<em>you</em>' : ''}</b><small id="stBot">${bot === 'w' ? 'White' : 'Black'}</small></div><div class="pv-clk" id="clkBot">--:--</div></div>
       <div class="pv-stat"><span class="dot" id="netDot"></span><span id="netTxt">Connecting…</span></div>
     </div>
   </div>
