@@ -29,9 +29,15 @@ if (process.argv.includes('--rules')) {
   if (got.ok) console.log('Database exists:', got.j.databaseUrl || DB_URL, got.j.state || '');
   else {
     const mk = await api('POST', `${base}/${LOC}/instances?databaseId=${ID}`, { type: 'DEFAULT_DATABASE' });
-    if (!mk.ok) { console.log('::warning::Realtime Database not created yet (create it once in the Firebase console):', mk.status, JSON.stringify(mk.j).slice(0, 300)); process.exit(0); }
+    if (!mk.ok) {
+      // the management API may be off even when the database exists (created in the console): try the database itself
+      const probe = await api('GET', `${DB_URL}/.settings/rules.json`);
+      if (!probe.ok) { console.log('::warning::Realtime Database not reachable yet (create it once in the Firebase console):', probe.status, JSON.stringify(probe.j).slice(0, 200)); process.exit(0); }
+      console.log('Database exists (found directly):', DB_URL);
+    } else {
     console.log('Database created:', mk.j.databaseUrl || DB_URL);
     await new Promise(r => setTimeout(r, 10000));
+    }
   }
   // 2) rules
   const rules = readFileSync('database.rules.json', 'utf8');
